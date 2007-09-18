@@ -1,0 +1,40 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+
+
+<title>{$lang_imagemap_title}</title>
+	<script language="javascript" type="text/javascript" src="../../tiny_mce_popup.js"></script>
+	<script language="javascript" type="text/javascript" src="jscripts/imgmap2.js"></script>
+	<script language="javascript" type="text/javascript" src="jscripts/functions.js"></script>
+	<!--  link href="css/imagemap.css" rel="stylesheet" type="text/css" /-->
+	<base target="_self" />
+</head>
+<body id="imagemap" onload="javascript:tinyMCEPopup.executeOnLoad('init();');"  style="display: none">
+
+
+	<div class="panel current">
+	<form id="img_area_form">
+
+        <div id="pic_container">
+        </div>
+        
+		<fieldset>
+			<legend>
+			    Image map areas
+			</legend>
+			<div id="button_container">
+			<!-- buttons come here -->
+			</div>
+			<div id="form_container">
+			<!-- form elements comehere -->
+         	</div>
+		</fieldset>
+		<input type="button" value="Submit" onclick="javascript:save();"/>
+		<input type="button" value="Cancel" onclick="javascript:closeWindow();"/>
+		<input type="button" value="Remove Map" onclick="javascript:removeMap();"/>
+	
+	</form>
+	</div>
+
+</body>
+</html>

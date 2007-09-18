@@ -1,0 +1,9 @@
+Version 2.0
+	Added MAP id attribute support apart from existing MAP name usage.
+	Added function getMapId().
+	Added function getMapName().
+	Added function getMapInnerHTML().
+	
+	TODO: correct html up arrow bug
+	opera failsafe operation
+	tinymce support
