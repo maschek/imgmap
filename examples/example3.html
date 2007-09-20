@@ -24,6 +24,7 @@
 		external_link_list_url : "example_link_list.js",
 		external_image_list_url : "example_image_list.js",
 		media_external_list_url : "example_media_list.js",
+		extended_valid_elements : "map[id|name],area[shape|alt|coords|href|target],hr[class|width|size|noshade],font[face|size|color|style],span[class|align|style],p[lang]",
 		file_browser_callback : "fileBrowserCallBack",
 		paste_use_dialog : false,
 		theme_advanced_resizing : true,
@@ -47,7 +48,7 @@
 <!-- /TinyMCE -->
 </head>
 <body>
-
+<form method="post" action="http://tinymce.moxiecode.com/dump.php?example=true">
 <p style="font-size: 12px; font-weight: bold">
 Example 3 shows how to use the imgmap with TinyMCE editor.
 </p>
@@ -57,6 +58,8 @@ Example 3 shows how to use the imgmap with TinyMCE editor.
 		&lt;img src=&quot;example_files/sample1.jpg&quot;&gt;</p>
 </textarea>
 		
+<input type="submit" name="save" value="Submit" />
+</form>
 
 </body>
 </html>
