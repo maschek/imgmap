@@ -5,43 +5,29 @@ var map_obj = null;
 
 function init() {
 
-	//why do we need this??
-	//tinyMCEPopup.resizeToInnerSize();
 	tinyMCE.setWindowArg('mce_windowresize', true);
-	
-	//what is this??
-	var list = tinyMCE.getParam("external_rollover_list");
-	if (list != null) {
-		alert(list[0][0]);
-	}
 
-//late init
-myimgmap = new imgmap({
-	mode : "editor",
-	button_container: document.getElementById('button_container'),
-	imgroot: 'images/',
-	buttons : ['add','delete','preview','html'],
-	button_callbacks : ['','','',htmlShow],
-	pic_container: document.getElementById('pic_container'),
-	html_container: document.getElementById('html_container'),
-	status_container: document.getElementById('status_container'),
-	form_container: document.getElementById('form_container'),
-	bounding_box : false
-});
+	editor = tinyMCE.getInstanceById(tinyMCE.getWindowArg('editor_id'));
+	img_obj = editor.selection.getFocusElement();
+
+	//late init
+	myimgmap = new imgmap({
+		mode : "editor",
+		button_container: document.getElementById('button_container'),
+		imgroot: 'images/',
+		buttons : ['add','delete','preview','html'],
+		button_callbacks : ['','','',htmlShow],
+		pic_container: document.getElementById('pic_container'),
+		html_container: document.getElementById('html_container'),
+		status_container: document.getElementById('status_container'),
+		form_container: document.getElementById('form_container'),
+		bounding_box : false
+	});
 
 	
 	//we need this to load languages
 	myimgmap.onLoad();
-	
-	editor = tinyMCE.getInstanceById(tinyMCE.getWindowArg('editor_id'));
-	img_obj = editor.selection.getFocusElement();
 
-	//do we need this??
-	var src = tinyMCE.getAttrib(img_obj, 'src');
-	src = convertURL(src, img_obj, true);
-	var src = src == "" ? src : tinyMCE.convertRelativeToAbsoluteURL(tinyMCE.settings['base_href'], src);
-	//alert(src);
-	//console.log(img_obj);
 	myimgmap.loadImage(img_obj);
 	//console.log(myimgmap);
 	
@@ -60,12 +46,6 @@ myimgmap = new imgmap({
 		}
 	}
 }
-
-//why would we need this exactly??
-function convertURL(url, node, on_save) {
-	return eval("tinyMCEPopup.windowOpener." + tinyMCE.settings['urlconverter_callback'] + "(url, node, on_save);");
-}
-
 
 function updateAction() {
 	if (img_obj != null && img_obj.nodeName == "IMG") {
