@@ -86,6 +86,7 @@ function imgmap(config) {
 	this.config.bounding_box       = true;
 	this.config.label              = '%n';
 	this.config.label_class        = 'imgmap_label';
+	//this.config.label_style        = 'font-weight: bold; font-size: 10px; font-family: Arial';
 	this.config.label_style        = 'font: bold 10px Arial';
 	this.config.hint               = '#%n %h';
 	this.config.draw_opacity       = '35';	
@@ -117,15 +118,20 @@ function imgmap(config) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype.assignOID = function(objorid) {
-	if (typeof objorid == 'undefined') {
-		this.log("Undefined object passed to assignOID (" + objorid.toString() + ")" + arguments.callee.caller.toString(), 1);
-		return null;
+	try {
+		if (typeof objorid == 'undefined') {
+			this.log("Undefined object passed to assignOID. Called from: " + arguments.callee.caller, 1);
+			return null;
+		}
+		else if (typeof objorid == 'object') {
+			return objorid;
+		}
+		else if (typeof objorid == 'string') {
+			return document.getElementById(objorid);
+		}
 	}
-	else if (typeof objorid == 'object') {
-		return objorid;
-	}
-	else if (typeof objorid == 'string') {
-		return document.getElementById(objorid);
+	catch (err) {
+		this.log("Error in assignOID", 1);
 	}
 	return null;
 }
@@ -807,9 +813,9 @@ imgmap.prototype.addNewArea = function() {
 		this.props[id].aid       = id;
 		this.props[id].className = 'img_area';
 		//hook event handlers
-		this.props[id].onmouseover = this.img_area_mouseover.bind(this);
-		this.props[id].onmouseout  = this.img_area_mouseout.bind(this);
-		this.props[id].onclick     = this.img_area_click.bind(this);
+		this.addEvent(this.props[id], 'mouseover', this.img_area_mouseover.bind(this));
+		this.addEvent(this.props[id], 'mouseout',  this.img_area_mouseout.bind(this));
+		this.addEvent(this.props[id], 'click',     this.img_area_click.bind(this));
 		this.props[id].innerHTML = '\
 			<input type="text"  name="img_id" class="img_id" value="' + id + '" readonly="1"/>\
 			<input type="radio" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">\
@@ -827,11 +833,12 @@ imgmap.prototype.addNewArea = function() {
 				<option value="_top"   >top window</option>\
 				</select>';
 		//hook more event handlers
-		this.props[id].getElementsByTagName('input')[1].onkeydown = this.img_area_keydown.bind(this);
-		this.props[id].getElementsByTagName('input')[2].onblur    = this.img_area_blur.bind(this);
-		this.props[id].getElementsByTagName('input')[3].onblur    = this.img_area_blur.bind(this);
-		this.props[id].getElementsByTagName('input')[4].onblur    = this.img_area_blur.bind(this);
-		this.props[id].getElementsByTagName('select')[1].onblur   = this.img_area_blur.bind(this);
+		this.addEvent(this.props[id].getElementsByTagName('input')[1],  'keydown', this.img_area_keydown.bind(this));
+		this.addEvent(this.props[id].getElementsByTagName('input')[2],  'keydown', this.img_coords_keydown.bind(this));
+		this.addEvent(this.props[id].getElementsByTagName('input')[2],  'blur', this.img_area_blur.bind(this));
+		this.addEvent(this.props[id].getElementsByTagName('input')[3],  'blur', this.img_area_blur.bind(this));
+		this.addEvent(this.props[id].getElementsByTagName('input')[4],  'blur', this.img_area_blur.bind(this));
+		this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
 		//set shape same as lastarea - just for convenience
 		if (lastarea) this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
 		//alert(this.props[id].parentNode.innerHTML);
@@ -880,7 +887,9 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id].label = document.createElement('DIV');
 	this.pic.parentNode.appendChild(this.areas[id].label);
 	this.areas[id].label.className      = this.config.label_class;
-	this.areas[id].label.cssText        = this.config.label_style;
+	this.assignCSS(this.areas[id].label,  this.config.label_style);
+	//this.areas[id].label.cssText        = this.config.label_style;
+	//alert(this.areas[id].label.cssText);
 	this.areas[id].label.style.position = 'absolute';
 }
 
@@ -1629,6 +1638,7 @@ imgmap.prototype.img_area_mouseout = function(e) {
 
 
 imgmap.prototype.img_area_click = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
 	var obj = (document.all) ? window.event.srcElement : e.currentTarget;
 	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
 	this.form_selectRow(obj.aid, false);
@@ -1660,6 +1670,10 @@ imgmap.prototype.form_selectRow = function(id, setfocus) {
 }
 
 
+/**
+ *	Handles delete keypress on any form row.
+ *	@author	adam 
+ */
 imgmap.prototype.img_area_keydown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	var key = (window.event) ? event.keyCode : e.keyCode;
@@ -1714,6 +1728,7 @@ imgmap.prototype.html_container_focus = function(e) {
  *	@url	http://evolt.org/article/Mission_Impossible_mouse_position/17/23335/index.html
  */
 imgmap.prototype.area_mousemove = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
 	if (this.is_drawing == 0) {
 		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'image' || obj.tagName == 'group' ||
@@ -1765,6 +1780,7 @@ imgmap.prototype.area_mousemove = function(e) {
 
 
 imgmap.prototype.area_mousedown = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
 	if (this.is_drawing == 0) {
 		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
 		//alert(obj.tagName);
@@ -1928,22 +1944,19 @@ imgmap.prototype.setSelectionRange = function(obj, start, end) {
 }
 
 
-imgmap.prototype.doc_keydown = function(e) {
+/**
+ *	Handles arrow keys on img_coords input field.
+ *	Changes the coordinate values by +/- 1 and updates the corresponding canvas area.
+ *	@author	adam
+ *	@date	25-09-2007 17:12:43
+ */
+imgmap.prototype.img_coords_keydown = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
 	var key = (window.event) ? event.keyCode : e.keyCode;
 	var obj = (document.all) ? window.event.srcElement : e.originalTarget;
 	//console.log(key);
-	//console.log(e);
-	if (key == 16) {
-		//shift key pressed
-		if (this.is_drawing == this.DM_POLYGON_DRAW) {
-			this.is_drawing = this.DM_POLYGON_LASTDRAW;
-		}
-		else if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
-			this.is_drawing   = this.DM_SQUARE_DRAW;
-			this.statusMessage(this.strings['SQUARE2_DRAW']);
-		}
-	}
-	else if (key == 40 || key == 38) {
+	//console.log(obj);
+	if (key == 40 || key == 38) {
 		//down or up pressed
 		//get the coords
 		var coords = obj.value;
@@ -1971,6 +1984,30 @@ imgmap.prototype.doc_keydown = function(e) {
 }
 
 
+/**
+ *	Handles SHIFT hold while drawing.
+ *	@author	adam
+ */
+imgmap.prototype.doc_keydown = function(e) {
+	var key = (window.event) ? event.keyCode : e.keyCode;
+	//console.log(key);
+	if (key == 16) {
+		//shift key pressed
+		if (this.is_drawing == this.DM_POLYGON_DRAW) {
+			this.is_drawing = this.DM_POLYGON_LASTDRAW;
+		}
+		else if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
+			this.is_drawing   = this.DM_SQUARE_DRAW;
+			this.statusMessage(this.strings['SQUARE2_DRAW']);
+		}
+	}
+}
+
+
+/**
+ *	Handles SHIFT release while drawing.
+ *	@author	adam
+ */
 imgmap.prototype.doc_keyup = function(e) {
 	var key = (window.event) ? event.keyCode : e.keyCode;
 	//alert(key);
@@ -2068,6 +2105,30 @@ imgmap.prototype.toClipBoard = function(text) {
 
 
 /**
+ *	Parses cssText to single style declarations.
+ *	@author	adam
+ *	@date	25-09-2007 18:19:51
+ */
+imgmap.prototype.assignCSS = function(obj, cssText) {
+	var parts = cssText.split(';');
+	for (var i=0; i<parts.length; i++) {
+		var p = parts[i].split(':');
+		//we need to camelcase by - signs
+		var pp = p[0].trim().split('-');
+		var prop = pp[0];
+		for (var j=1; j<pp.length; j++) {
+			prop+= pp[j].replace(/^./, pp[j].substring(0,1).toUpperCase());
+		}
+		prop = prop.trim();
+		//breaks on IE
+		//alert('obj.style.' + prop + ' = \'' + p[1] + '\';');
+		//eval is evil, but we have no other choice
+		eval('obj.style.' + prop + ' = \'' + p[1] + '\';');
+	}
+}
+
+
+/**
  *	@date	11-02-2007 19:57:05
  *	@url	http://www.deepwood.net/writing/method-references.html.utf8
  *	@author	Daniel Brockman
@@ -2079,6 +2140,20 @@ Function.prototype.bind = function(object) {
 	}
 }
 
+
+/**
+ *	Trim functions.
+ *	@url	http://www.somacon.com/p355.php 
+ */
+String.prototype.trim = function() {
+	return this.replace(/^\s+|\s+$/g,"");
+}
+String.prototype.ltrim = function() {
+	return this.replace(/^\s+/,"");
+}
+String.prototype.rtrim = function() {
+	return this.replace(/\s+$/,"");
+}
 
 function imgmap_spawnObjects(config) {
 	//console.log('spawnobjects');
