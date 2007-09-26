@@ -60,7 +60,9 @@ function updateAction() {
 			map_obj.id   = myimgmap.getMapId();
 		}
 		else {
+			//will produce error in ie
 			editor.selection.collapse(true);
+			//
 			tinyMCEPopup.execCommand("mceInsertContent", false, myimgmap.getMapHTML());
 		}
 		tinyMCEPopup.execCommand("mceEndUndoLevel");
