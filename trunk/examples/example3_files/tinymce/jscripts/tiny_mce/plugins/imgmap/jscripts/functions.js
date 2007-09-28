@@ -50,26 +50,22 @@ function init() {
 function updateAction() {
 	if (img_obj != null && img_obj.nodeName == "IMG") {
 		tinyMCEPopup.execCommand("mceBeginUndoLevel");
-		if (typeof map_obj != 'undefined' && map_obj != null) {
-			map_obj.innerHTML = myimgmap.getMapInnerHTML();
-			map_obj.name = myimgmap.getMapName();
-			map_obj.id   = myimgmap.getMapId();
-		}
-		else {
-			//will produce error in ie
-			//editor.selection.collapse(true);
-			//tinyMCEPopup.execCommand("mceInsertContent", false, myimgmap.getMapHTML());
+
+		if (typeof map_obj == 'undefined' || map_obj == null) {
 			map_obj = editor.contentWindow.document.createElement('MAP');
-			map_obj.innerHTML = myimgmap.getMapInnerHTML();
-			map_obj.name = myimgmap.getMapName();
-			map_obj.id   = myimgmap.getMapId();
 			img_obj.parentNode.appendChild(map_obj);
 		}
+
+		map_obj.innerHTML = myimgmap.getMapInnerHTML();
+		map_obj.name = myimgmap.getMapName();
+		map_obj.id   = myimgmap.getMapId();
+		
 		img_obj.setAttribute('usemap', "#" + myimgmap.getMapName());
 		img_obj.setAttribute('border', '0');
 		img_obj.setAttribute('onmouseover', 'test');
+		
 		tinyMCEPopup.execCommand('mceSetAttribute', false, {name:'usemap', value:"#" + myimgmap.getMapName()});
-		alert('done');
+		//alert('done');
 		tinyMCEPopup.execCommand("mceEndUndoLevel");
 	}
 	tinyMCEPopup.close();
