@@ -62,10 +62,7 @@ function updateAction() {
 		
 		img_obj.setAttribute('usemap', "#" + myimgmap.getMapName());
 		img_obj.setAttribute('border', '0');
-		img_obj.setAttribute('onmouseover', 'test');
 		
-		tinyMCEPopup.execCommand('mceSetAttribute', false, {name:'usemap', value:"#" + myimgmap.getMapName()});
-		//alert('done');
 		tinyMCEPopup.execCommand("mceEndUndoLevel");
 	}
 	tinyMCEPopup.close();
