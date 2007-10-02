@@ -1,1 +1,1 @@
-java -jar custom_rhino.jar -c ../imgmap.js > ../imgmap_compressed.js 2>&1
+java -jar custom_rhino.jar -c ../imgmap.js > ../imgmap_packed.js 2>&1
