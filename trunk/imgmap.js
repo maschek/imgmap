@@ -86,8 +86,8 @@ function imgmap(config) {
 	this.config.bounding_box       = true;
 	this.config.label              = '%n';
 	this.config.label_class        = 'imgmap_label';
-	//this.config.label_style        = 'font-weight: bold; font-size: 10px; font-family: Arial';
 	this.config.label_style        = 'font: bold 10px Arial';
+	//this.config.label_style        = 'font-weight: bold; font-size: 10px; font-family: Arial';
 	this.config.hint               = '#%n %h';
 	this.config.draw_opacity       = '35';	
 	this.config.norm_opacity       = '50';	
@@ -210,7 +210,11 @@ imgmap.prototype.setup = function(config) {
 	}
 
 	//load excanvas js - as soon as possible
-	if (this.isMSIE) this.loadScript(this.config.baseroot + 'excanvas.js');
+	if (this.isMSIE &&
+		typeof window.CanvasRenderingContext2D == 'undefined' && typeof G_vmlCanvasManager == 'undefined') { 
+		this.loadScript(this.config.baseroot + 'excanvas.js');
+		//alert('loadcanvas');
+	}
 	//alert(this.config.baseroot);
 
 	//load language js - as soon as possible
@@ -888,8 +892,6 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.pic.parentNode.appendChild(this.areas[id].label);
 	this.areas[id].label.className      = this.config.label_class;
 	this.assignCSS(this.areas[id].label,  this.config.label_style);
-	//this.areas[id].label.cssText        = this.config.label_style;
-	//alert(this.areas[id].label.cssText);
 	this.areas[id].label.style.position = 'absolute';
 }
 
@@ -2117,13 +2119,14 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
 		var pp = p[0].trim().split('-');
 		var prop = pp[0];
 		for (var j=1; j<pp.length; j++) {
+			//replace first letters to uppercase
 			prop+= pp[j].replace(/^./, pp[j].substring(0,1).toUpperCase());
 		}
 		prop = prop.trim();
-		//breaks on IE
-		//alert('obj.style.' + prop + ' = \'' + p[1] + '\';');
+		value = p[1].trim();
+		//alert('obj.style.' + prop + ' = \'' + value + '\';');
 		//eval is evil, but we have no other choice
-		eval('obj.style.' + prop + ' = \'' + p[1] + '\';');
+		eval('obj.style.' + prop + ' = \'' + value + '\';');
 	}
 }
 
