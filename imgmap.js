@@ -19,6 +19,9 @@
  *	-highlight which control point is edited in html or form mode, up/down keys to change them   
  *	-more comments, especially on config vars
  *	-make function names more logical
+ *	- auto language detection
+ *	- hooks
+ *	- dumpconfig   
  *	-prepare for bad input /poly not properly closed?
  *	-prepare for % values in coords  
  *	-prepare for default shape http://www.w3.org/TR/html4/struct/objects.html#edef-AREA
@@ -120,7 +123,7 @@ function imgmap(config) {
 imgmap.prototype.assignOID = function(objorid) {
 	try {
 		if (typeof objorid == 'undefined') {
-			this.log("Undefined object passed to assignOID. Called from: " + arguments.callee.caller, 1);
+			this.log("Undefined object passed to assignOID.");// Called from: " + arguments.callee.caller, 1);
 			return null;
 		}
 		else if (typeof objorid == 'object') {
@@ -526,22 +529,25 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 			this.pic.onmousemove = this.img_mousemove.bind(this);
 			this.pic.style.cursor = this.config.cursor_default;
 		}
-
+		//img ='../../'+img;
+		this.log('Loading image: ' + img, 3);
 		//calculate timestamp to bypass browser cache mechanism
-		var ts = new Date().getTime();
-		this.pic.src = img+'?'+ts;
+		this.pic.src = img + '? '+ (new Date().getTime());
 		//if (imgw > 0) pic.setAttribute('width',  imgw);
 		//if (imgh > 0) pic.setAttribute('height', imgh);
 	}
 	else if (typeof img == 'object') {
-		//we have to use the src of it the image object  
-		//if it is a tinymce object, it has no src but mce_src attribute!
-		if (img.getAttribute('src') == '' && img.getAttribute('mce_src') != '') {
-			this.loadImage(img.getAttribute('mce_src'), imgw, imgh);
+		//we have to use the src of the image object
+		var src = img.getAttribute('src');
+		if (src == '' && img.getAttribute('mce_src') != '') {
+			//if it is a tinymce object, it has no src but mce_src attribute!
+			src = img.getAttribute('mce_src');
 		}
-		else {
-			this.loadImage(img.getAttribute('src'), imgw, imgh);
+		else if (src == '' && img.getAttribute('_fcksavedurl') != '') {
+			//if it is an fck object, it might have only _fcksavedurl attribute!
+			src = img.getAttribute('_fcksavedurl');
 		}
+		this.loadImage(src, imgw, imgh);
 	}
 }
 
