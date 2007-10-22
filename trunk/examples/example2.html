@@ -1,7 +1,10 @@
 <html>
 <head>
 <title>Image Map Editor - Example 2</title>
-<script type="text/javascript" src="../imgmap.js?nocache=ex2"></script>
+<!--[if gte IE 6]>
+<script language="javascript" type="text/javascript" src="../excanvas.js"></script>
+<![endif]-->
+<script type="text/javascript" src="../imgmap.js"></script>
 </head>
 <body>
 
@@ -23,12 +26,15 @@
 
 <script type="text/javascript">
 
-var myimgmap = new imgmap({
-mode : "highlighter",
-CL_NORM_SHAPE : "#fefefe"
+var oldload = window.onload;
+window.onload = function() {
+	if (oldload) oldload();
+	var myimgmap = new imgmap({
+	mode : "highlighter",
+	CL_NORM_SHAPE : "#fefefe"
+	}
+	);
 }
-);
-
 
 </script>
 

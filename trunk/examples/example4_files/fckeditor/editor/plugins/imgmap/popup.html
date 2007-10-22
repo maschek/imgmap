@@ -1,7 +1,6 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<title fckLang="imgmapDlgTitle">Image Map Editor</title>
-	<xscript language="javascript" type="text/javascript" src="../../tiny_mce_popup.js"></script>
 	<!--[if gte IE 6]>
 	<script language="javascript" type="text/javascript" src="jscripts/excanvas.js"></script>
 	<![endif]-->
@@ -9,6 +8,11 @@
 	<script language="javascript" type="text/javascript" src="jscripts/functions.js"></script>
 	<link rel="stylesheet" href="css/imgmap.css" type="text/css"/>
 	<meta http-equiv="imagetoolbar" content="no"/>
+	<script type="text/javascript">
+		// Sets the Skin CSS
+		document.write( '<link href="' + window.opener.FCKConfig.SkinPath + 'fck_dialog.css" type="text/css" rel="stylesheet">' ) ;
+	</script>
+
 </head>
 <body id="imgmap" onload="delayedLoad()">
 	<form id="img_area_form">
@@ -61,81 +65,16 @@
 
 		<div class="ActionPanel">
 			<div style="float: left">
-				<input type="button" id="insert" name="update" fckLang="imgmapBtnOk" value="OK" onclick="updateAction();" />
+				<input type="button" id="remove" name="remove" fckLang="imgmapBtnRemove" value="Remove Map" onclick="removeAction();" />
 			</div>
 			<div style="float: right">
-				<input type="button" id="remove" name="remove" fckLang="imgmapBtnRemove" value="Remove Map" onclick="removeAction();" />
+				<input type="button" id="insert" name="update" fckLang="imgmapBtnOk" value="OK" onclick="updateAction();" />
 				<input type="button" id="cancel" name="cancel" fckLang="imgmapBtnCancel" value="Cancel" onclick="cancelAction();" />
 			</div>
 			<div class="spacer"/>
 		</div>
 		
 	</form>
-
-
-<script type="text/javascript">
-
-function delayedLoad(){
-window.setTimeout('plugin_init()', 1000);
-	
-}
-
-function htmlShow() {
-	toggleFieldset(document.getElementById('fieldset_html'), 1);
-	document.getElementById('html_container').focus();
-}
-
-function changelabeling(obj) {
-	myimgmap.config.label = obj.value;
-	myimgmap._repaintAll();
-}
-
-function toggleBoundingBox(obj) {
-	//console.log(obj.checked);
-	myimgmap.config.bounding_box = obj.checked;
-	myimgmap.relaxAllAreas();
-}
-
-function toggleFieldset(fieldset, on) {
-	if (fieldset) {
-		if (fieldset.className == 'fieldset_off' || on == 1) {
-			fieldset.className = '';
-			resizeToContent();
-		}
-		else {
-			fieldset.className = 'fieldset_off';
-		}
-	}
-}
-
-function resizeToContent() {
-//alert('b');
-if (document.all) {
-			try { window.resizeTo(10, 10); } catch (e) {}
-
-			elm = document.body;
-			width = elm.offsetWidth;
-			height = elm.offsetHeight;
-			dx = (elm.scrollWidth - width) + 4;
-			dy = elm.scrollHeight - height;
-alert('a0');
-			try { window.resizeBy(dx, dy); } catch (e) {}
-		} else {
-			window.scrollBy(1000, 1000);
-			if (window.scrollX > 0 || window.scrollY > 0) {
-				window.resizeBy(window.innerWidth * 2, window.innerHeight * 2);
-				window.sizeToContent();
-				window.scrollTo(0, 0);
-				x = parseInt(screen.width / 2.0) - (window.outerWidth / 2.0);
-				y = parseInt(screen.height / 2.0) - (window.outerHeight / 2.0);
-				window.moveTo(x, y);
-				alert('a');
-			}
-		}
-}
-
-
-</script>
 
 </body>
 </html>
