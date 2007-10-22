@@ -72,7 +72,8 @@ function imgmap(config) {
 	this.config.lang     = "en";
 	this.config.loglevel = 0;
 	this.config.buttons          = ['add','delete','preview','html'];
-	this.config.button_callbacks = new Array();
+	this.config.custom_callbacks = new Object();
+	//possible values: onPreview, onClipboard, onHtml, onAddArea, onRemoveArea, onDrawArea, onResizeArea, onRelaxArea, onFocusArea, onBlurArea, onMoveArea, onSelectRow, onLoadImage, onSetMap, onGetMap
 
 	this.config.CL_DRAW_BOX        = '#dd2400';
 	this.config.CL_DRAW_SHAPE      = '#d00';
@@ -314,22 +315,12 @@ imgmap.prototype.onLoad = function(e) {
 					try {
 						var img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'add.gif';
-						//alert(img.src);
-						//document.write(img.src);
-						img.onclick = this.addNewArea.bind(this);
-						//add custom callback
-						if (this.config.button_callbacks[i])
-							this.addEvent(img, 'click', this.config.button_callbacks[i]);
+						this.addEvent(img, 'click', this.addNewArea.bind(this));
 						img.alt     = this.strings['HINT_ADD'];
 						img.title   = this.strings['HINT_ADD'];
 						img.style.cursor = 'pointer';
 						img.style.margin = '0 2px';
 						this.button_container.appendChild(img);
-						//this.button_container.style.font = '10px Impact';
-						//this.button_container.innerHTML = 'aaa';
-						//alert(this.button_container.parentNode.tagName);
-						//alert(document.getElementById('button_container').parentNode.tagName);
-						//alert('added');
 					}
 					catch (err) {
 						this.log("Unable to add button (" + this.config.buttons[i] + ")", 1);
@@ -339,10 +330,7 @@ imgmap.prototype.onLoad = function(e) {
 					try {
 						var img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'delete.gif';
-						img.onclick = this.removeArea.bind(this);
-						//add custom callback
-						if (this.config.button_callbacks[i])
-							this.addEvent(img, 'click', this.config.button_callbacks[i]);
+						this.addEvent(img, 'click', this.removeArea.bind(this));
 						img.alt     = this.strings['HINT_DELETE'];
 						img.title   = this.strings['HINT_DELETE'];
 						img.style.cursor = 'pointer';
@@ -357,10 +345,7 @@ imgmap.prototype.onLoad = function(e) {
 					try {
 						var img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'zoom.gif';
-						img.onclick = this.togglePreview.bind(this);
-						//add custom callback
-						if (this.config.button_callbacks[i])
-							this.addEvent(img, 'click', this.config.button_callbacks[i]);
+						this.addEvent(img, 'click', this.togglePreview.bind(this));
 						img.alt     = this.strings['HINT_PREVIEW'];
 						img.title   = this.strings['HINT_PREVIEW'];
 						img.style.cursor = 'pointer';
@@ -376,9 +361,7 @@ imgmap.prototype.onLoad = function(e) {
 					try {
 						var img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'html.gif';
-						//add custom callback
-						if (this.config.button_callbacks[i])
-							this.addEvent(img, 'click', this.config.button_callbacks[i]);
+						this.addEvent(img, 'click', this.clickHtml.bind(this));
 						img.alt     = this.strings['HINT_HTML'];
 						img.title   = this.strings['HINT_HTML'];
 						img.style.cursor = 'pointer';
@@ -393,10 +376,7 @@ imgmap.prototype.onLoad = function(e) {
 					try {
 						var img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'clipboard.gif';
-						img.onclick = this.toClipBoard.bind(this);
-						//add custom callback
-						if (this.config.button_callbacks[i])
-							this.addEvent(img, 'click', this.config.button_callbacks[i]);
+						this.addEvent(img, 'click', this.toClipBoard.bind(this));
 						img.alt     = this.strings['HINT_CLIPBOARD'];
 						img.title   = this.strings['HINT_CLIPBOARD'];
 						img.style.cursor = 'pointer';
@@ -530,15 +510,16 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 			this.pic.style.cursor = this.config.cursor_default;
 		}
 		//img ='../../'+img;
-		this.log('Loading image: ' + img, 3);
+		this.log('Loading image: ' + img, 0);
 		//calculate timestamp to bypass browser cache mechanism
 		this.pic.src = img + '? '+ (new Date().getTime());
 		//if (imgw > 0) pic.setAttribute('width',  imgw);
 		//if (imgh > 0) pic.setAttribute('height', imgh);
+		this.fireEvent('onLoadImage');
 	}
 	else if (typeof img == 'object') {
 		//we have to use the src of the image object
-		var src = img.getAttribute('src');
+		var src = img.src; //img.getAttribute('src');
 		if (src == '' && img.getAttribute('mce_src') != '') {
 			//if it is a tinymce object, it has no src but mce_src attribute!
 			src = img.getAttribute('mce_src');
@@ -566,6 +547,7 @@ imgmap.prototype.useImage = function(img) {
 		this.pic.onmousemove = this.img_mousemove.bind(this);
 		this.pic.style.cursor = this.config.cursor_default;
 		this.pic_container = this.pic.parentNode;
+		this.fireEvent('onLoadImage');
 	}
 }
 
@@ -617,14 +599,8 @@ imgmap.prototype.log = function(obj, level) {
  *	@date	2006-06-06 15:10:27
  */
 imgmap.prototype.getMapHTML = function() {
-	if (this.mapname == '') {
-		var now = new Date();
-		this.mapname = 'imgmap' + now.getFullYear() + (now.getMonth()+1) + now.getDate() + now.getHours() + now.getMinutes() + now.getSeconds();
-	}
-	if (this.mapid == '') {
-		this.mapid = this.mapname;
-	}
-	html = '<map id="'+this.mapid+'" name="'+this.mapname+'">' + this.getMapInnerHTML() + '</map>';
+	this.fireEvent('onGetMap');
+	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML() + '</map>';
 	//alert(html);
 	return(html);
 }
@@ -650,10 +626,18 @@ imgmap.prototype.getMapInnerHTML = function() {
 }
 
 imgmap.prototype.getMapName = function() {
+	if (this.mapname == '') {
+		if (this.mapid != '') return this.mapid;
+		var now = new Date();
+		this.mapname = 'imgmap' + now.getFullYear() + (now.getMonth()+1) + now.getDate() + now.getHours() + now.getMinutes() + now.getSeconds();
+	}
 	return this.mapname;
 }
 
 imgmap.prototype.getMapId = function() {
+	if (this.mapid == '') {
+		this.mapid = this.getMapName();
+	}
 	return this.mapid;
 }
 
@@ -674,29 +658,30 @@ imgmap.prototype._normCoords = function(coords) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-07 11:47:16
  */   
-imgmap.prototype.setMapHTML = function(html) {
+imgmap.prototype.setMapHTML = function(map) {
+	this.fireEvent('onSetMap');
 	//remove all areas
 	this.removeAllAreas();
-	//create temp div
-	this.log('setmap');
-	//this.log(html);
-	var div = document.createElement('DIV');
-	if (typeof html == 'string') {
-		div.innerHTML = html;
+	//this.log(map);
+	var oMap;
+	if (typeof map == 'string') {
+		var oHolder = document.createElement('DIV');
+		oHolder.innerHTML = map;
+		oMap = oHolder.firstChild;
 	}
-	else if (typeof html == 'object') {
-		div.appendChild(html);
+	else if (typeof map == 'object') {
+		oMap = map;
 	}
-	if (!div.getElementsByTagName('map')[0]) return false;
-	this.mapname = div.getElementsByTagName('map')[0].name;
-	this.mapid   = div.getElementsByTagName('map')[0].id;
-	var newareas = div.getElementsByTagName('area');
+	if (!oMap || oMap.nodeName.toLowerCase() !== 'map') return false;
+	this.mapname = oMap.name;
+	this.mapid   = oMap.id;
+	var newareas = oMap.getElementsByTagName('area');	
 	for (var i=0; i<newareas.length; i++) {
-		//alert(newareas[i].getAttribute('coords'));
+		//alert(newareas[i].getAttribute('coords', 2));
 		id = this.addNewArea();//btw id == this.currentid, just this form is a bit clearer
 
-		if (newareas[i].getAttribute('shape')) {
-			shape = newareas[i].getAttribute('shape').toLowerCase();
+		if (newareas[i].getAttribute('shape', 2)) {
+			shape = newareas[i].getAttribute('shape', 2).toLowerCase();
 			if (shape == 'rect')      shape = 'rectangle'
 			else if (shape == 'circ') shape = 'circle'
 			else if (shape == 'poly') shape = 'polygon';
@@ -705,9 +690,9 @@ imgmap.prototype.setMapHTML = function(html) {
 			shape = 'rectangle';
 		} 
 		this.props[id].getElementsByTagName('select')[0].value = shape;
-		if (newareas[i].getAttribute('coords')) {
+		if (newareas[i].getAttribute('coords', 2)) {
 			//normalize coords
-			var coords = this._normCoords(newareas[i].getAttribute('coords'));
+			var coords = this._normCoords(newareas[i].getAttribute('coords', 2));
 			this.props[id].getElementsByTagName('input')[2].value  = coords;
 		}
 		if (newareas[i].getAttribute('href')) this.props[id].getElementsByTagName('input')[3].value  = newareas[i].getAttribute('href');
@@ -730,6 +715,15 @@ imgmap.prototype.setMapHTML = function(html) {
 
 
 /**
+ *	Dummy
+ */
+imgmap.prototype.clickHtml = function() {
+	this.fireEvent('onHtml');
+	return true;
+}
+
+
+/**
  *	Preview image with imagemap applied.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-06 14:51:01
@@ -738,6 +732,7 @@ imgmap.prototype.setMapHTML = function(html) {
 imgmap.prototype.togglePreview = function() {
 	if (!this.pic) return false;//exit if pic is undefined
 	if (this.viewmode == 0) {
+		this.fireEvent('onPreview');
 		//hide canvas elements and labels
 		for (var i=0; i<this.areas.length; i++) {
 			if (this.areas[i]) {
@@ -803,8 +798,8 @@ imgmap.prototype.togglePreview = function() {
  *	@date	2006-06-06 16:49:25  
  */ 
 imgmap.prototype.addNewArea = function() {
-	//alert('a');
 		if (this.viewmode == 1) return;//exit if preview mode
+		this.fireEvent('onAddArea');
 		var lastarea = this._getLastArea();
 		var id = this.areas.length;
 		//alert(id);
@@ -908,6 +903,7 @@ imgmap.prototype.initArea = function(id, shape) {
  *	@date	15-02-2007 22:07:28
  */
 imgmap.prototype.relaxArea = function(id) {
+	this.fireEvent('onRelaxArea');
 	if (this.areas[id].shape == 'rectangle') {
 		this.areas[id].style.borderWidth = '1px';
 		this.areas[id].style.borderStyle = 'solid';
@@ -956,6 +952,7 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
  */
 imgmap.prototype.removeArea = function() {
 	if (this.viewmode == 1) return;//exit if preview mode
+	this.fireEvent('onRemoveArea');
 	var id = this.currentid;
 	if (this.props[id]) {
 		//shall we leave the last one?
@@ -1282,6 +1279,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	
 	if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
 		//rectangle mode
+		this.fireEvent('onDrawArea');
 		var xdiff = x - this.memory[this.currentid].downx;
 		var ydiff = y - this.memory[this.currentid].downy;
 		//alert(xdiff);
@@ -1297,7 +1295,8 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_SQUARE_DRAW) {
-		//square mode - align to shorter side 
+		//square mode - align to shorter side
+		this.fireEvent('onDrawArea');
 		var xdiff = x - this.memory[this.currentid].downx;
 		var ydiff = y - this.memory[this.currentid].downy;
 		var diff;
@@ -1321,9 +1320,11 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_POLYGON_DRAW) {
 		//polygon mode
+		this.fireEvent('onDrawArea');
 		this._polygongrow(this.areas[this.currentid], x, y);
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_MOVE || this.is_drawing == this.DM_SQUARE_MOVE) {
+		this.fireEvent('onMoveArea');
 		var x = x - this.memory[this.currentid].rdownx;
 		var y = y - this.memory[this.currentid].rdowny;
 		if (x + width > this.pic.width || y + height > this.pic.height) return;
@@ -1333,6 +1334,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		this.areas[this.currentid].style.top  = y + 1 + 'px';
 	}
 	else if (this.is_drawing == this.DM_POLYGON_MOVE) {
+		this.fireEvent('onMoveArea');
 		var x = x - this.memory[this.currentid].rdownx;
 		var y = y - this.memory[this.currentid].rdowny;
 		if (x + width > this.pic.width || y + height > this.pic.height) return;
@@ -1347,6 +1349,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		this.areas[this.currentid].style.top  = y + 1 + 'px';
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_LEFT) {
+		this.fireEvent('onResizeArea');
 		var diff = x - left;
 		//alert(diff);
 		if ((width  + (-1 * diff)) > 0) {
@@ -1368,6 +1371,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_RIGHT) {
+		this.fireEvent('onResizeArea');
 		var diff = x - left - width;
 		if ((width  + (diff)) - 1 > 0) {
 			//real resize right
@@ -1387,6 +1391,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_TOP) {
+		this.fireEvent('onResizeArea');
 		var diff = y - top;
 		if ((width  + (-1 * diff)) > 0) {
 			//real resize top
@@ -1407,6 +1412,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_BOTTOM) {
+		this.fireEvent('onResizeArea');
 		var diff = y - top - height;
 		if ((width  + (diff)) - 1 > 0) {
 			//real resize bottom
@@ -1426,7 +1432,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_LEFT) {
-		//balszel mozgatas
+		this.fireEvent('onResizeArea');
 		var xdiff = x - left;
 		if (width + (-1 * xdiff) > 0) {
 			//real resize left
@@ -1442,6 +1448,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_RIGHT) {
+		this.fireEvent('onResizeArea');
 		var xdiff = x - left - width;
 		if ((width  + (xdiff)) - 1 > 0) {
 			//real resize right
@@ -1456,6 +1463,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_TOP) {
+		this.fireEvent('onResizeArea');
 		var ydiff = y - top;
 		if ((height + (-1 * ydiff)) > 0) {
 			//real resize top
@@ -1471,6 +1479,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_BOTTOM) {
+		this.fireEvent('onResizeArea');
 		var ydiff = y - top - height;
 		if ((height + (ydiff)) - 1 > 0) {
 			//real resize bottom
@@ -1600,6 +1609,7 @@ imgmap.prototype.img_area_mouseover = function(e) {
 	
 	if (this.areas[id]) {
 		//area exists - highlight it
+		this.fireEvent('onFocusArea');
 		if (this.areas[id].shape == 'rectangle') {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
@@ -1627,6 +1637,7 @@ imgmap.prototype.img_area_mouseout = function(e) {
 
 	if (this.areas[id]) {
 		//area exists - fade it back
+		this.fireEvent('onBlurArea');
 		if (this.areas[id].shape == 'rectangle') {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
@@ -1665,6 +1676,7 @@ imgmap.prototype.form_selectRow = function(id, setfocus) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	if (!this.form_container) return;//exit if no form container
 	if (!document.getElementById('img_active_'+id)) return;
+	this.fireEvent('onSelectRow');
 	document.getElementById('img_active_'+id).checked = 1;
 	if (setfocus) document.getElementById('img_active_'+id).focus();
 	//remove all background styles
@@ -1965,6 +1977,7 @@ imgmap.prototype.img_coords_keydown = function(e) {
 	//console.log(key);
 	//console.log(obj);
 	if (key == 40 || key == 38) {
+		this.fireEvent('onResizeArea');
 		//down or up pressed
 		//get the coords
 		var coords = obj.value;
@@ -2074,6 +2087,7 @@ imgmap.prototype._getLastArea = function() {
  *	@date	2006.10.24. 22:14:12
  */
 imgmap.prototype.toClipBoard = function(text) {
+	this.fireEvent('onClipboard');
 	if (typeof text == 'undefined') text = this.getMapHTML();
 	//alert(typeof window.clipboardData);
 	try {
@@ -2133,6 +2147,19 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
 		//alert('obj.style.' + prop + ' = \'' + value + '\';');
 		//eval is evil, but we have no other choice
 		eval('obj.style.' + prop + ' = \'' + value + '\';');
+	}
+}
+
+
+/**
+ *	To fire callback hooks on custom events
+ *	@author	adam
+ *	@date	13-10-2007 15:24:49
+ */   
+imgmap.prototype.fireEvent = function(evt) {
+	//this.log("Firing event: " + evt);
+	if (typeof this.config.custom_callbacks[evt] == 'function') {
+		this.config.custom_callbacks[evt]();
 	}
 }
 

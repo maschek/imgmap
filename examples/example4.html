@@ -7,18 +7,20 @@
 <!-- /FCKeditor -->
 </head>
 <body>
-<form method="post" action="http://tinymce.moxiecode.com/dump.php?example=true">
+<form method="post" action="">
 <p style="font-size: 12px; font-weight: bold">
 Example 4 shows how to use the imgmap with FCKeditor.
 </p>
 
-
-		<script type="text/javascript">
+<script type="text/javascript">
 
 var oFCKeditor = new FCKeditor( 'FCKeditor1' ) ;
 oFCKeditor.BasePath	= 'example4_files/fckeditor/';
+
+//oFCKeditor.Config['BaseHref']	= document.location; //.pathname; //.substring(0,document.location.pathname.lastIndexOf('example4')) ;
 // Set the custom configurations file path (in this way the original file is mantained).
 oFCKeditor.Config['CustomConfigurationsPath'] = '../../../example4_files/custom_config.js?' ;
+oFCKeditor.Height = '500';
 
 oFCKeditor.Value	= '\
 	<p>Some paragraph</p> \
@@ -26,10 +28,8 @@ oFCKeditor.Value	= '\
 	';
 oFCKeditor.Create() ;
 
-		</script>
-		<br>
-
-		
+</script>
+<br>
 <input type="submit" name="save" value="Submit" />
 </form>
 
