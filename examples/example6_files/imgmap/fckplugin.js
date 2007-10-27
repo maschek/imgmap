@@ -1,10 +1,5 @@
 
-//alert('loading plugin imgmap');
-
-var imgmapCommand = function() {
-};
-
-imgmapCommand.prototype.GetState = function() {
+imgmapCommand_GetState = function() {
 	if ( FCK.EditMode != FCK_EDITMODE_WYSIWYG )
 		return FCK_TRISTATE_DISABLED;
 
@@ -22,21 +17,10 @@ imgmapCommand.prototype.GetState = function() {
 	return FCK_TRISTATE_DISABLED;
 }
 
-imgmapCommand.prototype.Execute = function() {
-	window.open(
-		FCKPlugins.Items['imgmap'].Path + 'popup.html',
-		FCKLang.imgmapDlgName,
-		'width=700,height=700,scrollbars=no,scrolling=no,location=no,toolbar=no');
-}
 
+FCKCommands.RegisterCommand( 'imgmapPopup', 
+	new FCKDialogCommand( FCKLang.imgmapDlgName, FCKLang.imgmapDlgTitle, FCKPlugins.Items['imgmap'].Path + 'popup.html', 700, 600, imgmapCommand_GetState ) ) ;
 
-// register the related command.
-FCKCommands.RegisterCommand(
-	'imgmapPopup',
-	new imgmapCommand(
-		FCKLang.imgmapDlgName,
-		FCKLang.imgmapDlgTitle,
-		FCKPlugins.Items['imgmap'].Path + 'popup.html', 700, 700));
 
 // create imgmap toolbar button.
 var imgmapButton = new FCKToolbarButton('imgmapPopup', FCKLang.imgmapBtn, null, null, false, true);
@@ -55,3 +39,20 @@ FCK.ContextMenu.RegisterListener({
 		}
 	}
 });
+
+
+
+// Fix behavior for IE, it doesn't read back the .name on newly created maps 
+FCKXHtml.TagProcessors['map'] = function( node, htmlNode )
+{
+	if ( ! node.attributes.getNamedItem( 'name' ) )
+	{
+		var name = htmlNode.name ;
+		if ( name )
+			FCKXHtml._AppendAttribute( node, 'name', name ) ;
+	}
+
+	node = FCKXHtml._AppendChildNodes( node, htmlNode, true ) ;
+
+	return node ;
+}

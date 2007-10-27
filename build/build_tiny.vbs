@@ -55,13 +55,17 @@ set fp = FSO.OpenTextFile("..\\temp\\popup.html", 2)
 fp.Write(data)
 fp.Close()
 
+'get environment variable
+Set WshShell = WScript.CreateObject("WScript.Shell")
+Set WshSysEnv = WshShell.Environment("SYSTEM")
 
 'make zip
-zipname = "a.zip"
+zipname = "plugin_tinymce" & WshSysEnv("IMGMAP_BUILDNO") & ".zip"
 WScript.Echo("Creating ZIP file...")
-Set objZip = Server.CreateObject("XStandard.Zip")
-objZip.Pack "..\\temp\\*", "..\\" & zipname
-Set objZip = Nothing
+set oZip = CreateObject("XStandard.Zip")
+oZip.Pack "..\\temp\\*", "..\\" & zipname
+Set oZip = Nothing
+
 WScript.Echo("ZIP file created as " & zipname)
 
 

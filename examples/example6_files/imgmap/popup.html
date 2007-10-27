@@ -2,20 +2,29 @@
 <head>
 	<title fckLang="imgmapDlgTitle">Image Map Editor</title>
 	<!--[if gte IE 6]>
-	<script language="javascript" type="text/javascript" src="jscripts/excanvas.js"></script>
+	<script type="text/javascript" src="jscripts/excanvas.js"></script>
 	<![endif]-->
-	<script language="javascript" type="text/javascript" src="../../../imgmap.js?"></script>
-	<script language="javascript" type="text/javascript" src="jscripts/functions.js?"></script>
+	<script type="text/javascript" src="../../../imgmap.js?"></script>
+	<script type="text/javascript" src="jscripts/functions.js?"></script>
 	<link rel="stylesheet" href="css/imgmap.css" type="text/css"/>
 	<meta http-equiv="imagetoolbar" content="no"/>
-	<script type="text/javascript">
-		// Sets the Skin CSS
-		document.write( '<link href="' + window.opener.FCKConfig.SkinPath + 'fck_dialog.css" type="text/css" rel="stylesheet">' ) ;
-	</script>
 
 </head>
-<body id="imgmap" onload="delayedLoad()">
+<body id="imgmap">
 	<form id="img_area_form">
+		<fieldset>
+			<legend>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)">Map</a>
+			</legend>
+			<div style="float: left">
+				<label for="MapName">Map name</label>
+				<input type="text" id="MapName" value="" size="30" onchange="myimgmap.mapname = this.value"/>
+			</div>
+
+			<div style="float: right">
+				<input type="button" id="remove" name="remove" fckLang="imgmapBtnRemove" value="Remove Map" onclick="removeMap();" class="Button" />
+			</div>
+		</fieldset>
 		<fieldset>
 			<legend>
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image map areas</a>
@@ -23,10 +32,10 @@
 			<div style="border-bottom: solid 1px #efefef">
 			<div id="button_container" style="float: left;">
 			<!-- buttons come here -->
-			<a href="javascript:setMode('pointer')">pointer</a>
-			<a href="javascript:setMode('rectangle')">rect</a>
-			<a href="javascript:setMode('circle')">circle</a>
-			<a href="javascript:setMode('polygon')">poly</a>
+			<a href="javascript:setMode('pointer')"><img src="images/pointer.png" alt="Pointer" id="imgpointer"></a>
+			<a href="javascript:setMode('rectangle')"><img src="images/rect.png" alt="Rectangle" id="imgrectangle"></a>
+			<a href="javascript:setMode('circle')"><img src="images/circle.png" alt="Pointer" id="imgcircle"></a>
+			<a href="javascript:setMode('polygon')"><img src="images/poly.png" alt="Polygon" id="imgpolygon"></a>
 			</div>
 			<div style="float: right; margin: 0 5px">
 				<select onchange="changelabeling(this)">
@@ -34,6 +43,7 @@
 				<option value='%n' selected='1'>Label with numbers</option>
 				<option value='%a'>Label with alt text</option>
 				<option value='%h'>Label with href</option>
+				<option value='%t'>Label with title</option>
 				<option value='%c'>Label with coords</option>
 				</select>
 			</div>
@@ -67,17 +77,6 @@
 			<textarea id="html_container" xstyle="float: left; clear: left;"></textarea></div>
 		</fieldset>
 
-		<div class="ActionPanel">
-			<div style="float: left">
-				<input type="button" id="remove" name="remove" fckLang="imgmapBtnRemove" value="Remove Map" onclick="removeAction();" />
-			</div>
-			<div style="float: right">
-				<input type="button" id="insert" name="update" fckLang="imgmapBtnOk" value="OK" onclick="updateAction();" />
-				<input type="button" id="cancel" name="cancel" fckLang="imgmapBtnCancel" value="Cancel" onclick="cancelAction();" />
-			</div>
-			<div class="spacer"/>
-		</div>
-		
 	</form>
 
 </body>
