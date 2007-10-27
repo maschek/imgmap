@@ -39,6 +39,8 @@ function imgmap(config) {
 	this.props     = new Array();
 	this.logStore  = new Array();
 	this.currentid = 0;
+	this.draggedId = null;
+	this.nextShape = 'rectangle';
 	this.viewmode  = 0;
 	this.loadedScripts = new Array();
 	this.isLoaded   = false;
@@ -497,7 +499,7 @@ imgmap.prototype.loadStrings = function(obj) {
 imgmap.prototype.loadImage = function(img, imgw, imgh) {
 	if (!this._getLastArea()) {
 		//init with one new area if there was none editable
-		this.addNewArea();
+		//this.addNewArea();
 	}
 	if (typeof img == 'string') {
 		//there is an image given with url to load
@@ -505,8 +507,9 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 			this.pic = document.createElement('IMG');
 			this.pic_container.appendChild(this.pic);
 			//event handler hooking
-			this.pic.onmousedown = this.img_mousedown.bind(this);
-			this.pic.onmousemove = this.img_mousemove.bind(this);
+			this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
+			this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
+			this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 			this.pic.style.cursor = this.config.cursor_default;
 		}
 		//img ='../../'+img;
@@ -543,8 +546,9 @@ imgmap.prototype.useImage = function(img) {
 	if (typeof img == 'object') {
 		this.pic = img;
 		//event handler hooking
-		this.pic.onmousedown = this.img_mousedown.bind(this);
-		this.pic.onmousemove = this.img_mousemove.bind(this);
+		this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
+		this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
+		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor = this.config.cursor_default;
 		this.pic_container = this.pic.parentNode;
 		this.fireEvent('onLoadImage');
@@ -754,6 +758,7 @@ imgmap.prototype.togglePreview = function() {
 		this.preview.innerHTML = this.getMapHTML();
 		this.pic.setAttribute('usemap', '#' + this.mapname, 0);
 		this.pic.onmousedown   = null;
+		this.pic.onmouseup     = null;
 		this.pic.onmousemove   = null;
 		this.pic.style.cursor  = 'auto';
 		//change preview button
@@ -781,8 +786,9 @@ imgmap.prototype.togglePreview = function() {
 		//clear image map
 		this.preview.innerHTML = '';
 		//hook back event handlers
-		this.pic.onmousedown = this.img_mousedown.bind(this);
-		this.pic.onmousemove = this.img_mousemove.bind(this);
+		this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
+		this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
+		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor  = this.config.cursor_default;
 		//change preview button
 		this.viewmode = 0;
@@ -804,11 +810,11 @@ imgmap.prototype.addNewArea = function() {
 		var id = this.areas.length;
 		//alert(id);
 		
-		//insert new unknown area (will be initialized at mousedown)
+		//insert new possibly? unknown area (will be initialized at mousedown)
 		this.areas[id] = document.createElement('DIV');
 		this.areas[id].id        = this.mapname + 'area' + id;
 		this.areas[id].aid       = id;
-		this.areas[id].shape     = 'unknown';
+		this.areas[id].shape     = this.nextShape;
 		
 		//insert props row
 		this.props[id] = document.createElement('DIV');
@@ -846,6 +852,8 @@ imgmap.prototype.addNewArea = function() {
 		this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
 		//set shape same as lastarea - just for convenience
 		if (lastarea) this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
+		//set shape as nextshape if set
+		if (this.nextShape) this.props[id].getElementsByTagName('select')[0].value = this.nextShape;
 		//alert(this.props[id].parentNode.innerHTML);
 		this.form_selectRow(id, true);
 		this.currentid = id;
@@ -877,6 +885,7 @@ imgmap.prototype.initArea = function(id, shape) {
 	this._setopacity(this.areas[id], this.config.CL_DRAW_BG, this.config.draw_opacity);
 	//hook event handlers
 	this.areas[id].onmousedown = this.area_mousedown.bind(this);
+	this.areas[id].onmouseup   = this.area_mouseup.bind(this);
 	this.areas[id].onmousemove = this.area_mousemove.bind(this);
 	//initialize memory object
 	this.memory[id] = new Object();
@@ -1503,7 +1512,7 @@ imgmap.prototype.img_mousemove = function(e) {
 }
 
 
-imgmap.prototype.img_mousedown = function(e) {
+imgmap.prototype.img_mouseup = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	if (!this.props[this.currentid]) return;
 	var pos = this._getPos(this.pic);
@@ -1511,38 +1520,67 @@ imgmap.prototype.img_mousedown = function(e) {
 	var y = (window.event) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
 	x = x + this.pic_container.scrollLeft;
 	y = y + this.pic_container.scrollTop;
+	//for everything that is move or resize
+	if (this.is_drawing != this.DM_RECTANGLE_DRAW &&
+		this.is_drawing != this.DM_SQUARE_DRAW &&
+		this.is_drawing != this.DM_POLYGON_DRAW &&
+		this.is_drawing != this.DM_POLYGON_LASTDRAW
+		) {
+		//end dragging
+		this.draggedId = null;
+		//finish state
+		this.is_drawing = 0;
+		this.statusMessage(this.strings['READY']);
+		this.relaxArea(this.currentid);
+		if (this.areas[this.currentid] == this._getLastArea()) {
+			//this.addNewArea();
+			return;
+		}
+		this.memory[this.currentid].downx  = x;
+		this.memory[this.currentid].downy  = y;
+	}
+}
+
+
+imgmap.prototype.img_mousedown = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
+	//if (!this.props[this.currentid]) return;
+	var pos = this._getPos(this.pic);
+	var x = (window.event) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
+	var y = (window.event) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
+	x = x + this.pic_container.scrollLeft;
+	y = y + this.pic_container.scrollTop;
 
 	//this.statusMessage(x + ' - ' + y + ': ' + this.props[this.currentid].getElementsByTagName('select')[0].value);
-
 	if (this.is_drawing == this.DM_POLYGON_DRAW) {
 		//its not finish state yet
 		this.areas[this.currentid].xpoints[this.areas[this.currentid].xpoints.length] = x - 5;
 		this.areas[this.currentid].ypoints[this.areas[this.currentid].ypoints.length] = y - 5;
 	}
 	else if (this.is_drawing && this.is_drawing != this.DM_POLYGON_DRAW) {
-		//finish state
+		//finish any other state
 		if (this.is_drawing == this.DM_POLYGON_LASTDRAW) {
 			//add last controlpoint and update coords
 			this.areas[this.currentid].xpoints[this.areas[this.currentid].xpoints.length] = x - 5;
 			this.areas[this.currentid].ypoints[this.areas[this.currentid].ypoints.length] = y - 5;
 			this._updatecoords();
-			this.is_drawing   = 0;
+			this.is_drawing = 0;
 			this._polygonshrink(this.areas[this.currentid]);
 		}
-		this.is_drawing   = 0;
+		this.is_drawing = 0;
 		this.statusMessage(this.strings['READY']);
 		this.relaxArea(this.currentid);
 		if (this.areas[this.currentid] == this._getLastArea()) {
-			this.addNewArea();
+			//this.addNewArea();
 			return;
 		}
 	}
-	else if (this.props[this.currentid].getElementsByTagName('select')[0].value == 'polygon') {
-		if (this.areas[this.currentid].shape != this.props[this.currentid].getElementsByTagName('select')[0].value) {
-			//initialize polygon area
-			this.initArea(this.currentid, 'polygon');
-		}
-		this.is_drawing   = this.DM_POLYGON_DRAW;
+	if (this.nextShape == '') return;
+	//console.log('here'+this.nextShape);
+	this.addNewArea();
+	this.initArea(this.currentid, this.nextShape);
+	if (this.areas[this.currentid].shape == 'polygon') {
+		this.is_drawing = this.DM_POLYGON_DRAW;
 		this.statusMessage(this.strings['POLYGON_DRAW']);
 		
 		this.areas[this.currentid].style.left = x + 'px';
@@ -1559,12 +1597,8 @@ imgmap.prototype.img_mousedown = function(e) {
 		this.areas[this.currentid].xpoints[0] = x;
 		this.areas[this.currentid].ypoints[0] = y;
 	}
-	else if (this.props[this.currentid].getElementsByTagName('select')[0].value == 'rectangle') {
-		if (this.areas[this.currentid].shape != this.props[this.currentid].getElementsByTagName('select')[0].value) {
-			//initialize rectangle area
-			this.initArea(this.currentid, 'rectangle');
-		}
-		this.is_drawing   = this.DM_RECTANGLE_DRAW;
+	else if (this.areas[this.currentid].shape == 'rectangle') {
+		this.is_drawing = this.DM_RECTANGLE_DRAW;
 		this.statusMessage(this.strings['RECTANGLE_DRAW']);
 		
 		this.areas[this.currentid].style.left = x + 'px';
@@ -1575,12 +1609,8 @@ imgmap.prototype.img_mousedown = function(e) {
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 	}
-	else if (this.props[this.currentid].getElementsByTagName('select')[0].value == 'circle') {
-		if (this.areas[this.currentid].shape != this.props[this.currentid].getElementsByTagName('select')[0].value) {
-			//initialize circle area
-			this.initArea(this.currentid, 'circle');
-		}
-		this.is_drawing   = this.DM_SQUARE_DRAW;
+	else if (this.areas[this.currentid].shape == 'circle') {
+		this.is_drawing = this.DM_SQUARE_DRAW;
 		this.statusMessage(this.strings['SQUARE_DRAW']);
 				
 		this.areas[this.currentid].style.left = x + 'px';
@@ -1751,6 +1781,10 @@ imgmap.prototype.area_mousemove = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	if (this.is_drawing == 0) {
 		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+		if (obj.tagName == 'DIV') {
+			//do this because of label
+			obj = obj.parentNode;
+		}
 		if (obj.tagName == 'image' || obj.tagName == 'group' ||
 			obj.tagName == 'shape' || obj.tagName == 'stroke') {
 			//do this because of excanvas
@@ -1759,11 +1793,7 @@ imgmap.prototype.area_mousemove = function(e) {
 		var xdiff = (window.event) ? (window.event.offsetX) : (e.layerX);
 		var ydiff = (window.event) ? (window.event.offsetY) : (e.layerY);
 		//this.log(obj.aid + ' : ' + xdiff + ',' + ydiff);
-		if (xdiff < 10 && ydiff < 10) {
-			//move all
-			obj.style.cursor = 'move';
-		}
-		else if (xdiff < 6 && ydiff > 6) {
+		if (xdiff < 6 && ydiff > 6) {
 			//move left
 			if (obj.shape != 'polygon') {
 				obj.style.cursor = 'w-resize';
@@ -1788,56 +1818,24 @@ imgmap.prototype.area_mousemove = function(e) {
 			}
 		}
 		else {
-			//default
+			//move all
 			obj.style.cursor = 'move';
 		}
-	}
-	else {
-		//if drawing and not ie, have to propagate to image event
-		this.img_mousemove(e);
-	}
-}
-
-
-imgmap.prototype.area_mousedown = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
-	if (this.is_drawing == 0) {
-		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
-		//alert(obj.tagName);
-		//alert(obj.className);
-		//alert(obj.parentNode.tagName);
-		//alert(obj.parentNode.parentNode.tagName);
-		if (obj.tagName == 'DIV') {
-			//do this because of label
-			//alert('a')
-			obj = obj.parentNode;
+		if (obj.aid != this.draggedId) {
+			//not dragged or different
+			if (obj.style.cursor == 'move') obj.style.cursor = 'default';
+			return;
 		}
-		if (obj.tagName == 'image' || obj.tagName == 'group' ||
-			obj.tagName == 'shape' || obj.tagName == 'stroke') {
-			//do this because of excanvas
-			obj = obj.parentNode.parentNode;
-		}
-		if (this.areas[this.currentid] != obj) {
-			//trying to draw on a different canvas,switch to this one
-			if (typeof obj.aid == 'undefined') {
-				this.log('Cannot identify target area', 1);
-				return;
-			}
-			this.form_selectRow(obj.aid, true);
-			this.currentid = obj.aid;
-		}
-		var xdiff = (window.event) ? (window.event.offsetX) : (e.layerX);
-		var ydiff = (window.event) ? (window.event.offsetY) : (e.layerY);
-		//this.log(obj.aid + ' : ' + xdiff + ',' + ydiff);
+		//moved here from mousedown
 		if (xdiff < 6 && ydiff > 6) {
 			//move left
 			if (this.areas[this.currentid].shape == 'circle') {
-				this.is_drawing   = this.DM_SQUARE_RESIZE_LEFT;
+				this.is_drawing = this.DM_SQUARE_RESIZE_LEFT;
 				this.statusMessage(this.strings['SQUARE_RESIZE_LEFT']);
 				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
-				this.is_drawing   = this.DM_RECTANGLE_RESIZE_LEFT;
+				this.is_drawing = this.DM_RECTANGLE_RESIZE_LEFT;
 				this.statusMessage(this.strings['RECTANGLE_RESIZE_LEFT']);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
@@ -1845,12 +1843,12 @@ imgmap.prototype.area_mousedown = function(e) {
 		else if (xdiff > parseInt(this.areas[this.currentid].style.width) - 6  && ydiff > 6) {
 			//move right
 			if (this.areas[this.currentid].shape == 'circle') {
-				this.is_drawing   = this.DM_SQUARE_RESIZE_RIGHT;
+				this.is_drawing = this.DM_SQUARE_RESIZE_RIGHT;
 				this.statusMessage(this.strings['SQUARE_RESIZE_RIGHT']);
 				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
-				this.is_drawing   = this.DM_RECTANGLE_RESIZE_RIGHT;
+				this.is_drawing = this.DM_RECTANGLE_RESIZE_RIGHT;
 				this.statusMessage(this.strings['RECTANGLE_RESIZE_RIGHT']);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
@@ -1858,12 +1856,12 @@ imgmap.prototype.area_mousedown = function(e) {
 		else if (xdiff > 6 && ydiff < 6) {
 			//move top
 			if (this.areas[this.currentid].shape == 'circle') {
-				this.is_drawing   = this.DM_SQUARE_RESIZE_TOP;
+				this.is_drawing = this.DM_SQUARE_RESIZE_TOP;
 				this.statusMessage(this.strings['SQUARE_RESIZE_TOP']);
 				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
-				this.is_drawing   = this.DM_RECTANGLE_RESIZE_TOP;
+				this.is_drawing = this.DM_RECTANGLE_RESIZE_TOP;
 				this.statusMessage(this.strings['RECTANGLE_RESIZE_TOP']);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
@@ -1871,12 +1869,12 @@ imgmap.prototype.area_mousedown = function(e) {
 		else if (ydiff > parseInt(this.areas[this.currentid].style.height) - 6  && xdiff > 6) {
 			//move bottom
 			if (this.areas[this.currentid].shape == 'circle') {
-				this.is_drawing   = this.DM_SQUARE_RESIZE_BOTTOM;
+				this.is_drawing = this.DM_SQUARE_RESIZE_BOTTOM;
 				this.statusMessage(this.strings['SQUARE_RESIZE_BOTTOM']);
 				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
-				this.is_drawing   = this.DM_RECTANGLE_RESIZE_BOTTOM;
+				this.is_drawing = this.DM_RECTANGLE_RESIZE_BOTTOM;
 				this.statusMessage(this.strings['RECTANGLE_RESIZE_BOTTOM']);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
@@ -1884,14 +1882,14 @@ imgmap.prototype.area_mousedown = function(e) {
 		else/*if (xdiff < 10 && ydiff < 10 ) */{
 			//move all
 			if (this.areas[this.currentid].shape == 'circle') {
-				this.is_drawing   = this.DM_SQUARE_MOVE;
+				this.is_drawing = this.DM_SQUARE_MOVE;
 				this.statusMessage(this.strings['SQUARE_MOVE']);
 				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
-				this.is_drawing   = this.DM_RECTANGLE_MOVE;
+				this.is_drawing = this.DM_RECTANGLE_MOVE;
 				this.statusMessage(this.strings['RECTANGLE_MOVE']);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 				this.memory[this.currentid].rdownx = xdiff;
@@ -1902,7 +1900,7 @@ imgmap.prototype.area_mousedown = function(e) {
 					this.memory[this.currentid].xpoints[i] = this.areas[this.currentid].xpoints[i];
 					this.memory[this.currentid].ypoints[i] = this.areas[this.currentid].ypoints[i];
 				}
-				this.is_drawing   = this.DM_POLYGON_MOVE;
+				this.is_drawing = this.DM_POLYGON_MOVE;
 				this.statusMessage(this.strings['POLYGON_MOVE']);
 				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 				this.memory[this.currentid].rdownx = xdiff;
@@ -1926,6 +1924,67 @@ imgmap.prototype.area_mousedown = function(e) {
 			}
 		}
 		this._setopacity(this.areas[this.currentid], this.config.CL_DRAW_BG, this.config.draw_opacity);
+	}
+	else {
+		//if drawing and not ie, have to propagate to image event
+		this.img_mousemove(e);
+	}
+}
+
+imgmap.prototype.area_mouseup = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.is_drawing == 0) {
+		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+		if (obj.tagName == 'DIV') {
+			//do this because of label
+			obj = obj.parentNode;
+		}
+		if (obj.tagName == 'image' || obj.tagName == 'group' ||
+			obj.tagName == 'shape' || obj.tagName == 'stroke') {
+			//do this because of excanvas
+			obj = obj.parentNode.parentNode;
+		}
+		if (this.areas[this.currentid] != obj) {
+			//trying to draw on a different canvas,switch to this one
+			if (typeof obj.aid == 'undefined') {
+				this.log('Cannot identify target area', 1);
+				return;
+			}
+			//this.form_selectRow(obj.aid, true);
+			//this.currentid = obj.aid;
+		}
+		this.draggedId = null;
+	}
+	else {
+		//if drawing and not ie, have to propagate to image event
+		this.img_mouseup(e);
+	}
+}
+
+imgmap.prototype.area_mousedown = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.is_drawing == 0) {
+		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+		if (obj.tagName == 'DIV') {
+			//do this because of label
+			obj = obj.parentNode;
+		}
+		if (obj.tagName == 'image' || obj.tagName == 'group' ||
+			obj.tagName == 'shape' || obj.tagName == 'stroke') {
+			//do this because of excanvas
+			obj = obj.parentNode.parentNode;
+		}
+		if (this.areas[this.currentid] != obj) {
+			//trying to draw on a different canvas, switch to this one
+			if (typeof obj.aid == 'undefined') {
+				this.log('Cannot identify target area', 1);
+				return;
+			}
+			this.form_selectRow(obj.aid, true);
+			this.currentid = obj.aid;
+		}
+		this.fireEvent('onSelectArea', this.areas[this.currentid]);
+		this.draggedId = this.currentid;
 	}
 	else {
 		//if drawing and not ie, have to propagate to image event
@@ -2018,7 +2077,7 @@ imgmap.prototype.doc_keydown = function(e) {
 			this.is_drawing = this.DM_POLYGON_LASTDRAW;
 		}
 		else if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
-			this.is_drawing   = this.DM_SQUARE_DRAW;
+			this.is_drawing = this.DM_SQUARE_DRAW;
 			this.statusMessage(this.strings['SQUARE2_DRAW']);
 		}
 	}
@@ -2039,7 +2098,7 @@ imgmap.prototype.doc_keyup = function(e) {
 		}
 		else if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
 			//not for circle!
-			this.is_drawing   = this.DM_RECTANGLE_DRAW;
+			this.is_drawing = this.DM_RECTANGLE_DRAW;
 			this.statusMessage(this.strings['RECTANGLE_DRAW']);
 		}
 	}
@@ -2156,10 +2215,10 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
  *	@author	adam
  *	@date	13-10-2007 15:24:49
  */   
-imgmap.prototype.fireEvent = function(evt) {
+imgmap.prototype.fireEvent = function(evt, obj) {
 	//this.log("Firing event: " + evt);
 	if (typeof this.config.custom_callbacks[evt] == 'function') {
-		this.config.custom_callbacks[evt]();
+		this.config.custom_callbacks[evt](obj);
 	}
 }
 

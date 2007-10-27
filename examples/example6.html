@@ -1,0 +1,37 @@
+<html>
+<head>
+<title>Online Image Map Editor - Example 6</title>
+<link rel="stylesheet" href="example2_files/imgmap.css" type="text/css">
+<!-- FCKeditor -->
+<script type="text/javascript" src="example6_files/fckeditor/fckeditor.js"></script>
+<!-- /FCKeditor -->
+</head>
+<body>
+<form method="post" action="">
+<p style="font-size: 12px; font-weight: bold">
+Example 6 shows how to use the imgmap with FCKeditor.
+</p>
+
+<script type="text/javascript">
+
+var oFCKeditor = new FCKeditor( 'FCKeditor1' ) ;
+oFCKeditor.BasePath	= 'example6_files/fckeditor/';
+
+//oFCKeditor.Config['BaseHref']	= document.location; //.pathname; //.substring(0,document.location.pathname.lastIndexOf('example4')) ;
+// Set the custom configurations file path (in this way the original file is mantained).
+oFCKeditor.Config['CustomConfigurationsPath'] = '../../custom_config.js?' ;
+oFCKeditor.Height = '500';
+
+oFCKeditor.Value	= '\
+	<p>Some paragraph</p> \
+	<img src="../../../example_files/sample1.jpg">\
+	';
+oFCKeditor.Create() ;
+
+</script>
+<br>
+<input type="submit" name="save" value="Submit" />
+</form>
+
+</body>
+</html>
