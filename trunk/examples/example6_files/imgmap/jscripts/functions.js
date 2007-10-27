@@ -1,24 +1,17 @@
 var myimgmap;
-var editor = null;
 var img_obj = null;
 var map_obj = null;
 
-function plugin_init() {
+var editor = window.parent.InnerDialogLoaded();
 
-	if (window.parent.SetOkButton) {
-		window.parent.SetOkButton(true);
-		window.parent.SetAutoSize(true);
-		editor		= window.parent.InnerDialogLoaded();
-	}
-	else {
-		editor		= window.opener;
-	}
+window.onload = function()
+{
+	window.parent.SetOkButton(true);
+	window.parent.SetAutoSize(true);
 
 	//translate page elements
 	editor.FCKLanguageManager.TranslatePage(document);
 	editor.FCKLanguageManager.TranslateElements(document, 'A', 'innerHTML');
-	editor.FCKLanguageManager.TranslateElements(document, 'TITLE', 'innerHTML');
-	//alert(FCKLang.imgmapDlgTitle);
 
 	//console.log(editor);
 	img_obj = editor.FCK.Selection.GetSelectedElement();
@@ -35,6 +28,13 @@ function plugin_init() {
 			'onHtml' : function() {htmlShow();},
 			'onSelectArea' : function(obj) {
 				//console.log(obj);
+				myimgmap.areas[obj.aid].ahref = 'foo.bar';
+				myimgmap.areas[obj.aid].aalt = 'alt changed';
+				myimgmap._recalculate(obj.aid);
+				if (myimgmap.html_container) myimgmap.html_container.value = myimgmap.getMapHTML();
+				//console.log(obj);
+				
+				
 			}
 		},
 		html_container: document.getElementById('html_container'), 
@@ -59,17 +59,20 @@ function plugin_init() {
 		var maps = editor.FCK.EditorDocument.getElementsByTagName('MAP');
 		//console.log(maps);
 		for (var i=0; i < maps.length; i++) {
-			// IE doesn't return name?
-			if (maps[i].name == mapname || maps[i].id == mapname) {
+			if (maps[i].name == mapname) {
 				map_obj = maps[i];
 				myimgmap.setMapHTML(map_obj);
+
+				document.getElementById('MapName').value = mapname ;
 				break;
 			}
 		}
 	}
+
+	hightlightMode( 'rectangle' );
 }
 
-function updateAction() {
+function Ok() {
 	if (img_obj != null && img_obj.nodeName == "IMG") {
 		editor.FCKUndo.SaveUndoStep();
 
@@ -78,22 +81,26 @@ function updateAction() {
 			img_obj.parentNode.appendChild(map_obj);
 		}
 
+		myimgmap.mapid = myimgmap.mapname = document.getElementById('MapName').value ;
+
 		map_obj.innerHTML = myimgmap.getMapInnerHTML();
+
+		// IE bug: it's not possible to directly assing the name and make it work easily
+		// We remove the previous name
+		if ( map_obj.name )
+			map_obj.removeAttribute( 'name' ) ;
+
 		map_obj.name = myimgmap.getMapName();
 		map_obj.id   = myimgmap.getMapId();
 		
 		img_obj.setAttribute('usemap', "#" + myimgmap.getMapName(), 0);
-//		img_obj.setAttribute('border', '0');
 	}
-	window.close();
-}
 
-function cancelAction() {
-	window.close();
+	return true;
 }
 
 //remove the map object and unset the usemap attribute
-function removeAction() {
+function removeMap() {
 	editor.FCKUndo.SaveUndoStep();
 	if (img_obj != null && img_obj.nodeName == "IMG") {
 		img_obj.removeAttribute('usemap', 0);
@@ -102,13 +109,7 @@ function removeAction() {
 		map_obj.parentNode.removeChild(map_obj);
 	}
 
-	window.close();
-}
-
-
-
-function delayedLoad() {
-	window.setTimeout('plugin_init()', 1000);
+	window.parent.close();
 }
 
 
@@ -164,7 +165,6 @@ function resizeToContent() {
 		}
 }
 
-
 function setMode(mode) {
 	if (mode == 'pointer') {
 		myimgmap.is_drawing = 0;
@@ -173,4 +173,17 @@ function setMode(mode) {
 	else {
 		myimgmap.nextShape = mode;
 	}
+
+	hightlightMode(mode); 
+}
+
+var previousModeImg = null ;
+function hightlightMode(mode) {
+	// Reset previous button
+	if ( previousModeImg )
+		previousModeImg.className = '';
+
+	// Highlight new mode
+	previousModeImg = document.getElementById( 'img' + mode );
+	previousModeImg.className = 'ActiveMode' ;
 }

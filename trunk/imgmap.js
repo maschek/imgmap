@@ -29,8 +29,9 @@
 
 
 function imgmap(config) {
-	this.version = "2.0beta2";
-	this.releaseDate = "2007-02-11";
+	this.version = "2.0beta3";
+	this.buildDate = "27-10-2007";
+	this.buildNumber = "18";
 	this.config = new Object();
 	this.is_drawing = 0;
 	this.strings   = new Array();
@@ -39,7 +40,8 @@ function imgmap(config) {
 	this.props     = new Array();
 	this.logStore  = new Array();
 	this.currentid = 0;
-	this.draggedId = null;
+	this.draggedId  = null;
+	this.selectedId = null;
 	this.nextShape = 'rectangle';
 	this.viewmode  = 0;
 	this.loadedScripts = new Array();
@@ -91,10 +93,14 @@ function imgmap(config) {
 
 	this.config.bounding_box       = true;
 	this.config.label              = '%n';
+	//possible values: %n - number, %c - coords, %h - href, %a - alt, %t - title
+	
 	this.config.label_class        = 'imgmap_label';
 	this.config.label_style        = 'font: bold 10px Arial';
 	//this.config.label_style        = 'font-weight: bold; font-size: 10px; font-family: Arial';
 	this.config.hint               = '#%n %h';
+	//possible values: %n - number, %c - coords, %h - href, %a - alt, %t - title
+
 	this.config.draw_opacity       = '35';	
 	this.config.norm_opacity       = '50';	
 	this.config.highlight_opacity  = '65';
@@ -110,8 +116,9 @@ function imgmap(config) {
 	this.isSafari  = ua.indexOf('Safari') != -1;
 	this.isOpera   = (typeof window.opera != 'undefined');
 
-	this.addEvent(document, 'keydown', this.doc_keydown.bind(this));
-	this.addEvent(document, 'keyup',   this.doc_keyup.bind(this));
+	this.addEvent(document, 'keydown',   this.doc_keydown.bind(this));
+	this.addEvent(document, 'keyup',     this.doc_keyup.bind(this));
+	this.addEvent(document, 'mousedown', this.doc_mousedown.bind(this));
 	
 	if (config) this.setup(config);
 	
@@ -613,15 +620,15 @@ imgmap.prototype.getMapHTML = function() {
 imgmap.prototype.getMapInnerHTML = function() {
 	var html = '';
 	//foreach area properties
-	for (var i=0; i<this.props.length; i++) {
-		if (this.props[i]) {
-			if (this.props[i].getElementsByTagName('input')[2].value != '') {
-				html+= '<area shape="' + 
-					this.props[i].getElementsByTagName('select')[0].value + '" alt="' +
-					this.props[i].getElementsByTagName('input')[4].value + '" coords="' +
-					this.props[i].getElementsByTagName('input')[2].value + '" href="' +
-					this.props[i].getElementsByTagName('input')[3].value + '" target="' +
-					this.props[i].getElementsByTagName('select')[1].value + '" />';
+	for (var i=0; i<this.areas.length; i++) {
+		if (this.areas[i]) {
+			if (this.areas[i].shape != '') {
+				html+= '<area shape="' + this.areas[i].shape + '"' +
+					' alt="' + this.areas[i].aalt + '"' +
+					' title="' + this.areas[i].atitle + '"' +
+					' coords="' + this.areas[i].lastInput + '"' +
+					' href="' +	this.areas[i].ahref + '"' +
+					' target="' + this.areas[i].atarget + '" />';
 			}
 		}
 	}
@@ -694,23 +701,37 @@ imgmap.prototype.setMapHTML = function(map) {
 			shape = 'rectangle';
 		} 
 		this.props[id].getElementsByTagName('select')[0].value = shape;
+		this.initArea(id, shape);
+		
 		if (newareas[i].getAttribute('coords', 2)) {
 			//normalize coords
 			var coords = this._normCoords(newareas[i].getAttribute('coords', 2));
 			this.props[id].getElementsByTagName('input')[2].value  = coords;
+			//for area this one will be set in recalculate
 		}
-		if (newareas[i].getAttribute('href')) this.props[id].getElementsByTagName('input')[3].value  = newareas[i].getAttribute('href');
-		if (newareas[i].getAttribute('alt'))  this.props[id].getElementsByTagName('input')[4].value  = newareas[i].getAttribute('alt');
+		
+		var href = newareas[i].getAttribute('href');
+		if (href) {
+			this.props[id].getElementsByTagName('input')[3].value  = href;
+			this.areas[id].ahref = href;
+		}
+		
+		var alt = newareas[i].getAttribute('alt');
+		if (alt) {
+			this.props[id].getElementsByTagName('input')[4].value  = alt;
+			this.areas[id].aalt = alt;
+		}
+		
+		var title = newareas[i].getAttribute('title');
+		if (!title) title = alt;
+		this.areas[id].atitle = title;
 
-		if (newareas[i].getAttribute('target')) {
-			target = newareas[i].getAttribute('target').toLowerCase();
-			if (target == '') target = '_self';
-		}
-		else {
-			target = '_self';
-		}
+		var target = newareas[i].getAttribute('target');
+		if (target) target = target.toLowerCase();
+		if (target == '') target = '_self';
 		this.props[id].getElementsByTagName('select')[1].value = target;
-		this.initArea(id, shape);
+		this.areas[id].atarget = target;
+		
 		this._recalculate(id);//contains repaint
 		this.relaxArea(id);
 		if (this.html_container) this.html_container.value = this.getMapHTML();
@@ -879,6 +900,10 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id].id        = this.mapname + 'area' + id;
 	this.areas[id].aid       = id;
 	this.areas[id].shape     = shape;
+	this.areas[id].ahref     = '';
+	this.areas[id].atitle    = '';
+	this.areas[id].aalt      = '';
+	this.areas[id].atarget   = '_self';
 	this.areas[id].style.position = 'absolute';
 	this.areas[id].style.top      = this.pic.offsetTop  + 'px';
 	this.areas[id].style.left     = this.pic.offsetLeft + 'px';
@@ -1022,9 +1047,10 @@ imgmap.prototype._putlabel = function(id) {
 			this.areas[id].label.style.display = '';
 			var label = this.config.label;
 			label = label.replace(/%n/g, String(id));
-			label = label.replace(/%c/g, String(this.props[id].getElementsByTagName('input')[2].value));
-			label = label.replace(/%h/g, String(this.props[id].getElementsByTagName('input')[3].value));
-			label = label.replace(/%a/g, String(this.props[id].getElementsByTagName('input')[4].value));
+			label = label.replace(/%c/g, String(this.areas[id].lastInput));
+			label = label.replace(/%h/g, String(this.areas[id].ahref));
+			label = label.replace(/%a/g, String(this.areas[id].aalt));
+			label = label.replace(/%t/g, String(this.areas[id].atitle));
 			this.areas[id].label.innerHTML = label;
 		}
 		//align to the top left corner
@@ -1046,9 +1072,10 @@ imgmap.prototype._puthint = function(id) {
 		else {
 			var hint = this.config.hint;
 			hint = hint.replace(/%n/g, String(id));
-			hint = hint.replace(/%c/g, String(this.props[id].getElementsByTagName('input')[2].value));
-			hint = hint.replace(/%h/g, String(this.props[id].getElementsByTagName('input')[3].value));
-			hint = hint.replace(/%a/g, String(this.props[id].getElementsByTagName('input')[4].value));
+			hint = hint.replace(/%c/g, String(this.areas[id].lastInput));
+			hint = hint.replace(/%h/g, String(this.areas[id].ahref));
+			hint = hint.replace(/%a/g, String(this.areas[id].aalt));
+			hint = hint.replace(/%t/g, String(this.areas[id].atitle));
 			this.areas[id].title = hint;
 			this.areas[id].alt   = hint;
 		}
@@ -1556,6 +1583,9 @@ imgmap.prototype.img_mousedown = function(e) {
 		//its not finish state yet
 		this.areas[this.currentid].xpoints[this.areas[this.currentid].xpoints.length] = x - 5;
 		this.areas[this.currentid].ypoints[this.areas[this.currentid].ypoints.length] = y - 5;
+		this.memory[this.currentid].downx  = x;
+		this.memory[this.currentid].downy  = y;
+		return;
 	}
 	else if (this.is_drawing && this.is_drawing != this.DM_POLYGON_DRAW) {
 		//finish any other state
@@ -1984,7 +2014,10 @@ imgmap.prototype.area_mousedown = function(e) {
 			this.currentid = obj.aid;
 		}
 		this.fireEvent('onSelectArea', this.areas[this.currentid]);
-		this.draggedId = this.currentid;
+		this.draggedId  = this.currentid;
+		this.selectedId = this.currentid;
+		//stop event propagation to document level
+		(window.event) ? window.event.cancelBubble = true : e.stopPropagation();
 	}
 	else {
 		//if drawing and not ie, have to propagate to image event
@@ -2069,9 +2102,14 @@ imgmap.prototype.img_coords_keydown = function(e) {
  *	@author	adam
  */
 imgmap.prototype.doc_keydown = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
 	var key = (window.event) ? event.keyCode : e.keyCode;
 	//console.log(key);
-	if (key == 16) {
+	if (key == 46) {
+		//delete key pressed
+		if (this.selectedId != null && !this.is_drawing) this.removeArea();
+	}
+	else if (key == 16) {
 		//shift key pressed
 		if (this.is_drawing == this.DM_POLYGON_DRAW) {
 			this.is_drawing = this.DM_POLYGON_LASTDRAW;
@@ -2104,6 +2142,12 @@ imgmap.prototype.doc_keyup = function(e) {
 	}
 }
 
+imgmap.prototype.doc_mousedown = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.is_drawing == 0) {
+		this.selectedId = null;
+	}
+}
 
 imgmap.prototype._getPos = function(element) {
 	var xpos = 0;

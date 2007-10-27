@@ -156,6 +156,16 @@ A.source_accept:hover {
 	padding: 5px;
 	line-height: 16px;
 }
+#button_container a {
+	outline: 0;
+}
+#button_container img {
+	border: 1px solid transparent;
+}
+#button_container .ActiveMode {
+	border-color: #666;
+	background-color: #ddd;
+}
 
 #fieldset_html {
 	text-align: left;
