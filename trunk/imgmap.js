@@ -77,7 +77,7 @@ function imgmap(config) {
 	this.config.loglevel = 0;
 	this.config.buttons          = ['add','delete','preview','html'];
 	this.config.custom_callbacks = new Object();
-	//possible values: onPreview, onClipboard, onHtml, onAddArea, onRemoveArea, onDrawArea, onResizeArea, onRelaxArea, onFocusArea, onBlurArea, onMoveArea, onSelectRow, onLoadImage, onSetMap, onGetMap
+	//possible values: onPreview, onClipboard, onHtml, onAddArea, onRemoveArea, onDrawArea, onResizeArea, onRelaxArea, onFocusArea, onBlurArea, onMoveArea, onSelectRow, onLoadImage, onSetMap, onGetMap, onSelectArea
 
 	this.config.CL_DRAW_BOX        = '#dd2400';
 	this.config.CL_DRAW_SHAPE      = '#d00';
@@ -523,8 +523,8 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		this.log('Loading image: ' + img, 0);
 		//calculate timestamp to bypass browser cache mechanism
 		this.pic.src = img + '? '+ (new Date().getTime());
-		//if (imgw > 0) pic.setAttribute('width',  imgw);
-		//if (imgh > 0) pic.setAttribute('height', imgh);
+		if (imgw && imgw > 0) this.pic.setAttribute('width',  imgw);
+		if (imgh && imgh > 0) this.pic.setAttribute('height', imgh);
 		this.fireEvent('onLoadImage');
 	}
 	else if (typeof img == 'object') {
@@ -538,6 +538,12 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 			//if it is an fck object, it might have only _fcksavedurl attribute!
 			src = img.getAttribute('_fcksavedurl');
 		}
+		// Get the displayed dimensions of the image
+		if (!imgw)
+			imgw = img.clientWidth;
+		if (!imgh)
+			imgh = img.clientHeight;
+
 		this.loadImage(src, imgw, imgh);
 	}
 }
@@ -623,12 +629,16 @@ imgmap.prototype.getMapInnerHTML = function() {
 	for (var i=0; i<this.areas.length; i++) {
 		if (this.areas[i]) {
 			if (this.areas[i].shape != '') {
-				html+= '<area shape="' + this.areas[i].shape + '"' +
-					' alt="' + this.areas[i].aalt + '"' +
-					' title="' + this.areas[i].atitle + '"' +
-					' coords="' + this.areas[i].lastInput + '"' +
-					' href="' +	this.areas[i].ahref + '"' +
-					' target="' + this.areas[i].atarget + '" />';
+				var areaHtml = this.fireEvent('onGetAreaHtml', this.areas[i])
+				if ( typeof areaHtml == 'string')
+					html+= areaHtml ;
+				else
+					html+= '<area shape="' + this.areas[i].shape + '"' +
+						' alt="' + this.areas[i].aalt + '"' +
+						' title="' + this.areas[i].atitle + '"' +
+						' coords="' + this.areas[i].lastInput + '"' +
+						' href="' +	this.areas[i].ahref + '"' +
+						' target="' + this.areas[i].atarget + '" />';
 			}
 		}
 	}
@@ -700,25 +710,36 @@ imgmap.prototype.setMapHTML = function(map) {
 		else {
 			shape = 'rectangle';
 		} 
-		this.props[id].getElementsByTagName('select')[0].value = shape;
+		if (this.props[id])
+			this.props[id].getElementsByTagName('select')[0].value = shape;
+
 		this.initArea(id, shape);
 		
 		if (newareas[i].getAttribute('coords', 2)) {
 			//normalize coords
 			var coords = this._normCoords(newareas[i].getAttribute('coords', 2));
-			this.props[id].getElementsByTagName('input')[2].value  = coords;
+			if (this.props[id])
+				this.props[id].getElementsByTagName('input')[2].value  = coords;
+			this.areas[id].lastInput = coords;
 			//for area this one will be set in recalculate
 		}
-		
+
 		var href = newareas[i].getAttribute('href');
+		// FCKeditor stored url to prevent mangling from the browser.
+		var sSavedUrl = newareas[i].getAttribute( '_fcksavedurl' ) ;
+		if ( sSavedUrl != null )
+			href = sSavedUrl ;
+
 		if (href) {
-			this.props[id].getElementsByTagName('input')[3].value  = href;
+			if (this.props[id])
+				this.props[id].getElementsByTagName('input')[3].value  = href;
 			this.areas[id].ahref = href;
 		}
 		
 		var alt = newareas[i].getAttribute('alt');
 		if (alt) {
-			this.props[id].getElementsByTagName('input')[4].value  = alt;
+			if (this.props[id])
+				this.props[id].getElementsByTagName('input')[4].value  = alt;
 			this.areas[id].aalt = alt;
 		}
 		
@@ -728,8 +749,9 @@ imgmap.prototype.setMapHTML = function(map) {
 
 		var target = newareas[i].getAttribute('target');
 		if (target) target = target.toLowerCase();
-		if (target == '') target = '_self';
-		this.props[id].getElementsByTagName('select')[1].value = target;
+//		if (target == '') target = '_self';
+		if (this.props[id])
+			this.props[id].getElementsByTagName('select')[1].value = target;
 		this.areas[id].atarget = target;
 		
 		this._recalculate(id);//contains repaint
@@ -826,9 +848,9 @@ imgmap.prototype.togglePreview = function() {
  */ 
 imgmap.prototype.addNewArea = function() {
 		if (this.viewmode == 1) return;//exit if preview mode
-		this.fireEvent('onAddArea');
 		var lastarea = this._getLastArea();
 		var id = this.areas.length;
+		this.fireEvent('onAddArea', id);
 		//alert(id);
 		
 		//insert new possibly? unknown area (will be initialized at mousedown)
@@ -838,45 +860,49 @@ imgmap.prototype.addNewArea = function() {
 		this.areas[id].shape     = this.nextShape;
 		
 		//insert props row
-		this.props[id] = document.createElement('DIV');
 		if (this.form_container)
+		{
+			this.props[id] = document.createElement('DIV');
 			this.form_container.appendChild(this.props[id]);
-		this.props[id].id        = 'img_area_' + id;
-		this.props[id].aid       = id;
-		this.props[id].className = 'img_area';
-		//hook event handlers
-		this.addEvent(this.props[id], 'mouseover', this.img_area_mouseover.bind(this));
-		this.addEvent(this.props[id], 'mouseout',  this.img_area_mouseout.bind(this));
-		this.addEvent(this.props[id], 'click',     this.img_area_click.bind(this));
-		this.props[id].innerHTML = '\
-			<input type="text"  name="img_id" class="img_id" value="' + id + '" readonly="1"/>\
-			<input type="radio" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">\
-			Shape:	<select name="img_shape" class="img_shape">\
-				<option value="rectangle" >rectangle</option>\
-				<option value="circle"    >circle</option>\
-				<option value="polygon"   >polygon</option>\
-				</select>\
-			Coords: <input type="text" name="img_coords" class="img_coords" value="">\
-			Href: <input type="text" name="img_href" class="img_href" value="">\
-			Alt: <input type="text" name="img_alt" class="img_alt" value="">\
-			Target:	<select name="img_target" class="img_target">\
-				<option value="_self"  >this window</option>\
-				<option value="_blank" >new window</option>\
-				<option value="_top"   >top window</option>\
-				</select>';
-		//hook more event handlers
-		this.addEvent(this.props[id].getElementsByTagName('input')[1],  'keydown', this.img_area_keydown.bind(this));
-		this.addEvent(this.props[id].getElementsByTagName('input')[2],  'keydown', this.img_coords_keydown.bind(this));
-		this.addEvent(this.props[id].getElementsByTagName('input')[2],  'blur', this.img_area_blur.bind(this));
-		this.addEvent(this.props[id].getElementsByTagName('input')[3],  'blur', this.img_area_blur.bind(this));
-		this.addEvent(this.props[id].getElementsByTagName('input')[4],  'blur', this.img_area_blur.bind(this));
-		this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
-		//set shape same as lastarea - just for convenience
-		if (lastarea) this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
-		//set shape as nextshape if set
-		if (this.nextShape) this.props[id].getElementsByTagName('select')[0].value = this.nextShape;
-		//alert(this.props[id].parentNode.innerHTML);
-		this.form_selectRow(id, true);
+
+			this.props[id].id        = 'img_area_' + id;
+			this.props[id].aid       = id;
+			this.props[id].className = 'img_area';
+			//hook event handlers
+			this.addEvent(this.props[id], 'mouseover', this.img_area_mouseover.bind(this));
+			this.addEvent(this.props[id], 'mouseout',  this.img_area_mouseout.bind(this));
+			this.addEvent(this.props[id], 'click',     this.img_area_click.bind(this));
+			this.props[id].innerHTML = '\
+				<input type="text"  name="img_id" class="img_id" value="' + id + '" readonly="1"/>\
+				<input type="radio" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">\
+				Shape:	<select name="img_shape" class="img_shape">\
+					<option value="rectangle" >rectangle</option>\
+					<option value="circle"    >circle</option>\
+					<option value="polygon"   >polygon</option>\
+					</select>\
+				Coords: <input type="text" name="img_coords" class="img_coords" value="">\
+				Href: <input type="text" name="img_href" class="img_href" value="">\
+				Alt: <input type="text" name="img_alt" class="img_alt" value="">\
+				Target:	<select name="img_target" class="img_target">\
+					<option value=""  >&lt;not set&gt;</option>\
+					<option value="_self"  >this window</option>\
+					<option value="_blank" >new window</option>\
+					<option value="_top"   >top window</option>\
+					</select>';
+			//hook more event handlers
+			this.addEvent(this.props[id].getElementsByTagName('input')[1],  'keydown', this.img_area_keydown.bind(this));
+			this.addEvent(this.props[id].getElementsByTagName('input')[2],  'keydown', this.img_coords_keydown.bind(this));
+			this.addEvent(this.props[id].getElementsByTagName('input')[2],  'blur', this.img_area_blur.bind(this));
+			this.addEvent(this.props[id].getElementsByTagName('input')[3],  'blur', this.img_area_blur.bind(this));
+			this.addEvent(this.props[id].getElementsByTagName('input')[4],  'blur', this.img_area_blur.bind(this));
+			this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
+			//set shape same as lastarea - just for convenience
+			if (lastarea) this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
+			//set shape as nextshape if set
+			if (this.nextShape) this.props[id].getElementsByTagName('select')[0].value = this.nextShape;
+			//alert(this.props[id].parentNode.innerHTML);
+			this.form_selectRow(id, true);
+		}
 		this.currentid = id;
 		return(id);
 }
@@ -903,7 +929,7 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id].ahref     = '';
 	this.areas[id].atitle    = '';
 	this.areas[id].aalt      = '';
-	this.areas[id].atarget   = '_self';
+	this.areas[id].atarget   = ''; // '_self';
 	this.areas[id].style.position = 'absolute';
 	this.areas[id].style.top      = this.pic.offsetTop  + 'px';
 	this.areas[id].style.left     = this.pic.offsetLeft + 'px';
@@ -1001,19 +1027,19 @@ imgmap.prototype.removeArea = function() {
 		catch (err) {
 			//alert('noparent');
 		}
-		
-		try {
-			//remove area and label
-			this.areas[id].parentNode.removeChild(this.areas[id]);
-			this.areas[id].label.parentNode.removeChild(this.areas[id].label);
-		}
-		catch (err) {
-			//alert('noparent');
-		}
-		this.areas[id] = null;
-		//update grand html
-		if (this.html_container) this.html_container.value = this.getMapHTML();
 	}
+
+	try {
+		//remove area and label
+		this.areas[id].parentNode.removeChild(this.areas[id]);
+		this.areas[id].label.parentNode.removeChild(this.areas[id].label);
+	}
+	catch (err) {
+		//alert('noparent');
+	}
+	this.areas[id] = null;
+	//update grand html
+	if (this.html_container) this.html_container.value = this.getMapHTML();
 }
 
 
@@ -1160,29 +1186,34 @@ imgmap.prototype._repaint = function(area, color, x, y) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype._updatecoords = function() {
-	var input  = this.props[this.currentid].getElementsByTagName('input')[2];
 	var left   = parseInt(this.areas[this.currentid].style.left);
 	var top    = parseInt(this.areas[this.currentid].style.top);
 	var height = parseInt(this.areas[this.currentid].style.height);
 	var width  = parseInt(this.areas[this.currentid].style.width);
 	
+	var value = '' ;
 	if (this.areas[this.currentid].shape == 'rectangle') {
-		input.value = left + ',' + top + ',' + (left + width) + ',' + (top + height);
-		this.areas[this.currentid].lastInput = input.value;
+		value = left + ',' + top + ',' + (left + width) + ',' + (top + height);
+		this.areas[this.currentid].lastInput = value;
 	}
 	else if (this.areas[this.currentid].shape == 'circle') {
 		var radius = Math.floor(width/2) - 1;
-		input.value = (left + radius) + ',' +	(top + radius) + ',' + radius;
-		this.areas[this.currentid].lastInput = input.value;
+		value = (left + radius) + ',' +	(top + radius) + ',' + radius;
+		this.areas[this.currentid].lastInput = value;
 	}
 	else if (this.areas[this.currentid].shape == 'polygon') {
-		input.value = '';
+		value = '';
 		for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
-			input.value+= this.areas[this.currentid].xpoints[i] + ',' + this.areas[this.currentid].ypoints[i] + ',';
+			value+= this.areas[this.currentid].xpoints[i] + ',' + this.areas[this.currentid].ypoints[i] + ',';
 		}
-		input.value = input.value.substring(0, input.value.length - 1);
-		this.areas[this.currentid].lastInput = input.value;
+		value = value.substring(0, value.length - 1);
+		this.areas[this.currentid].lastInput = value;
 	}
+
+	if (this.props[this.currentid])
+		this.props[this.currentid].getElementsByTagName('input')[2].value = value;
+
+	
 	if (this.html_container) this.html_container.value = this.getMapHTML();
 }
 
@@ -1194,9 +1225,17 @@ imgmap.prototype._updatecoords = function() {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype._recalculate = function(id) {
-	var input   = this.props[id].getElementsByTagName('input')[2];
-	input.value = this._normCoords(input.value);
-	var coords  = input.value;
+	var coords = '';
+	var input = null;
+	if (this.props[id])
+	{
+		var input   = this.props[id].getElementsByTagName('input')[2];
+		input.value = this._normCoords(input.value);
+		coords  = input.value;
+	}
+	else
+		coords = this.areas[id].lastInput || '' ;
+
 	var parts   = coords.split(',');
 	try {
 		if (this.areas[id].shape == 'rectangle') {
@@ -1240,12 +1279,12 @@ imgmap.prototype._recalculate = function(id) {
 	catch (err) {
 		this.log(err.message, 1);
 		this.statusMessage(this.strings['ERR_INVALID_COORDS']);
-		if (this.areas[id].lastInput) input.value = this.areas[id].lastInput;
+		if (this.areas[id].lastInput && input) input.value = this.areas[id].lastInput;
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		return;
 	}
 	//on success update lastInput
-	this.areas[id].lastInput = input.value;
+	this.areas[id].lastInput = coords;
 }
 
 
@@ -2262,7 +2301,7 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
 imgmap.prototype.fireEvent = function(evt, obj) {
 	//this.log("Firing event: " + evt);
 	if (typeof this.config.custom_callbacks[evt] == 'function') {
-		this.config.custom_callbacks[evt](obj);
+		return this.config.custom_callbacks[evt](obj);
 	}
 }
 

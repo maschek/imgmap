@@ -19,7 +19,7 @@ imgmapCommand_GetState = function() {
 
 
 FCKCommands.RegisterCommand( 'imgmapPopup', 
-	new FCKDialogCommand( FCKLang.imgmapDlgName, FCKLang.imgmapDlgTitle, FCKPlugins.Items['imgmap'].Path + 'popup.html', 700, 600, imgmapCommand_GetState ) ) ;
+	new FCKDialogCommand( FCKLang.imgmapDlgName, FCKLang.imgmapDlgTitle, FCKPlugins.Items['imgmap'].Path + 'popup.html', 700, 620, imgmapCommand_GetState ) ) ;
 
 
 // create imgmap toolbar button.
@@ -55,4 +55,36 @@ FCKXHtml.TagProcessors['map'] = function( node, htmlNode )
 	node = FCKXHtml._AppendChildNodes( node, htmlNode, true ) ;
 
 	return node ;
+}
+
+// The href in the areas might get distorted by the browser.
+
+// Keep a reference to the default processsor:
+var imgmap_OldAreaProcessor = FCKXHtml.TagProcessors['area'] ;
+
+FCKXHtml.TagProcessors['area'] = function( node, htmlNode )
+{
+	var sSavedUrl = htmlNode.getAttribute( '_fcksavedurl' ) ;
+	if ( sSavedUrl != null )
+		FCKXHtml._AppendAttribute( node, 'href', sSavedUrl ) ;
+
+	// Call the default processor
+	if (typeof imgmap_OldAreaProcessor == 'function') 
+		node = imgmap_OldAreaProcessor ( node, htmlNode ) ;
+
+	return node ;
+}
+
+
+// Saves URLs on links and images on special attributes, so they don't change when 
+// moving around.
+var imgmap_OldProtectUrls = FCK.ProtectUrls ;
+FCK.ProtectUrls  = function( html )
+{
+	html = imgmap_OldProtectUrls( html ) ;
+
+	// <AREA> href
+	html = html.replace( /(?:(<area(?=\s).*?\shref=)("|')(.*?)\2)|(?:(<area\s.*?href=)([^"'][^ >]+))/gi	, '$1$4$2$3$5$2 _fcksavedurl=$2$3$5$2' ) ;
+
+	return html ;
 }
