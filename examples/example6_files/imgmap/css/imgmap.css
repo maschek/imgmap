@@ -1,3 +1,6 @@
+body {
+	overflow: hidden;
+}
 
 FIELDSET {
 	margin: 0;
@@ -26,58 +29,6 @@ LEGEND A {
 }
 .fieldset_off DIV {
 	display: none;
-}
-
-.spacer {
-	clear: both;
-}
-
-.ActionPanel {
-	background-color: #E3E3C7;
-	border-top: 1px solid #D5D59D;
-	padding: 7px 10px;
-}
-.ActionPanel INPUT {
-	background-color: #C7C78F;
-	border: 1px solid #737357;
-	color: #3B3B1F;
-	font-family: 'Microsoft Sans Serif',Arial,Helvetica,Verdana;
-	font-size: 11px;
-	padding-bottom: 2px;
-	cursor: pointer;
-}
-
-.source_desc {
-	clear: left;
-	float: left;
-	width: 200px;
-}
-
-.source_url {
-	float: left;
-	width: 250px;
-	height: 24px;
-}
-.source_url INPUT, .source_url SELECT {
-	font-size: 95%;
-	width: 240px;
-	padding: 0 0 0 1px;
-}
-
-A.source_accept {
-	display: block;
-	float: left;
-	padding-left: 18px;
-	color: #888888!important;
-	background-image: url(../images/accept.gif);
-	background-repeat: no-repeat;
-	background-position: left center;
-	font-size: 90%;
-	letter-spacing: -1px;
-	border: none!important;
-}
-A.source_accept:hover {
-	color: #333333!important;
 }
 
 #img_area_form {
@@ -150,6 +101,7 @@ A.source_accept:hover {
 	font-size: 90%;
 	color: #e95949;
 	width: 100%;
+	height: 1em;
 }
 
 #button_container {
@@ -160,10 +112,12 @@ A.source_accept:hover {
 	outline: 0;
 }
 #button_container img {
-	border: 1px solid transparent;
+	border: 0;
+	padding: 1px;
 }
 #button_container .ActiveMode {
-	border-color: #666;
+	border: 1px solid #666;
+	padding: 0;
 	background-color: #ddd;
 }
 
@@ -177,4 +131,15 @@ A.source_accept:hover {
 	padding: 1px 0 0 1px;
 	height: 100px;
 	width: 100%;
+}
+
+#properties {
+	clear:both; 
+	border:1px solid #BFC1C5; 
+	border-width:1px 0;
+	padding-bottom:0.8em;
+}
+
+#properties td {
+	padding:2px 4px;
 }

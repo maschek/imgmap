@@ -1,6 +1,8 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+	"http://www.w3.org/TR/html4/loose.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	<title fckLang="imgmapDlgTitle">Image Map Editor</title>
+	<title>Image Map Editor</title>
 	<!--[if gte IE 6]>
 	<script type="text/javascript" src="jscripts/excanvas.js"></script>
 	<![endif]-->
@@ -10,7 +12,8 @@
 	<meta http-equiv="imagetoolbar" content="no"/>
 
 </head>
-<body id="imgmap">
+<body>
+
 	<form id="img_area_form">
 		<fieldset>
 			<legend>
@@ -25,37 +28,68 @@
 				<input type="button" id="remove" name="remove" fckLang="imgmapBtnRemove" value="Remove Map" onclick="removeMap();" class="Button" />
 			</div>
 		</fieldset>
+
 		<fieldset>
 			<legend>
-				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image map areas</a>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image Map Areas</a>
 			</legend>
-			<div style="border-bottom: solid 1px #efefef">
-			<div id="button_container" style="float: left;">
-			<!-- buttons come here -->
-			<a href="javascript:setMode('pointer')"><img src="images/pointer.png" alt="Pointer" id="imgpointer"></a>
-			<a href="javascript:setMode('rectangle')"><img src="images/rect.png" alt="Rectangle" id="imgrectangle"></a>
-			<a href="javascript:setMode('circle')"><img src="images/circle.png" alt="Pointer" id="imgcircle"></a>
-			<a href="javascript:setMode('polygon')"><img src="images/poly.png" alt="Polygon" id="imgpolygon"></a>
+
+			<div>
+				<div id="button_container" style="float: left;">
+					<!-- buttons come here -->
+					<a href="javascript:setMode('pointer')"><img src="images/pointer.png" alt="Pointer" id="imgpointer"></a>
+					<a href="javascript:setMode('rectangle')"><img src="images/rect.png" alt="Rectangle" id="imgrectangle"></a>
+					<a href="javascript:setMode('circle')"><img src="images/circle.png" alt="Pointer" id="imgcircle"></a>
+					<a href="javascript:setMode('polygon')"><img src="images/poly.png" alt="Polygon" id="imgpolygon"></a>
+				</div>
+				<div style="float: right; margin: 0 5px">
+					<select onchange="changelabeling(this)">
+					<option value=''>No labeling</option>
+					<option value='%n' selected='1'>Label with numbers</option>
+					<option value='%a'>Label with alt text</option>
+					<option value='%h'>Label with href</option>
+					<option value='%t'>Label with title</option>
+					<option value='%c'>Label with coords</option>
+					</select>
+				</div>
 			</div>
-			<div style="float: right; margin: 0 5px">
-				<select onchange="changelabeling(this)">
-				<option value=''>No labeling</option>
-				<option value='%n' selected='1'>Label with numbers</option>
-				<option value='%a'>Label with alt text</option>
-				<option value='%h'>Label with href</option>
-				<option value='%t'>Label with title</option>
-				<option value='%c'>Label with coords</option>
-				</select>
+
+			<div id="properties" style="visibility:hidden;">
+				<table cellspacing="0" cellpadding="0" border="0">
+						<tr>
+							<td width="100%">
+								<label for="txtUrl" fcklang="DlgImgURL">URL</label><br>
+								<input id="txtUrl" style="width: 100%" type="text" onchange="SetUrl(this.value)" />
+							</td>
+							<td id="tdBrowse" nowrap="nowrap">
+								<br>&nbsp;
+								<input id="btnBrowse" onclick="BrowseServer();" type="button" value="Browse Server" fcklang="DlgBtnBrowseServer"  style="display:none"/>
+							</td>
+							<td><label for="cmbTarget" fckLang="DlgLnkTarget">Target</label><br>
+								<select id="cmbTarget" onchange="SetTarget(this.value);">
+									<option value="" fckLang="DlgGenNotSet" selected="selected">&lt;not set&gt;</option>
+									<option value="_self" fckLang="DlgLnkTargetSelf">Same Window (_self)</option>
+									<option value="_blank" fckLang="DlgLnkTargetBlank">New Window (_blank)</option>
+									<option value="_top" fckLang="DlgLnkTargetTop">Topmost Window (_top)</option>
+								</select>
+						</tr>
+						<tr>
+							<td colspan="2">
+								<label for="txtAlt" fcklang="DlgImgAlt">Short Description</label><br />
+								<input id="txtAlt" style="width: 100%" type="text" onchange="SetAlt(this.value)" />
+							</td>
+							<td>
+								<label for="txtAttTitle" fckLang="DlgGenTitle">Advisory Title</label><br />
+								<input id="txtAttTitle" type="text" onchange="SetTitle(this.value)" />
+							</td>
+						</tr>
+
+					</table>
 			</div>
-			<div style="float: right; margin: 0 5px">
-				<input type="checkbox" onClick="toggleBoundingBox(this)"/>
-				bounding box
-			</div>
-			</div>
-			<div id="form_container" style="clear: both;">
-			<!-- form elements come here -->
-		 	</div>
+
+			<div id="status_container"></div>
 		</fieldset>
+
 		<fieldset>
 			<legend>
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image</a>
@@ -63,21 +97,7 @@
 			<div id="pic_container">
 			</div>			
 		</fieldset>
-		<fieldset>
-			<legend>
-				<a onclick="toggleFieldset(this.parentNode.parentNode)">Status</a>
-			</legend>
-			<div id="status_container"></div>
-		</fieldset>
-		<fieldset id="fieldset_html" class="fieldset_off">
-			<legend>
-				<a onclick="toggleFieldset(this.parentNode.parentNode)">Code</a>
-			</legend>
-			<div>
-			<textarea id="html_container" xstyle="float: left; clear: left;"></textarea></div>
-		</fieldset>
 
 	</form>
-
 </body>
 </html>
