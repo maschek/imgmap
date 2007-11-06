@@ -14,17 +14,18 @@ FSO.CopyFolder "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugi
 FSO.CopyFolder "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\jscripts", "..\\temp\\jscripts"
 FSO.CopyFolder "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\langs", "..\\temp\\langs"
 FSO.CreateFolder "..\\temp\\licenses"
-FSO.CopyFolder "..\\licenses\\excanvas", "..\\temp\\licenses\\excanvas"
+FSO.CopyFile "..\\licenses\\excanvas.txt.", "..\\temp\\licenses\\"
 
 'delete svn files if exist
 FSO.DeleteFolder "..\\temp\\css\\.svn", true
 FSO.DeleteFolder "..\\temp\\images\\.svn", true
 FSO.DeleteFolder "..\\temp\\jscripts\\.svn", true
 FSO.DeleteFolder "..\\temp\\langs\\.svn", true
-FSO.DeleteFolder "..\\temp\\licenses\\excanvas\\.svn", true
+'FSO.DeleteFolder "..\\temp\\licenses\\.svn", true
 
 FSO.CopyFile "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\popup.html", "..\\temp\\"
 FSO.CopyFile "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\editor_plugin.js", "..\\temp\\"
+FSO.CopyFile "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\install.txt", "..\\temp\\"
 
 'copy imgmap in place
 FSO.CopyFile "..\\imgmap.js", "..\\temp\\jscripts\\"
@@ -66,8 +67,8 @@ set oZip = CreateObject("XStandard.Zip")
 oZip.Pack "..\\temp\\*", "..\\" & zipname
 Set oZip = Nothing
 
-WScript.Echo("ZIP file created as " & zipname)
-
+'clean up temp folder
+FSO.DeleteFolder "..\\temp\\*", true
 
   
-WScript.Echo("Done creating TinyMCE package")
+WScript.Echo("Done creating TinyMCE package as " & zipname)
