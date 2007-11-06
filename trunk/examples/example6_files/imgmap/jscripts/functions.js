@@ -10,6 +10,7 @@ window.$ = function( id )
 
 var oEditor = window.parent.InnerDialogLoaded();
 var FCKConfig	= oEditor.FCKConfig ;
+var FCKLang = oEditor.FCKLang ;
 
 document.write('<scr'+'ipt type="text/javascript" src="' + FCKConfig.FullBasePath + 'dialog/common/fck_dialog_common.js"></sc' + 'ript>');
 
@@ -23,7 +24,37 @@ window.onload = function()
 	oEditor.FCKLanguageManager.TranslatePage(document);
 	oEditor.FCKLanguageManager.TranslateElements(document, 'A', 'innerHTML');
 
+	var btn;
+	btn = $('imgpointer') ;
+	btn.alt = btn.title = FCKLang.imgmapPointer ;
+	btn = $('imgrectangle') ;
+	btn.alt = btn.title = FCKLang.imgmapRectangle ;
+	btn = $('imgcircle') ;
+	btn.alt = btn.title = FCKLang.imgmapCircle ;
+	btn = $('imgpolygon') ;
+	btn.alt = btn.title = FCKLang.imgmapPolygon ;
+
+
 	img_obj = oEditor.FCK.Selection.GetSelectedElement();
+
+	// On rare situations it's possible to launch the dialog without an image selected
+	// -> in IE select an image, click outside the editor and the button will remain enabled, 
+	//		but img_obj will be null
+	if ( !img_obj )
+	{
+		alert( FCKLang.msgImageNotSelected ) ;
+		window.parent.close() ;
+		return ;
+	}
+
+	// Autoselect the language based on the current FCKeditor language
+	// Check if the plugin has the language file for the active language.
+	var sLang ;
+	if ( oEditor.FCKPlugins.Items['imgmap'].AvailableLangs.IndexOf( oEditor.FCKLanguageManager.ActiveLanguage.Code ) >= 0 )
+		sLang = oEditor.FCKLanguageManager.ActiveLanguage.Code ;
+	else
+		// Load the english language file if the prefered by the user is not available.
+		sLang = "en" ;
 
 	//late init
 	myimgmap = new imgmap({
@@ -32,18 +63,16 @@ window.onload = function()
 		imgroot: 'images/',
 		buttons : ['delete'],
 		custom_callbacks : {
-//			'onHtml' : function() {htmlShow();},
 			'onSelectArea' : onSelectArea,
-			'onRemoveArea'	: onRemoveArea ,
-			'onGetAreaHtml'	: onGetAreaHtml
+			'onRemoveArea'	: onRemoveArea
 		},
-		html_container: null, // $('html_container'), 
+		html_container: null, 
 		pic_container: $('pic_container'),
 		status_container: $('status_container'),
 		form_container: null, // $('form_container'),
-		bounding_box : false
+		bounding_box : false,
+		lang : sLang
 	});
-
 	
 	//we need this to load languages
 	myimgmap.onLoad();
@@ -74,7 +103,13 @@ window.onload = function()
 	$('btnBrowse').style.display	= FCKConfig.LinkBrowser		? '' : 'none' ;
 
 	if ( map_obj !== null )
+	{
+		// Select the first area: 
+		myimgmap.selectedId = 0 ;
+		onSelectArea( myimgmap.areas[0] ) ;
+
 		setMode( 'pointer' ) ;
+	}
 	else
 		hightlightMode( 'rectangle' ) ;
 
@@ -82,7 +117,18 @@ window.onload = function()
 } ;
 
 function Ok() {
+	updateAreaValues() ;
+
 	if (img_obj !== null && img_obj.nodeName == "IMG") {
+		var MapInnerHTML = getMapInnerHTML(myimgmap);
+
+		// If there are no areas, then exit (and remove if neccesary the map).
+		if (MapInnerHTML == '')
+		{
+			removeMap();
+			return ;
+		}
+
 		oEditor.FCKUndo.SaveUndoStep();
 
 		if (typeof map_obj == 'undefined' || map_obj === null) {
@@ -92,7 +138,7 @@ function Ok() {
 
 		myimgmap.mapid = myimgmap.mapname = $('MapName').value ;
 
-		map_obj.innerHTML = myimgmap.getMapInnerHTML();
+		map_obj.innerHTML = MapInnerHTML ;
 
 		// IE bug: it's not possible to directly assing the name and make it work easily
 		// We remove the previous name
@@ -125,12 +171,6 @@ function removeMap() {
 function changelabeling(obj) {
 	myimgmap.config.label = obj.value;
 	myimgmap._repaintAll();
-}
-
-function toggleBoundingBox(obj) {
-	//console.log(obj.checked);
-	myimgmap.config.bounding_box = obj.checked;
-	myimgmap.relaxAllAreas();
 }
 
 function toggleFieldset(fieldset, on) {
@@ -239,8 +279,25 @@ function hightlightMode(mode) {
 	previousModeImg.className = 'ActiveMode' ;
 }
 
-function onGetAreaHtml(area)
+
+
+/* Call our custom version to protect URLs */
+
+function getMapInnerHTML( imgmap )
 {
+	var html = '' ;
+	//foreach area properties
+	for (var i=0; i< imgmap.areas.length; i++) {
+		html+= getAreaHtml( imgmap.areas[i] ) ;
+	}
+	return(html);
+}
+// Protect urls and add only the used attributes
+function getAreaHtml(area)
+{
+	if ( !area || area.shape == '')
+		return '';
+
 	var html = '<area shape="' + area.shape + '"' +
 							' coords="' + area.lastInput + '"' ;
 

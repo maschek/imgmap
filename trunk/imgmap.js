@@ -474,7 +474,7 @@ imgmap.prototype.loadScript = function(url) {
 
 
 imgmap.prototype.script_load = function(e) {
-	var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	var url = obj.src;
 	var complete = false;
 	//alert(url);
@@ -629,10 +629,6 @@ imgmap.prototype.getMapInnerHTML = function() {
 	for (var i=0; i<this.areas.length; i++) {
 		if (this.areas[i]) {
 			if (this.areas[i].shape != '') {
-				var areaHtml = this.fireEvent('onGetAreaHtml', this.areas[i])
-				if ( typeof areaHtml == 'string')
-					html+= areaHtml ;
-				else
 					html+= '<area shape="' + this.areas[i].shape + '"' +
 						' alt="' + this.areas[i].aalt + '"' +
 						' title="' + this.areas[i].atitle + '"' +
@@ -745,6 +741,7 @@ imgmap.prototype.setMapHTML = function(map) {
 		
 		var title = newareas[i].getAttribute('title');
 		if (!title) title = alt;
+		if (title)
 		this.areas[id].atitle = title;
 
 		var target = newareas[i].getAttribute('target');
@@ -833,6 +830,7 @@ imgmap.prototype.togglePreview = function() {
 		this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
 		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor  = this.config.cursor_default;
+		this.pic.setAttribute('usemap', '', 0);
 		//change preview button
 		this.viewmode = 0;
 		this.i_preview.src = this.config.imgroot + 'zoom.gif';
@@ -1334,8 +1332,8 @@ imgmap.prototype.img_mousemove = function(e) {
 	//event.x is relative to parent element, but page.x is NOT
 	//pos coordinates are the same absolute coords, offset coords are relative to parent
 	var pos = this._getPos(this.pic);
-	var x = (window.event) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
-	var y = (window.event) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
+	var x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
+	var y = (this.isMSIE) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
 	x = x + this.pic_container.scrollLeft;
 	y = y + this.pic_container.scrollTop;
 	
@@ -1351,6 +1349,28 @@ imgmap.prototype.img_mousemove = function(e) {
 		var height = this.memory[this.currentid].height;
 		var width  = this.memory[this.currentid].width;
 	}
+	
+	// Handle shift state for Safari
+	// Safari doesn't generate keyboard events for modifiers: http://bugs.webkit.org/show_bug.cgi?id=11696
+	if (this.isSafari)
+	{
+		if (e.shiftKey)
+		{
+	if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
+				this.is_drawing = this.DM_SQUARE_DRAW;
+				this.statusMessage(this.strings['SQUARE2_DRAW']);
+			}
+		} 
+		else
+		{
+			if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
+				//not for circle!
+				this.is_drawing = this.DM_RECTANGLE_DRAW;
+				this.statusMessage(this.strings['RECTANGLE_DRAW']);
+			}
+		}
+	}
+
 	
 	if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
 		//rectangle mode
@@ -1582,8 +1602,8 @@ imgmap.prototype.img_mouseup = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	if (!this.props[this.currentid]) return;
 	var pos = this._getPos(this.pic);
-	var x = (window.event) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
-	var y = (window.event) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
+	var x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
+	var y = (this.isMSIE) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
 	x = x + this.pic_container.scrollLeft;
 	y = y + this.pic_container.scrollTop;
 	//for everything that is move or resize
@@ -1612,10 +1632,22 @@ imgmap.prototype.img_mousedown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	//if (!this.props[this.currentid]) return;
 	var pos = this._getPos(this.pic);
-	var x = (window.event) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
-	var y = (window.event) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
+
+	var x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
+	var y = (this.isMSIE) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
 	x = x + this.pic_container.scrollLeft;
 	y = y + this.pic_container.scrollTop;
+	
+	// Handle the Shift state
+	if ( !e )
+		e = window.event ;
+
+	if (e.shiftKey)
+	{
+		if (this.is_drawing == this.DM_POLYGON_DRAW) {
+			this.is_drawing = this.DM_POLYGON_LASTDRAW;
+		}
+	}
 
 	//this.statusMessage(x + ' - ' + y + ': ' + this.props[this.currentid].getElementsByTagName('select')[0].value);
 	if (this.is_drawing == this.DM_POLYGON_DRAW) {
@@ -1702,7 +1734,7 @@ imgmap.prototype.img_mousedown = function(e) {
 imgmap.prototype.img_area_mouseover = function(e) {
 	if (this.is_drawing) return;//exit if in drawing state
 	if (this.viewmode == 1) return;//exit if preview mode
-	var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
 	var id = obj.aid;
 	
@@ -1730,7 +1762,7 @@ imgmap.prototype.img_area_mouseover = function(e) {
 imgmap.prototype.img_area_mouseout = function(e) {
 	if (this.is_drawing) return;//exit if in drawing state
 	if (this.viewmode == 1) return;//exit if preview mode
-	var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
 	var id = obj.aid;
 
@@ -1757,7 +1789,7 @@ imgmap.prototype.img_area_mouseout = function(e) {
 
 imgmap.prototype.img_area_click = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
-	var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
 	this.form_selectRow(obj.aid, false);
 	this.currentid = obj.aid;
@@ -1795,7 +1827,7 @@ imgmap.prototype.form_selectRow = function(id, setfocus) {
  */
 imgmap.prototype.img_area_keydown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
-	var key = (window.event) ? event.keyCode : e.keyCode;
+	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
 	//alert(key);
 	if (key == 46) {
 		//delete pressed
@@ -1811,7 +1843,7 @@ imgmap.prototype.img_area_keydown = function(e) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype.img_area_blur = function(e) {
-	var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	this._recalculate(obj.parentNode.aid);
 	if (this.html_container) this.html_container.value = this.getMapHTML();
 }
@@ -1849,7 +1881,7 @@ imgmap.prototype.html_container_focus = function(e) {
 imgmap.prototype.area_mousemove = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	if (this.is_drawing == 0) {
-		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
 			//do this because of label
 			obj = obj.parentNode;
@@ -1859,8 +1891,8 @@ imgmap.prototype.area_mousemove = function(e) {
 			//do this because of excanvas
 			obj = obj.parentNode.parentNode;
 		}
-		var xdiff = (window.event) ? (window.event.offsetX) : (e.layerX);
-		var ydiff = (window.event) ? (window.event.offsetY) : (e.layerY);
+		var xdiff = (this.isMSIE) ? (window.event.offsetX) : (e.layerX);
+		var ydiff = (this.isMSIE) ? (window.event.offsetY) : (e.layerY);
 		//this.log(obj.aid + ' : ' + xdiff + ',' + ydiff);
 		if (xdiff < 6 && ydiff > 6) {
 			//move left
@@ -2003,7 +2035,7 @@ imgmap.prototype.area_mousemove = function(e) {
 imgmap.prototype.area_mouseup = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	if (this.is_drawing == 0) {
-		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
 			//do this because of label
 			obj = obj.parentNode;
@@ -2033,7 +2065,7 @@ imgmap.prototype.area_mouseup = function(e) {
 imgmap.prototype.area_mousedown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	if (this.is_drawing == 0) {
-		var obj = (document.all) ? window.event.srcElement : e.currentTarget;
+		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
 			//do this because of label
 			obj = obj.parentNode;
@@ -2056,7 +2088,7 @@ imgmap.prototype.area_mousedown = function(e) {
 		this.draggedId  = this.currentid;
 		this.selectedId = this.currentid;
 		//stop event propagation to document level
-		(window.event) ? window.event.cancelBubble = true : e.stopPropagation();
+		(this.isMSIE) ? window.event.cancelBubble = true : e.stopPropagation();
 	}
 	else {
 		//if drawing and not ie, have to propagate to image event
@@ -2103,8 +2135,8 @@ imgmap.prototype.setSelectionRange = function(obj, start, end) {
  */
 imgmap.prototype.img_coords_keydown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
-	var key = (window.event) ? event.keyCode : e.keyCode;
-	var obj = (document.all) ? window.event.srcElement : e.originalTarget;
+	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
+	var obj = (this.isMSIE) ? window.event.srcElement : e.originalTarget;
 	//console.log(key);
 	//console.log(obj);
 	if (key == 40 || key == 38) {
@@ -2135,14 +2167,14 @@ imgmap.prototype.img_coords_keydown = function(e) {
 	}
 }
 
-
+// Safari doesn't generate keyboard events for modifiers: http://bugs.webkit.org/show_bug.cgi?id=11696
 /**
  *	Handles SHIFT hold while drawing.
  *	@author	adam
  */
 imgmap.prototype.doc_keydown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
-	var key = (window.event) ? event.keyCode : e.keyCode;
+	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
 	//console.log(key);
 	if (key == 46) {
 		//delete key pressed
@@ -2150,10 +2182,7 @@ imgmap.prototype.doc_keydown = function(e) {
 	}
 	else if (key == 16) {
 		//shift key pressed
-		if (this.is_drawing == this.DM_POLYGON_DRAW) {
-			this.is_drawing = this.DM_POLYGON_LASTDRAW;
-		}
-		else if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
+		if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
 			this.is_drawing = this.DM_SQUARE_DRAW;
 			this.statusMessage(this.strings['SQUARE2_DRAW']);
 		}
@@ -2166,14 +2195,11 @@ imgmap.prototype.doc_keydown = function(e) {
  *	@author	adam
  */
 imgmap.prototype.doc_keyup = function(e) {
-	var key = (window.event) ? event.keyCode : e.keyCode;
+	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
 	//alert(key);
 	if (key == 16) {
 		//shift key released
-		if (this.is_drawing == this.DM_POLYGON_LASTDRAW) {
-			this.is_drawing = this.DM_POLYGON_DRAW;
-		}
-		else if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
+		if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
 			//not for circle!
 			this.is_drawing = this.DM_RECTANGLE_DRAW;
 			this.statusMessage(this.strings['RECTANGLE_DRAW']);

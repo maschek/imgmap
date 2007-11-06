@@ -17,10 +17,10 @@
 	<form id="img_area_form">
 		<fieldset>
 			<legend>
-				<a onclick="toggleFieldset(this.parentNode.parentNode)">Map</a>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)" fckLang="imgmapMap">Map</a>
 			</legend>
 			<div style="float: left">
-				<label for="MapName">Map name</label>
+				<label for="MapName" fckLang="imgmapMapName">Map name</label>
 				<input type="text" id="MapName" value="" size="30" onchange="myimgmap.mapname = this.value"/>
 			</div>
 
@@ -31,7 +31,7 @@
 
 		<fieldset>
 			<legend>
-				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image Map Areas</a>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)" fckLang="imgmapMapAreas">Image Map Areas</a>
 			</legend>
 
 			<div>
@@ -39,17 +39,17 @@
 					<!-- buttons come here -->
 					<a href="javascript:setMode('pointer')"><img src="images/pointer.png" alt="Pointer" id="imgpointer"></a>
 					<a href="javascript:setMode('rectangle')"><img src="images/rect.png" alt="Rectangle" id="imgrectangle"></a>
-					<a href="javascript:setMode('circle')"><img src="images/circle.png" alt="Pointer" id="imgcircle"></a>
+					<a href="javascript:setMode('circle')"><img src="images/circle.png" alt="Circle" id="imgcircle"></a>
 					<a href="javascript:setMode('polygon')"><img src="images/poly.png" alt="Polygon" id="imgpolygon"></a>
 				</div>
 				<div style="float: right; margin: 0 5px">
 					<select onchange="changelabeling(this)">
-					<option value=''>No labeling</option>
-					<option value='%n' selected='1'>Label with numbers</option>
-					<option value='%a'>Label with alt text</option>
-					<option value='%h'>Label with href</option>
-					<option value='%t'>Label with title</option>
-					<option value='%c'>Label with coords</option>
+					<option value='' fckLang="imgmapNoLabel">No labeling</option>
+					<option value='%n' selected='selected' fckLang="imgmapLabelNumber">Label with numbers</option>
+					<option value='%a' fckLang="imgmapLabelAlt">Label with alt text</option>
+					<option value='%h' fckLang="imgmapLabelHref">Label with href</option>
+					<option value='%t' fckLang="imgmapLabelTitle">Label with title</option>
+					<option value='%c' fckLang="imgmapLabelCoords">Label with coords</option>
 					</select>
 				</div>
 			</div>
@@ -92,7 +92,7 @@
 
 		<fieldset>
 			<legend>
-				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image</a>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)" fckLang="DlgImgPreview">Preview</a>
 			</legend>
 			<div id="pic_container">
 			</div>			

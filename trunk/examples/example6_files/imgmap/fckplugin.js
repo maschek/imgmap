@@ -24,7 +24,12 @@ FCKCommands.RegisterCommand( 'imgmapPopup',
 
 // create imgmap toolbar button.
 var imgmapButton = new FCKToolbarButton('imgmapPopup', FCKLang.imgmapBtn, null, null, false, true);
+// Use the proper icon according to the skin:
+if ( /\/editor\/skins\/(.*)\//.test(FCKConfig.SkinPath) )
+	imgmapButton.IconPath = FCKPlugins.Items['imgmap'].Path + 'images/icon_' + RegExp.$1 + '.gif';
+else
 imgmapButton.IconPath = FCKPlugins.Items['imgmap'].Path + 'images/editor_icon.gif';
+
 FCKToolbarItems.RegisterItem('imgmapPopup', imgmapButton);
 
 // register new contextmenu
@@ -41,7 +46,11 @@ FCK.ContextMenu.RegisterListener({
 });
 
 
-
+// The code has been added in FCKeditor 2.5, so we only need it here for previous versions.
+if ( !FCKRegexLib.ProtectUrlsArea )
+{
+	if ( FCKBrowserInfo.IsIE )
+	{
 // Fix behavior for IE, it doesn't read back the .name on newly created maps 
 FCKXHtml.TagProcessors['map'] = function( node, htmlNode )
 {
@@ -56,6 +65,7 @@ FCKXHtml.TagProcessors['map'] = function( node, htmlNode )
 
 	return node ;
 }
+	}
 
 // The href in the areas might get distorted by the browser.
 
@@ -75,7 +85,6 @@ FCKXHtml.TagProcessors['area'] = function( node, htmlNode )
 	return node ;
 }
 
-
 // Saves URLs on links and images on special attributes, so they don't change when 
 // moving around.
 var imgmap_OldProtectUrls = FCK.ProtectUrls ;
@@ -84,7 +93,8 @@ FCK.ProtectUrls  = function( html )
 	html = imgmap_OldProtectUrls( html ) ;
 
 	// <AREA> href
-	html = html.replace( /(?:(<area(?=\s).*?\shref=)("|')(.*?)\2)|(?:(<area\s.*?href=)([^"'][^ >]+))/gi	, '$1$4$2$3$5$2 _fcksavedurl=$2$3$5$2' ) ;
+		html = html.replace( /<area(?=\s).*?\shref=((?:(?:\s*)("|').*?\2)|(?:[^"'][^ >]+))/gi	, '$& _fcksavedurl=$1' ) ;
 
 	return html ;
+	}
 }
