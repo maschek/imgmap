@@ -1,9 +1,9 @@
-Version 2.0
+Version 2.0beta3
 	Added MAP id attribute support apart from existing MAP name usage.
 	Added function getMapId().
 	Added function getMapName().
 	Added function getMapInnerHTML().
-	
-	TODO: correct html up arrow bug
-	opera failsafe operation
-	tinymce support
+	Added TinyMCE support plus example.
+	Added FCKEditor support plus example.
+	Added custom callbacks on certain imgmap events.
+

@@ -1,10 +1,28 @@
 /**
+ *	Image Map Editor (imgmap) - in-browser imagemap editor
+ *	Copyright (C) 2006 - 2007 Adam Maschek (adam.maschek @ gmail.com)
+ *	
+ *	This program is free software; you can redistribute it and/or
+ *	modify it under the terms of the GNU General Public License
+ *	as published by the Free Software Foundation; either version 2
+ *	of the License, or (at your option) any later version.
+ *	
+ *	This program is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU General Public License for more details.
+ *	
+ *	You should have received a copy of the GNU General Public License
+ *	along with this program; if not, write to the Free Software
+ *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+/**
  *	Online Image Map Editor - main script file.
  *	This is the main script file of the Online Image Map Editor. 
  *	@date	26-02-2007 2:24:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@copyright
- *	@version 2.0beta2
+ *	@version 2.0beta3
  *	 
  *	TODO:
  *	-pic_container dynamic create(pos rel)?
@@ -31,7 +49,7 @@
 function imgmap(config) {
 	this.version = "2.0beta3";
 	this.buildDate = "27-10-2007";
-	this.buildNumber = "18";
+	this.buildNumber = "22";
 	this.config = new Object();
 	this.is_drawing = 0;
 	this.strings   = new Array();
@@ -830,11 +848,12 @@ imgmap.prototype.togglePreview = function() {
 		this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
 		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor  = this.config.cursor_default;
-		this.pic.setAttribute('usemap', '', 0);
+		this.pic.removeAttribute('usemap', 0);
 		//change preview button
 		this.viewmode = 0;
 		this.i_preview.src = this.config.imgroot + 'zoom.gif';
 		this.statusMessage(this.strings['DESIGN_MODE']);
+		this.is_drawing = 0;
 	}
 }
 
@@ -1600,7 +1619,7 @@ imgmap.prototype.img_mousemove = function(e) {
 
 imgmap.prototype.img_mouseup = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
-	if (!this.props[this.currentid]) return;
+	//if (!this.props[this.currentid]) return;
 	var pos = this._getPos(this.pic);
 	var x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
 	var y = (this.isMSIE) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
@@ -1631,6 +1650,7 @@ imgmap.prototype.img_mouseup = function(e) {
 imgmap.prototype.img_mousedown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	//if (!this.props[this.currentid]) return;
+	//console.log('md');
 	var pos = this._getPos(this.pic);
 
 	var x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
@@ -1843,8 +1863,15 @@ imgmap.prototype.img_area_keydown = function(e) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype.img_area_blur = function(e) {
+	//console.log('blur');
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	this._recalculate(obj.parentNode.aid);
+	//console.log(obj);
+	var id = obj.parentNode.aid;
+	if (obj.name == 'img_href')   this.areas[id].ahref   = obj.value;
+	if (obj.name == 'img_alt')    this.areas[id].aalt    = obj.value;
+	if (obj.name == 'img_title')  this.areas[id].atitle  = obj.value;
+	if (obj.name == 'img_target') this.areas[id].atarget = obj.value;
+	this._recalculate(id);
 	if (this.html_container) this.html_container.value = this.getMapHTML();
 }
 

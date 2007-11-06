@@ -1,0 +1,14 @@
+How to install the plugin
+=========================
+
+1. copy files to plugins/imgmap/
+
+2. set up your instance to use the plugin, like
+plugins : "table,save,advhr,advimage,imgmap,...",
+
+3. set up your instance to use the imgmap button
+theme_advanced_buttons3_add : "emotions,iespell,...,imgmap",
+
+4. restart your computer
+(just kidding)
+

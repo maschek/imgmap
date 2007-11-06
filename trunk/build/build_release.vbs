@@ -39,7 +39,7 @@ fp.Close()
 'now we have buld and version number
 WScript.Echo "Version: " & version & " (build " & buildno & ")" 
 
-
+'	@version 2.0beta2
 '	this.version = "2.0beta2";
 '	this.buildDate = "2007-02-11";
 '	this.buildNumber = "1";
@@ -62,9 +62,18 @@ data = r.Replace(data, replacement)
 r.Pattern    = "this.version = ""(.*?)"""
 replacement  = "this.version = """ & version & """"
 data = r.Replace(data, replacement)
+r.Pattern    = "\@version\s([\w\.]*)"
+replacement  = "@version " & version
+data = r.Replace(data, replacement)
+
+'get preamble
+'set fp = FSO.OpenTextFile("..\\license_GPL.js", 1)
+'pdata = fp.ReadAll()
+'fp.Close()
 
 'WScript.Echo data
 set fp = FSO.OpenTextFile("..\\imgmap.js", 2)
+'fp.Write(pdata)
 fp.Write(data)
 fp.Close()
 
