@@ -58,7 +58,7 @@ window.onload = function()
 
 	//late init
 	myimgmap = new imgmap({
-		mode : "editor",
+		mode : "editor2",
 		button_container: $('button_container'),
 		imgroot: 'images/',
 		buttons : ['delete'],
