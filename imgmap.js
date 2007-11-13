@@ -89,6 +89,8 @@ function imgmap(config) {
 
 	//set some config defaults
 	this.config.mode     = "editor";
+	//possible values: editor, editor2, highlighter
+	
 	this.config.imgroot  = "";
 	this.config.baseroot = "";
 	this.config.lang     = "en";
@@ -522,9 +524,11 @@ imgmap.prototype.loadStrings = function(obj) {
 
 
 imgmap.prototype.loadImage = function(img, imgw, imgh) {
+	//wipe all
+	this.removeAllAreas();
 	if (!this._getLastArea()) {
 		//init with one new area if there was none editable
-		//this.addNewArea();
+		if (this.config.mode != "editor2") this.addNewArea();
 	}
 	if (typeof img == 'string') {
 		//there is an image given with url to load
@@ -569,10 +573,12 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 
 //there is an existing image object we want to handle with imgmap
 imgmap.prototype.useImage = function(img) {
-	//if (!this._getLastArea()) {
-	//	//init with one new area if there was none editable
-	//	this.addNewArea();
-	//}
+	//wipe all
+	this.removeAllAreas();
+	if (!this._getLastArea()) {
+		//init with one new area if there was none editable
+		if (this.config.mode != "editor2") this.addNewArea();
+	}
 	img = this.assignOID(img);
 	if (typeof img == 'object') {
 		this.pic = img;
@@ -646,7 +652,7 @@ imgmap.prototype.getMapInnerHTML = function() {
 	//foreach area properties
 	for (var i=0; i<this.areas.length; i++) {
 		if (this.areas[i]) {
-			if (this.areas[i].shape != '') {
+			if (this.areas[i].shape != '' && this.areas[i].shape != 'undefined') {
 					html+= '<area shape="' + this.areas[i].shape + '"' +
 						' alt="' + this.areas[i].aalt + '"' +
 						' title="' + this.areas[i].atitle + '"' +
@@ -866,7 +872,7 @@ imgmap.prototype.togglePreview = function() {
 imgmap.prototype.addNewArea = function() {
 		if (this.viewmode == 1) return;//exit if preview mode
 		var lastarea = this._getLastArea();
-		var id = this.areas.length;
+		var id = (lastarea) ? lastarea.aid + 1 : 0;
 		this.fireEvent('onAddArea', id);
 		//alert(id);
 		
@@ -874,7 +880,7 @@ imgmap.prototype.addNewArea = function() {
 		this.areas[id] = document.createElement('DIV');
 		this.areas[id].id        = this.mapname + 'area' + id;
 		this.areas[id].aid       = id;
-		this.areas[id].shape     = this.nextShape;
+		this.areas[id].shape     = "undefined";
 		
 		//insert props row
 		if (this.form_container)
@@ -912,6 +918,7 @@ imgmap.prototype.addNewArea = function() {
 			this.addEvent(this.props[id].getElementsByTagName('input')[2],  'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('input')[3],  'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('input')[4],  'blur', this.img_area_blur.bind(this));
+			this.addEvent(this.props[id].getElementsByTagName('select')[0], 'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
 			//set shape same as lastarea - just for convenience
 			if (lastarea) this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
@@ -1081,6 +1088,7 @@ imgmap.prototype.removeAllAreas = function() {
 
 imgmap.prototype._putlabel = function(id) {
 	if (this.viewmode == 1) return;//exit if preview mode
+	if (!this.areas[id].label) return;//not yet inited
 	try {
 		if (this.config.label == '' || this.config.label == false) {
 			this.areas[id].label.innerHTML     = '';
@@ -1638,7 +1646,7 @@ imgmap.prototype.img_mouseup = function(e) {
 		this.statusMessage(this.strings['READY']);
 		this.relaxArea(this.currentid);
 		if (this.areas[this.currentid] == this._getLastArea()) {
-			//this.addNewArea();
+			//if (this.config.mode != "editor2") this.addNewArea();
 			return;
 		}
 		this.memory[this.currentid].downx  = x;
@@ -1692,14 +1700,23 @@ imgmap.prototype.img_mousedown = function(e) {
 		this.statusMessage(this.strings['READY']);
 		this.relaxArea(this.currentid);
 		if (this.areas[this.currentid] == this._getLastArea()) {
-			//this.addNewArea();
+			if (this.config.mode != "editor2") this.addNewArea();
 			return;
 		}
 	}
-	if (this.nextShape == '') return;
-	//console.log('here'+this.nextShape);
-	this.addNewArea();
-	this.initArea(this.currentid, this.nextShape);
+	
+	if (this.config.mode == "editor2") {
+		if (this.nextShape == '') return;
+		this.addNewArea();
+		//console.log("init: " + this.nextShape);
+		this.initArea(this.currentid, this.nextShape);
+	}
+	else {
+		var shape = (this.props[this.currentid]) ? this.props[this.currentid].getElementsByTagName('select')[0].value : this.nextShape;
+		if (shape == '') shape = 'rectangle';
+		//console.log("init: " + shape);
+		this.initArea(this.currentid, shape);
+	}
 	if (this.areas[this.currentid].shape == 'polygon') {
 		this.is_drawing = this.DM_POLYGON_DRAW;
 		this.statusMessage(this.strings['POLYGON_DRAW']);
@@ -1758,7 +1775,7 @@ imgmap.prototype.img_area_mouseover = function(e) {
 	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
 	var id = obj.aid;
 	
-	if (this.areas[id]) {
+	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - highlight it
 		this.fireEvent('onFocusArea');
 		if (this.areas[id].shape == 'rectangle') {
@@ -1786,7 +1803,7 @@ imgmap.prototype.img_area_mouseout = function(e) {
 	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
 	var id = obj.aid;
 
-	if (this.areas[id]) {
+	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - fade it back
 		this.fireEvent('onBlurArea');
 		if (this.areas[id].shape == 'rectangle') {
@@ -1863,16 +1880,22 @@ imgmap.prototype.img_area_keydown = function(e) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype.img_area_blur = function(e) {
+	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.is_drawing != 0) return;//exit if drawing
 	//console.log('blur');
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	//console.log(obj);
 	var id = obj.parentNode.aid;
+	//console.log(this.areas[id]);
 	if (obj.name == 'img_href')   this.areas[id].ahref   = obj.value;
 	if (obj.name == 'img_alt')    this.areas[id].aalt    = obj.value;
 	if (obj.name == 'img_title')  this.areas[id].atitle  = obj.value;
 	if (obj.name == 'img_target') this.areas[id].atarget = obj.value;
-	this._recalculate(id);
-	if (this.html_container) this.html_container.value = this.getMapHTML();
+	if (obj.name == 'img_shape')  this.areas[id].shape   = obj.value;
+	if (this.areas[id]  && this.areas[id].shape != 'undefined') {
+		this._recalculate(id);
+		if (this.html_container) this.html_container.value = this.getMapHTML();
+	}
 }
 
 
