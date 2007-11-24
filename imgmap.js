@@ -89,7 +89,7 @@ function imgmap(config) {
 
 	//set some config defaults
 	this.config.mode     = "editor";
-	//possible values: editor, editor2, highlighter
+	//possible values: editor - classical editor, editor2 - dreamweaver style editor, highlighter - map highlighter
 	
 	this.config.imgroot  = "";
 	this.config.baseroot = "";
@@ -435,12 +435,33 @@ imgmap.prototype.addEvent = function(obj, evt, callback) {
 		return obj.attachEvent("on" + evt, callback);
 	}
 	else if (obj.addEventListener) {
-		//W3C style registration model
+		//W3C style model
 		obj.addEventListener(evt, callback, false);
 		return true;
 	}
 	else {
 		obj['on' + evt] = callback;
+	}
+}
+
+
+/**
+ *	Detach event from object
+ *	@date	24-11-2007 15:22:17
+ *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ */
+imgmap.prototype.removeEvent = function(obj, evt, callback) {
+	if (obj.detachEvent) {
+		//Microsoft style detach model
+		return obj.detachEvent("on" + evt, callback);
+	}
+	else if (obj.removeEventListener) {
+		//W3C style model
+		obj.removeEventListener(evt, callback, false);
+		return true;
+	}
+	else {
+		obj['on' + evt] = null;
 	}
 }
 
@@ -684,12 +705,35 @@ imgmap.prototype.getMapId = function() {
 
 //bad inputs: 035,035 075,062
 //150,217, 190,257, 150,297,110,257
-imgmap.prototype._normCoords = function(coords) {
+imgmap.prototype._normCoords = function(coords, shape) {
+	//console.log(coords + ' - ' + shape);
 	coords = coords.replace(/(\d)(\D)+(\d)/g, "$1,$3");
 	coords = coords.replace(/,(\D|0)+(\d)/g, ",$2");
 	coords = coords.replace(/(\d)(\D)+,/g, "$1,");
 	coords = coords.replace(/^(\D|0)+(\d)/g, "$2");
-	//console.log(coords);
+	//now fix other issues
+	var parts = coords.split(',');
+	if (shape == 'rectangle') {
+			if (!(parseInt(parts[1]) > 0)) parts[1] = parts[0];
+			if (!(parseInt(parts[2]) > 0)) parts[2] = parseInt(parts[0]) + 10;
+			if (!(parseInt(parts[3]) > 0)) parts[3] = parseInt(parts[1]) + 10;
+			if (parseInt(parts[0]) > parseInt(parts[2])) {
+				var temp = parts[0];
+				parts[0] = parts[2];
+				parts[2] = temp;
+			}
+			if (parseInt(parts[1]) > parseInt(parts[3])) {
+				var temp = parts[1];
+				parts[1] = parts[3];
+				parts[3] = temp;
+			}
+			coords = parts[0]+","+parts[1]+","+parts[2]+","+parts[3];
+	}
+	else if (shape == 'circle') {
+			if (!(parseInt(parts[1]) > 0)) parts[1] = parts[0];
+			if (!(parseInt(parts[2]) > 0)) parts[2] = 10;
+			coords = parts[0]+","+parts[1]+","+parts[2];
+	}
 	return coords;
 }
 
@@ -737,7 +781,7 @@ imgmap.prototype.setMapHTML = function(map) {
 		
 		if (newareas[i].getAttribute('coords', 2)) {
 			//normalize coords
-			var coords = this._normCoords(newareas[i].getAttribute('coords', 2));
+			var coords = this._normCoords(newareas[i].getAttribute('coords', 2), shape);
 			if (this.props[id])
 				this.props[id].getElementsByTagName('input')[2].value  = coords;
 			this.areas[id].lastInput = coords;
@@ -821,9 +865,10 @@ imgmap.prototype.togglePreview = function() {
 		//activate image map
 		this.preview.innerHTML = this.getMapHTML();
 		this.pic.setAttribute('usemap', '#' + this.mapname, 0);
-		this.pic.onmousedown   = null;
-		this.pic.onmouseup     = null;
-		this.pic.onmousemove   = null;
+		//detach event handlers
+		//this.removeEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
+		//this.removeEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
+		//this.removeEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor  = 'auto';
 		//change preview button
 		this.viewmode = 1;
@@ -850,9 +895,9 @@ imgmap.prototype.togglePreview = function() {
 		//clear image map
 		this.preview.innerHTML = '';
 		//hook back event handlers
-		this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
-		this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
-		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
+		//this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
+		//this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
+		//this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor  = this.config.cursor_default;
 		this.pic.removeAttribute('usemap', 0);
 		//change preview button
@@ -920,10 +965,14 @@ imgmap.prototype.addNewArea = function() {
 			this.addEvent(this.props[id].getElementsByTagName('input')[4],  'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('select')[0], 'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
-			//set shape same as lastarea - just for convenience
-			if (lastarea) this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
-			//set shape as nextshape if set
-			if (this.nextShape) this.props[id].getElementsByTagName('select')[0].value = this.nextShape;
+			if (lastarea && this.config.mode == "editor") {
+				//set shape same as lastarea - just for convenience
+				this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
+			}
+			else {
+				//set shape as nextshape if set
+				if (this.nextShape) this.props[id].getElementsByTagName('select')[0].value = this.nextShape;
+			}
 			//alert(this.props[id].parentNode.innerHTML);
 			this.form_selectRow(id, true);
 		}
@@ -933,6 +982,7 @@ imgmap.prototype.addNewArea = function() {
 
 
 imgmap.prototype.initArea = function(id, shape) {
+	if (!this.areas[id]) return false;//if all was erased, return
 	//remove preinited dummy div or already placed canvas
 	if (this.areas[id].parentNode) this.areas[id].parentNode.removeChild(this.areas[id]);
 	if (this.areas[id].label) this.areas[id].label.parentNode.removeChild(this.areas[id].label);
@@ -987,6 +1037,7 @@ imgmap.prototype.initArea = function(id, shape) {
  *	@date	15-02-2007 22:07:28
  */
 imgmap.prototype.relaxArea = function(id) {
+	if (!this.areas[id]) return;
 	this.fireEvent('onRelaxArea');
 	if (this.areas[id].shape == 'rectangle') {
 		this.areas[id].style.borderWidth = '1px';
@@ -1255,7 +1306,7 @@ imgmap.prototype._recalculate = function(id) {
 	if (this.props[id])
 	{
 		var input   = this.props[id].getElementsByTagName('input')[2];
-		input.value = this._normCoords(input.value);
+		input.value = this._normCoords(input.value, this.areas[id].shape);
 		coords  = input.value;
 	}
 	else
@@ -1627,6 +1678,7 @@ imgmap.prototype.img_mousemove = function(e) {
 
 imgmap.prototype.img_mouseup = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
+	//console.log('img_mouseup');
 	//if (!this.props[this.currentid]) return;
 	var pos = this._getPos(this.pic);
 	var x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
@@ -1657,8 +1709,8 @@ imgmap.prototype.img_mouseup = function(e) {
 
 imgmap.prototype.img_mousedown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
-	//if (!this.props[this.currentid]) return;
-	//console.log('md');
+	if (!this.areas[this.currentid]) return;
+	//console.log('img_mousedown');
 	var pos = this._getPos(this.pic);
 
 	var x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
@@ -1668,15 +1720,14 @@ imgmap.prototype.img_mousedown = function(e) {
 	
 	// Handle the Shift state
 	if ( !e )
-		e = window.event ;
+		e = window.event;
 
-	if (e.shiftKey)
-	{
+	if (e.shiftKey)	{
 		if (this.is_drawing == this.DM_POLYGON_DRAW) {
 			this.is_drawing = this.DM_POLYGON_LASTDRAW;
 		}
 	}
-
+	//console.log(this.is_drawing);
 	//this.statusMessage(x + ' - ' + y + ': ' + this.props[this.currentid].getElementsByTagName('select')[0].value);
 	if (this.is_drawing == this.DM_POLYGON_DRAW) {
 		//its not finish state yet
@@ -1700,9 +1751,11 @@ imgmap.prototype.img_mousedown = function(e) {
 		this.statusMessage(this.strings['READY']);
 		this.relaxArea(this.currentid);
 		if (this.areas[this.currentid] == this._getLastArea()) {
+			//editor mode adds next area automatically
 			if (this.config.mode != "editor2") this.addNewArea();
 			return;
 		}
+		return;
 	}
 	
 	if (this.config.mode == "editor2") {
@@ -1907,6 +1960,7 @@ imgmap.prototype.img_area_blur = function(e) {
 imgmap.prototype.html_container_blur = function(e) {
 	var oldvalue = this.html_container.getAttribute('oldvalue');
 	if (oldvalue != this.html_container.value) {
+		if (this.viewmode == 1) return;//exit if preview mode
 		this.setMapHTML(this.html_container.value);
 	}
 }
@@ -2084,6 +2138,7 @@ imgmap.prototype.area_mousemove = function(e) {
 
 imgmap.prototype.area_mouseup = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
+	//console.log('area_mouseup');
 	if (this.is_drawing == 0) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
@@ -2108,12 +2163,14 @@ imgmap.prototype.area_mouseup = function(e) {
 	}
 	else {
 		//if drawing and not ie, have to propagate to image event
+		//console.log('propup');
 		this.img_mouseup(e);
 	}
 }
 
 imgmap.prototype.area_mousedown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
+	//console.log('area_mousedown');
 	if (this.is_drawing == 0) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
@@ -2142,6 +2199,7 @@ imgmap.prototype.area_mousedown = function(e) {
 	}
 	else {
 		//if drawing and not ie, have to propagate to image event
+		//console.log('propdown');
 		this.img_mousedown(e);
 	}
 }
