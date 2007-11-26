@@ -965,6 +965,11 @@ imgmap.prototype.addNewArea = function() {
 			this.addEvent(this.props[id].getElementsByTagName('input')[4],  'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('select')[0], 'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
+			if (this.isSafari) {
+				//need these for safari
+				this.addEvent(this.props[id].getElementsByTagName('select')[0], 'change', this.img_area_click.bind(this));
+				this.addEvent(this.props[id].getElementsByTagName('select')[1], 'change', this.img_area_click.bind(this));
+			}
 			if (lastarea && this.config.mode == "editor") {
 				//set shape same as lastarea - just for convenience
 				this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
