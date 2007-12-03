@@ -2,10 +2,13 @@
 <head>
 <title>Online Image Map Editor - Example 5</title>
 <link rel="stylesheet" href="example1_files/imgmap.css" type="text/css">
+<!--[if gte IE 6]>
+<script language="javascript" type="text/javascript" src="../excanvas.js"></script>
+<![endif]-->
 </head>
 <body>
 <p style="font-size: 12px; font-weight: bold">
-Example 5 shows how to register custom callback functions on imgmap events. Try to click on the href input field of any area, to get an example why is it useful.
+Example 5 shows how to register custom callback functions on imgmap events. Try to click on the href input field of any area, to get an example why is it useful. (Not working in Firefox yet)
 </p>
 	<form id="img_area_form">
 		<fieldset>
@@ -124,11 +127,9 @@ custom_callbacks : {
 	'onFocusArea' : function(){mylog('onFocusArea');},
 	'onBlurArea' : function(){mylog('onBlurArea');},
 	'onMoveArea' : function(){mylog('onMoveArea');},
-	'onSelectRow' : function(e){
+	'onSelectRow' : function(obj){
 		mylog('onSelectRow');
-		console.log(e);
-		if (document.all) e = window.event;
-		onSelectRow(e);
+		onSelectRow(obj);
 		},
 	'onLoadImage' : function(){mylog('onLoadImage');alert('image loaded');},
 	'onSetMap' : function(){mylog('onSetMap');},
@@ -177,21 +178,15 @@ function toggleFieldset(fieldset, on) {
 	}
 }
 
-function onSelectRow(e) {
+function onSelectRow(obj) {
 	//not yet in FFX :S
-	if (document.all) {
-		if (!window.event) return;
+	if (window.event) {
 		var obj = window.event.srcElement;
 	}
-	else {
-		if (!e) return;
-		var obj = e.currentTarget;
-	}
-	alert(obj.name);
-	//console.log(obj);
 	if (typeof obj != 'undefined')
 	if (obj.name == 'img_href') {
 		window.open('example5_files/url.html');
+		targetObj = obj;
 	}
 }
 

@@ -4,37 +4,32 @@
 <!--[if gte IE 6]>
 <script language="javascript" type="text/javascript" src="../excanvas.js"></script>
 <![endif]-->
-<script type="text/javascript" src="../imgmap.js"></script>
+<script type="text/javascript" src="../imgmap.js?"></script>
 </head>
 <body>
 
 <map id="imgmap200721605148" name="imgmap200721605148">
-<area shape="rectangle" alt="aaaaaaaa" title="aaaaaaaaaaaa" coords="146,168,294,265" href="http://anyam.hu" target="_self" />
-<area shape="rectangle" alt="aaaaaaaa" title="aaaaaaaaaaaa" coords="273,11,340,68" href="http://anyam.hu" target="_self" />
+<area shape="rectangle" alt="aaaaaaaa" title="aaaaaaaaaaaa" coords="146,168,294,265" href="http://www.example.com" target="_self" />
+<area shape="rectangle" alt="aaaaaaaa" title="aaaaaaaaaaaa" coords="273,11,340,68" href="http://www.example.com" target="_self" />
 
 </map>
 <img src='example_files/sample1.jpg' usemap="#imgmap200721605148"/>
 
 
 <map id="imgmap200721605149" name="imgmap200721605149">
-<area shape="rectangle" alt="aaaaaaaa" title="aaaaaaaaaaaa" coords="46,168,294,265" href="http://anyam.hu" target="_self" />
-<area shape="rectangle" alt="aaaaaaaa" title="aaaaaaaaaaaa" coords="73,11,340,68" href="http://anyam.hu" target="_self" />
+<area shape="rectangle" alt="aaaaaaaa" title="aaaaaaaaaaaa" coords="46,168,294,265" href="http://www.example.com" target="_self" />
+<area shape="rectangle" alt="aaaaaaaa" title="aaaaaaaaaaaa" coords="73,11,340,68" href="http://www.example.com" target="_self" />
 
 </map>
 <img src='example_files/sample2.jpg' usemap="#imgmap200721605149"/>
 
-
 <script type="text/javascript">
 
-var oldload = window.onload;
-window.onload = function() {
-	if (oldload) oldload();
-	var myimgmap = new imgmap({
+var myimgmap = new imgmap({
 	mode : "highlighter",
 	CL_NORM_SHAPE : "#fefefe"
 	}
-	);
-}
+);
 
 </script>
 

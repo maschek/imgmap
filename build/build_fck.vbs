@@ -1,20 +1,21 @@
 '
-'	Building script for TinyMCE imgmap plugin
+'	Building script for FCKEditor imgmap plugin
 '	@author	adam
-'	@date	02-10-2007 12:35:39
+'	@date	03-12-2007 22:50:48
 '
 
-WScript.Echo("Creating TinyMCE package...")
+WScript.Echo("Creating FCK package...")
 
 set FSO = WScript.CreateObject("Scripting.FileSystemObject")
 
 FSO.DeleteFolder "..\\temp\\*", true
 FSO.DeleteFile   "..\\temp\\*", true
 
-FSO.CopyFolder "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\css", "..\\temp\\css"
-FSO.CopyFolder "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\images", "..\\temp\\images"
-FSO.CopyFolder "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\jscripts", "..\\temp\\jscripts"
-FSO.CopyFolder "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\langs", "..\\temp\\langs"
+FSO.CopyFolder "..\\examples\\example6_files\\imgmap\\css", "..\\temp\\css"
+FSO.CopyFolder "..\\examples\\example6_files\\imgmap\\images", "..\\temp\\images"
+FSO.CopyFolder "..\\examples\\example6_files\\imgmap\\jscripts", "..\\temp\\jscripts"
+FSO.CopyFolder "..\\examples\\example6_files\\imgmap\\lang", "..\\temp\\lang"
+FSO.CopyFolder "..\\examples\\example6_files\\imgmap\\docs", "..\\temp\\docs"
 FSO.CreateFolder "..\\temp\\licenses"
 FSO.CopyFile "..\\licenses\\excanvas.txt.", "..\\temp\\licenses\\"
 
@@ -22,12 +23,13 @@ FSO.CopyFile "..\\licenses\\excanvas.txt.", "..\\temp\\licenses\\"
 FSO.DeleteFolder "..\\temp\\css\\.svn", true
 FSO.DeleteFolder "..\\temp\\images\\.svn", true
 FSO.DeleteFolder "..\\temp\\jscripts\\.svn", true
-FSO.DeleteFolder "..\\temp\\langs\\.svn", true
+FSO.DeleteFolder "..\\temp\\lang\\.svn", true
+FSO.DeleteFolder "..\\temp\\docs\\.svn", true
 'FSO.DeleteFolder "..\\temp\\licenses\\.svn", true
 
-FSO.CopyFile "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\popup.html", "..\\temp\\"
-FSO.CopyFile "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\editor_plugin.js", "..\\temp\\"
-FSO.CopyFile "..\\examples\\example3_files\\tinymce\\jscripts\\tiny_mce\\plugins\\imgmap\\install.txt", "..\\temp\\"
+FSO.CopyFile "..\\examples\\example6_files\\imgmap\\popup.html", "..\\temp\\"
+FSO.CopyFile "..\\examples\\example6_files\\imgmap\\fckplugin.js", "..\\temp\\"
+FSO.CopyFile "..\\examples\\example6_files\\imgmap\\readme.html", "..\\temp\\"
 
 'copy imgmap in place
 FSO.CopyFile "..\\imgmap.js", "..\\temp\\jscripts\\"
@@ -49,7 +51,7 @@ fp.Close()
 set r = new RegExp
 r.Global     = true
 r.IgnoreCase = true
-r.Pattern    = "../../../../../../../imgmap.js"
+r.Pattern    = "../../../imgmap.js"
 replacement  = "jscripts/imgmap_packed.js"
 data = r.Replace(data, replacement)
 
@@ -63,7 +65,7 @@ Set WshShell = WScript.CreateObject("WScript.Shell")
 Set WshSysEnv = WshShell.Environment("SYSTEM")
 
 'make zip
-zipname = "plugin_tinymce" & WshSysEnv("IMGMAP_BUILDNO") & ".zip"
+zipname = "plugin_fck" & WshSysEnv("IMGMAP_BUILDNO") & ".zip"
 WScript.Echo("Creating ZIP file...")
 set oZip = CreateObject("XStandard.Zip")
 oZip.Pack "..\\temp\\*", "..\\" & zipname
@@ -73,4 +75,4 @@ Set oZip = Nothing
 FSO.DeleteFolder "..\\temp\\*", true
 FSO.DeleteFile   "..\\temp\\*", true
   
-WScript.Echo("Done creating TinyMCE package as " & zipname)
+WScript.Echo("Done creating FCK package as " & zipname)
