@@ -48,8 +48,8 @@
 
 function imgmap(config) {
 	this.version = "2.0beta3";
-	this.buildDate = "27-10-2007";
-	this.buildNumber = "22";
+	this.buildDate = "03-12-2007";
+	this.buildNumber = "29";
 	this.config = new Object();
 	this.is_drawing = 0;
 	this.strings   = new Array();
@@ -568,7 +568,7 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		this.pic.src = img + '? '+ (new Date().getTime());
 		if (imgw && imgw > 0) this.pic.setAttribute('width',  imgw);
 		if (imgh && imgh > 0) this.pic.setAttribute('height', imgh);
-		this.fireEvent('onLoadImage');
+		this.fireEvent('onLoadImage', this.pic);
 	}
 	else if (typeof img == 'object') {
 		//we have to use the src of the image object
@@ -609,7 +609,7 @@ imgmap.prototype.useImage = function(img) {
 		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor = this.config.cursor_default;
 		this.pic_container = this.pic.parentNode;
-		this.fireEvent('onLoadImage');
+		this.fireEvent('onLoadImage', this.pic);
 	}
 }
 
@@ -661,8 +661,8 @@ imgmap.prototype.log = function(obj, level) {
  *	@date	2006-06-06 15:10:27
  */
 imgmap.prototype.getMapHTML = function() {
-	this.fireEvent('onGetMap');
 	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML() + '</map>';
+	this.fireEvent('onGetMap', html);
 	//alert(html);
 	return(html);
 }
@@ -744,7 +744,7 @@ imgmap.prototype._normCoords = function(coords, shape) {
  *	@date	2006-06-07 11:47:16
  */   
 imgmap.prototype.setMapHTML = function(map) {
-	this.fireEvent('onSetMap');
+	this.fireEvent('onSetMap', map);
 	//remove all areas
 	this.removeAllAreas();
 	//this.log(map);
@@ -788,7 +788,7 @@ imgmap.prototype.setMapHTML = function(map) {
 			//for area this one will be set in recalculate
 		}
 
-		var href = newareas[i].getAttribute('href');
+		var href = newareas[i].getAttribute('href', 2);
 		// FCKeditor stored url to prevent mangling from the browser.
 		var sSavedUrl = newareas[i].getAttribute( '_fcksavedurl' ) ;
 		if ( sSavedUrl != null )
@@ -1043,7 +1043,7 @@ imgmap.prototype.initArea = function(id, shape) {
  */
 imgmap.prototype.relaxArea = function(id) {
 	if (!this.areas[id]) return;
-	this.fireEvent('onRelaxArea');
+	this.fireEvent('onRelaxArea', id);
 	if (this.areas[id].shape == 'rectangle') {
 		this.areas[id].style.borderWidth = '1px';
 		this.areas[id].style.borderStyle = 'solid';
@@ -1092,8 +1092,8 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
  */
 imgmap.prototype.removeArea = function() {
 	if (this.viewmode == 1) return;//exit if preview mode
-	this.fireEvent('onRemoveArea');
 	var id = this.currentid;
+	this.fireEvent('onRemoveArea', id);
 	if (this.props[id]) {
 		//shall we leave the last one?
 		var pprops = this.props[id].parentNode;
@@ -1457,7 +1457,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	
 	if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
 		//rectangle mode
-		this.fireEvent('onDrawArea');
+		this.fireEvent('onDrawArea', this.currentid);
 		var xdiff = x - this.memory[this.currentid].downx;
 		var ydiff = y - this.memory[this.currentid].downy;
 		//alert(xdiff);
@@ -1474,7 +1474,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_SQUARE_DRAW) {
 		//square mode - align to shorter side
-		this.fireEvent('onDrawArea');
+		this.fireEvent('onDrawArea', this.currentid);
 		var xdiff = x - this.memory[this.currentid].downx;
 		var ydiff = y - this.memory[this.currentid].downy;
 		var diff;
@@ -1498,11 +1498,11 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_POLYGON_DRAW) {
 		//polygon mode
-		this.fireEvent('onDrawArea');
+		this.fireEvent('onDrawArea', this.currentid);
 		this._polygongrow(this.areas[this.currentid], x, y);
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_MOVE || this.is_drawing == this.DM_SQUARE_MOVE) {
-		this.fireEvent('onMoveArea');
+		this.fireEvent('onMoveArea', this.currentid);
 		var x = x - this.memory[this.currentid].rdownx;
 		var y = y - this.memory[this.currentid].rdowny;
 		if (x + width > this.pic.width || y + height > this.pic.height) return;
@@ -1512,7 +1512,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		this.areas[this.currentid].style.top  = y + 1 + 'px';
 	}
 	else if (this.is_drawing == this.DM_POLYGON_MOVE) {
-		this.fireEvent('onMoveArea');
+		this.fireEvent('onMoveArea', this.currentid);
 		var x = x - this.memory[this.currentid].rdownx;
 		var y = y - this.memory[this.currentid].rdowny;
 		if (x + width > this.pic.width || y + height > this.pic.height) return;
@@ -1527,7 +1527,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		this.areas[this.currentid].style.top  = y + 1 + 'px';
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_LEFT) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.currentid);
 		var diff = x - left;
 		//alert(diff);
 		if ((width  + (-1 * diff)) > 0) {
@@ -1549,7 +1549,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_RIGHT) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.currentid);
 		var diff = x - left - width;
 		if ((width  + (diff)) - 1 > 0) {
 			//real resize right
@@ -1569,7 +1569,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_TOP) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.currentid);
 		var diff = y - top;
 		if ((width  + (-1 * diff)) > 0) {
 			//real resize top
@@ -1590,7 +1590,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_BOTTOM) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.currentid);
 		var diff = y - top - height;
 		if ((width  + (diff)) - 1 > 0) {
 			//real resize bottom
@@ -1610,7 +1610,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_LEFT) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.currentid);
 		var xdiff = x - left;
 		if (width + (-1 * xdiff) > 0) {
 			//real resize left
@@ -1626,7 +1626,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_RIGHT) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.currentid);
 		var xdiff = x - left - width;
 		if ((width  + (xdiff)) - 1 > 0) {
 			//real resize right
@@ -1641,7 +1641,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_TOP) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.currentid);
 		var ydiff = y - top;
 		if ((height + (-1 * ydiff)) > 0) {
 			//real resize top
@@ -1657,7 +1657,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		}
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_BOTTOM) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.currentid);
 		var ydiff = y - top - height;
 		if ((height + (ydiff)) - 1 > 0) {
 			//real resize bottom
@@ -1714,7 +1714,7 @@ imgmap.prototype.img_mouseup = function(e) {
 
 imgmap.prototype.img_mousedown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
-	if (!this.areas[this.currentid]) return;
+	if (!this.areas[this.currentid] && this.config.mode != "editor2") return;
 	//console.log('img_mousedown');
 	var pos = this._getPos(this.pic);
 
@@ -1835,7 +1835,7 @@ imgmap.prototype.img_area_mouseover = function(e) {
 	
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - highlight it
-		this.fireEvent('onFocusArea');
+		this.fireEvent('onFocusArea', this.areas[id]);
 		if (this.areas[id].shape == 'rectangle') {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
@@ -1863,7 +1863,7 @@ imgmap.prototype.img_area_mouseout = function(e) {
 
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - fade it back
-		this.fireEvent('onBlurArea');
+		this.fireEvent('onBlurArea', this.areas[id]);
 		if (this.areas[id].shape == 'rectangle') {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
@@ -1902,7 +1902,6 @@ imgmap.prototype.form_selectRow = function(id, setfocus) {
 	if (this.viewmode == 1) return;//exit if preview mode
 	if (!this.form_container) return;//exit if no form container
 	if (!document.getElementById('img_active_'+id)) return;
-	this.fireEvent('onSelectRow');
 	document.getElementById('img_active_'+id).checked = 1;
 	if (setfocus) document.getElementById('img_active_'+id).focus();
 	//remove all background styles
@@ -1913,6 +1912,8 @@ imgmap.prototype.form_selectRow = function(id, setfocus) {
 	}
 	//put highlight on actual props row
 	this.props[id].style.background = this.config.CL_HIGHLIGHT_PROPS;
+	//fire custom event
+	this.fireEvent('onSelectRow', this.props[id]);
 }
 
 
@@ -2253,7 +2254,7 @@ imgmap.prototype.img_coords_keydown = function(e) {
 	//console.log(key);
 	//console.log(obj);
 	if (key == 40 || key == 38) {
-		this.fireEvent('onResizeArea');
+		this.fireEvent('onResizeArea', this.areas[this.currentid]);
 		//down or up pressed
 		//get the coords
 		var coords = obj.value;
@@ -2368,7 +2369,7 @@ imgmap.prototype._getLastArea = function() {
  *	@date	2006.10.24. 22:14:12
  */
 imgmap.prototype.toClipBoard = function(text) {
-	this.fireEvent('onClipboard');
+	this.fireEvent('onClipboard', text);
 	if (typeof text == 'undefined') text = this.getMapHTML();
 	//alert(typeof window.clipboardData);
 	try {

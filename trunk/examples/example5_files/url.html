@@ -8,7 +8,8 @@ Select URL:<br>
 </ul>
 <script type="text/javascript">
 function selectURL(obj) {
-	window.opener.document.getElementById('img_href').value = obj.innerHTML;
+	//alert(window.opener.targetObj);
+	window.opener.targetObj.value = obj.innerHTML;
 	window.close();
 }
 </script>
