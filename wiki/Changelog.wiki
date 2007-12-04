@@ -1,0 +1,13 @@
+= Changelog =
+
+Version 2.0beta3
+ * Added MAP id attribute support apart from existing MAP name usage.
+ * Added function getMapId().
+ * Added function getMapName().
+ * Added function getMapInnerHTML().
+ * Added TinyMCE support plus example. (Thanks to John Ericksen)
+ * Added FCKEditor support plus example. (Thanks to Alfonso MartÃ­nez de Lizarrondo)
+ * Added custom callbacks on certain imgmap events.
+ * Added Safari support. (Thanks to Alfonso MartÃ­nez de Lizarrondo)
+ * Improved handling of bad coordinates.
+ * Fixed several bugs and issues.
