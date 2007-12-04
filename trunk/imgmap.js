@@ -1327,6 +1327,8 @@ imgmap.prototype._recalculate = function(id) {
 			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1]) + 'px';
 			this.areas[id].style.width  = (parts[2] - parts[0]) + 'px';
 			this.areas[id].style.height = (parts[3] - parts[1]) + 'px';
+			this.areas[id].width  = (parts[2] - parts[0]);
+			this.areas[id].height = (parts[3] - parts[1]);
 			this.areas[id].setAttribute('width',  (parts[2] - parts[0]));
 			this.areas[id].setAttribute('height', (parts[3] - parts[1]));
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
@@ -1339,6 +1341,8 @@ imgmap.prototype._recalculate = function(id) {
 			//alert(width);
 			this.areas[id].style.width  = width + 'px';
 			this.areas[id].style.height = width + 'px';
+			this.areas[id].width  = width;
+			this.areas[id].height = width;
 			this.areas[id].setAttribute('width',  width);
 			this.areas[id].setAttribute('height', width);
 			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0]) - width/2 + 'px';
@@ -1378,19 +1382,23 @@ imgmap.prototype._polygongrow = function(area, newx, newy) {
 	if (newx < parseInt(area.style.left)) {
 		area.style.left   = newx - pad + 'px';
 		area.style.width  = parseInt(area.style.width)  + Math.abs(xdiff) + pad2 + 'px';
+		area.width  = parseInt(area.style.width)  + Math.abs(xdiff) + pad2;
 		area.setAttribute('width',  parseInt(area.style.width));
 	}
 	if (newy < parseInt(area.style.top)) {
 		area.style.top    = newy - pad + 'px';
 		area.style.height = parseInt(area.style.height) + Math.abs(ydiff) + pad2 + 'px';
+		area.height = parseInt(area.style.height) + Math.abs(ydiff) + pad2;
 		area.setAttribute('height',  parseInt(area.style.height));
 	}
 	if (newx > parseInt(area.style.left) + parseInt(area.style.width)) {
 		area.style.width  = newx - parseInt(area.style.left) + pad2 + 'px';
+		area.width  = newx - parseInt(area.style.left) + pad2;
 		area.setAttribute('width',  parseInt(area.style.width));
 	}
 	if (newy > parseInt(area.style.top) + parseInt(area.style.height)) {
 		area.style.height = newy - parseInt(area.style.top) + pad2 + 'px';
+		area.height = newy - parseInt(area.style.top) + pad2;
 		area.setAttribute('height',  parseInt(area.style.height));
 	}
 }
@@ -1401,6 +1409,8 @@ imgmap.prototype._polygonshrink = function(area) {
 	area.style.top  = (area.ypoints[0] + 1) + 'px';
 	area.style.height = '0px';
 	area.style.width  = '0px';
+	area.height = 0;
+	area.width  = 0;
 	area.setAttribute('height', '0');
 	area.setAttribute('width',  '0');
 	for (var i=0; i<area.xpoints.length; i++) {
@@ -1463,6 +1473,8 @@ imgmap.prototype.img_mousemove = function(e) {
 		//alert(xdiff);
 		this.areas[this.currentid].style.width  = Math.abs(xdiff) + 'px';
 		this.areas[this.currentid].style.height = Math.abs(ydiff) + 'px';
+		this.areas[this.currentid].width  = Math.abs(xdiff);
+		this.areas[this.currentid].height = Math.abs(ydiff);
 		this.areas[this.currentid].setAttribute('width',  Math.abs(xdiff));
 		this.areas[this.currentid].setAttribute('height', Math.abs(ydiff));
 		if (xdiff < 0) {
@@ -1479,14 +1491,16 @@ imgmap.prototype.img_mousemove = function(e) {
 		var ydiff = y - this.memory[this.currentid].downy;
 		var diff;
 		if (Math.abs(xdiff) < Math.abs(ydiff)) {
-			diff = Math.abs(xdiff);
+			diff = Math.abs(parseInt(xdiff));
 		}
 		else {
-			diff = Math.abs(ydiff);
+			diff = Math.abs(parseInt(ydiff));
 		}
 		//alert(xdiff);
 		this.areas[this.currentid].style.width  = diff + 'px';
 		this.areas[this.currentid].style.height = diff + 'px';
+		this.areas[this.currentid].width  = diff;
+		this.areas[this.currentid].height = diff;
 		this.areas[this.currentid].setAttribute('width',  diff);
 		this.areas[this.currentid].setAttribute('height', diff);
 		if (xdiff < 0) {
@@ -1536,6 +1550,8 @@ imgmap.prototype.img_mousemove = function(e) {
 			this.areas[this.currentid].style.top    = (top    + (diff/2)) + 'px';
 			this.areas[this.currentid].style.width  = (width  + (-1 * diff)) + 'px';
 			this.areas[this.currentid].style.height = (height + (-1 * diff)) + 'px';
+			this.areas[this.currentid].width  = parseInt(width  + (-1 * diff));
+			this.areas[this.currentid].height = parseInt(height + (-1 * diff));
 			this.areas[this.currentid].setAttribute('width',   parseInt(this.areas[this.currentid].style.width));
 			this.areas[this.currentid].setAttribute('height',  parseInt(this.areas[this.currentid].style.height));
 		}
@@ -1556,6 +1572,8 @@ imgmap.prototype.img_mousemove = function(e) {
 			this.areas[this.currentid].style.top    = (top    + (-1* diff/2)) + 'px';
 			this.areas[this.currentid].style.width  = (width  + (diff)) - 1 + 'px';
 			this.areas[this.currentid].style.height = (height + (diff)) + 'px';
+			this.areas[this.currentid].width  = parseInt(width  + (diff)) - 1;
+			this.areas[this.currentid].height = parseInt(height + (diff));
 			this.areas[this.currentid].setAttribute('width',   parseInt(this.areas[this.currentid].style.width));
 			this.areas[this.currentid].setAttribute('height',  parseInt(this.areas[this.currentid].style.height));
 		}
@@ -1577,6 +1595,8 @@ imgmap.prototype.img_mousemove = function(e) {
 			this.areas[this.currentid].style.left   = (left   + (diff/2)) + 'px';
 			this.areas[this.currentid].style.width  = (width  + (-1 * diff)) + 'px';
 			this.areas[this.currentid].style.height = (height + (-1 * diff)) + 'px';
+			this.areas[this.currentid].width  = parseInt(width  + (-1 * diff));
+			this.areas[this.currentid].height = parseInt(height + (-1 * diff));
 			this.areas[this.currentid].setAttribute('width',   parseInt(this.areas[this.currentid].style.width));
 			this.areas[this.currentid].setAttribute('height',  parseInt(this.areas[this.currentid].style.height));
 		}
@@ -1597,6 +1617,8 @@ imgmap.prototype.img_mousemove = function(e) {
 			this.areas[this.currentid].style.left   = (left   + (-1* diff/2)) + 'px';
 			this.areas[this.currentid].style.width  = (width  + (diff)) - 1 + 'px';
 			this.areas[this.currentid].style.height = (height + (diff)) - 1 + 'px';
+			this.areas[this.currentid].width  = parseInt(width  + (diff)) - 1;
+			this.areas[this.currentid].height = parseInt(height + (diff)) - 1;
 			this.areas[this.currentid].setAttribute('width',   parseInt(this.areas[this.currentid].style.width));
 			this.areas[this.currentid].setAttribute('height',  parseInt(this.areas[this.currentid].style.height));
 		}
@@ -1616,6 +1638,7 @@ imgmap.prototype.img_mousemove = function(e) {
 			//real resize left
 			this.areas[this.currentid].style.left = x + 1 + 'px';
 			this.areas[this.currentid].style.width = width + (-1 * xdiff) + 'px';
+			this.areas[this.currentid].width = width + (-1 * xdiff);
 			this.areas[this.currentid].setAttribute('width',  parseInt(this.areas[this.currentid].style.width));
 		}
 		else {
@@ -1631,6 +1654,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		if ((width  + (xdiff)) - 1 > 0) {
 			//real resize right
 			this.areas[this.currentid].style.width  = (width  + (xdiff)) - 1 + 'px';
+			this.areas[this.currentid].width  = (width  + (xdiff)) - 1;
 			this.areas[this.currentid].setAttribute('width',  parseInt(this.areas[this.currentid].style.width));
 		}
 		else {
@@ -1647,6 +1671,7 @@ imgmap.prototype.img_mousemove = function(e) {
 			//real resize top
 			this.areas[this.currentid].style.top   = y + 1 + 'px';
 			this.areas[this.currentid].style.height = (height + (-1 * ydiff)) + 'px';
+			this.areas[this.currentid].height = (height + (-1 * ydiff));
 			this.areas[this.currentid].setAttribute('height', parseInt(this.areas[this.currentid].style.height));
 		}
 		else {
@@ -1662,6 +1687,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		if ((height + (ydiff)) - 1 > 0) {
 			//real resize bottom
 			this.areas[this.currentid].style.height = (height + (ydiff)) - 1 + 'px';
+			this.areas[this.currentid].height = (height + (ydiff)) - 1;
 			this.areas[this.currentid].setAttribute('height', parseInt(this.areas[this.currentid].style.height));
 		}
 		else {
@@ -2000,6 +2026,11 @@ imgmap.prototype.area_mousemove = function(e) {
 			obj.tagName == 'shape' || obj.tagName == 'stroke') {
 			//do this because of excanvas
 			obj = obj.parentNode.parentNode;
+		}
+		//opera fix - adam - 04-12-2007 23:14:05
+		if (this.isOpera) {
+			e.layerX = e.offsetX;
+			e.layerY = e.offsetY;
 		}
 		var xdiff = (this.isMSIE) ? (window.event.offsetX) : (e.layerX);
 		var ydiff = (this.isMSIE) ? (window.event.offsetY) : (e.layerY);
