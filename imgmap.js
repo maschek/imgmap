@@ -1325,12 +1325,7 @@ imgmap.prototype._recalculate = function(id) {
 			if (parseInt(parts[1]) > parseInt(parts[3])) throw "invalid coords";
 			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0]) + 'px';
 			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1]) + 'px';
-			this.areas[id].style.width  = (parts[2] - parts[0]) + 'px';
-			this.areas[id].style.height = (parts[3] - parts[1]) + 'px';
-			this.areas[id].width  = (parts[2] - parts[0]);
-			this.areas[id].height = (parts[3] - parts[1]);
-			this.areas[id].setAttribute('width',  (parts[2] - parts[0]));
-			this.areas[id].setAttribute('height', (parts[3] - parts[1]));
+			this.setAreaSize(id, (parts[2] - parts[0]), (parts[3] - parts[1]));
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
 		else if (this.areas[id].shape == 'circle') {
@@ -1339,12 +1334,7 @@ imgmap.prototype._recalculate = function(id) {
 			var width = 2 * (1 * parts[2] + 1);
 			//alert(parts[2]);
 			//alert(width);
-			this.areas[id].style.width  = width + 'px';
-			this.areas[id].style.height = width + 'px';
-			this.areas[id].width  = width;
-			this.areas[id].height = width;
-			this.areas[id].setAttribute('width',  width);
-			this.areas[id].setAttribute('height', width);
+			this.setAreaSize(id, width, width);
 			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0]) - width/2 + 'px';
 			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1]) - width/2 + 'px';
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
@@ -1373,46 +1363,44 @@ imgmap.prototype._recalculate = function(id) {
 }
 
 
+/**
+ *	Grow polygon area to be able to contain the given new coordinates.
+ *	@author	adam
+ */
 imgmap.prototype._polygongrow = function(area, newx, newy) {
+	//this.log('pgrow');
 	var xdiff = newx - parseInt(area.style.left);
 	var ydiff = newy - parseInt(area.style.top );
-	var pad   = 2;
-	var pad2  = pad * 2;
+	var pad   = 3;//padding on the edges
+	var pad2  = 6;//twice the padding
 	
 	if (newx < parseInt(area.style.left)) {
-		area.style.left   = newx - pad + 'px';
-		area.style.width  = parseInt(area.style.width)  + Math.abs(xdiff) + pad2 + 'px';
-		area.width  = parseInt(area.style.width)  + Math.abs(xdiff) + pad2;
-		area.setAttribute('width',  parseInt(area.style.width));
+		area.style.left   = (newx - pad) + 'px';
+		this.setAreaSize(area.aid, parseInt(area.style.width)  + Math.abs(xdiff) + pad2, null);
+	}
+	else if (newx > parseInt(area.style.left) + parseInt(area.style.width)) {
+		this.setAreaSize(area.aid, newx - parseInt(area.style.left) + pad2, null);
 	}
 	if (newy < parseInt(area.style.top)) {
-		area.style.top    = newy - pad + 'px';
-		area.style.height = parseInt(area.style.height) + Math.abs(ydiff) + pad2 + 'px';
-		area.height = parseInt(area.style.height) + Math.abs(ydiff) + pad2;
-		area.setAttribute('height',  parseInt(area.style.height));
+		area.style.top    = (newy - pad) + 'px';
+		this.setAreaSize(area.aid, null, parseInt(area.style.height) + Math.abs(ydiff) + pad2);
 	}
-	if (newx > parseInt(area.style.left) + parseInt(area.style.width)) {
-		area.style.width  = newx - parseInt(area.style.left) + pad2 + 'px';
-		area.width  = newx - parseInt(area.style.left) + pad2;
-		area.setAttribute('width',  parseInt(area.style.width));
-	}
-	if (newy > parseInt(area.style.top) + parseInt(area.style.height)) {
-		area.style.height = newy - parseInt(area.style.top) + pad2 + 'px';
-		area.height = newy - parseInt(area.style.top) + pad2;
-		area.setAttribute('height',  parseInt(area.style.height));
+	else if (newy > parseInt(area.style.top) + parseInt(area.style.height)) {
+		this.setAreaSize(area.aid, null, newy - parseInt(area.style.top) + pad2);
 	}
 }
 
 
+/**
+ *	Shrink the polygon bounding area to the necessary size, by first reducing it
+ *	to the minimum, and then gradually growing it.
+ *	@author	adam
+ */
 imgmap.prototype._polygonshrink = function(area) {
+	//this.log('pshrink');
 	area.style.left = (area.xpoints[0] + 1) + 'px';
 	area.style.top  = (area.ypoints[0] + 1) + 'px';
-	area.style.height = '0px';
-	area.style.width  = '0px';
-	area.height = 0;
-	area.width  = 0;
-	area.setAttribute('height', '0');
-	area.setAttribute('width',  '0');
+	this.setAreaSize(area.aid, 0, 0);
 	for (var i=0; i<area.xpoints.length; i++) {
 		this._polygongrow(area, area.xpoints[i], area.ypoints[i]);
 	}
@@ -1471,12 +1459,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		var xdiff = x - this.memory[this.currentid].downx;
 		var ydiff = y - this.memory[this.currentid].downy;
 		//alert(xdiff);
-		this.areas[this.currentid].style.width  = Math.abs(xdiff) + 'px';
-		this.areas[this.currentid].style.height = Math.abs(ydiff) + 'px';
-		this.areas[this.currentid].width  = Math.abs(xdiff);
-		this.areas[this.currentid].height = Math.abs(ydiff);
-		this.areas[this.currentid].setAttribute('width',  Math.abs(xdiff));
-		this.areas[this.currentid].setAttribute('height', Math.abs(ydiff));
+		this.setAreaSize(this.currentid, Math.abs(xdiff), Math.abs(ydiff));
 		if (xdiff < 0) {
 			this.areas[this.currentid].style.left = (x + 1) + 'px';
 		}
@@ -1497,12 +1480,7 @@ imgmap.prototype.img_mousemove = function(e) {
 			diff = Math.abs(parseInt(ydiff));
 		}
 		//alert(xdiff);
-		this.areas[this.currentid].style.width  = diff + 'px';
-		this.areas[this.currentid].style.height = diff + 'px';
-		this.areas[this.currentid].width  = diff;
-		this.areas[this.currentid].height = diff;
-		this.areas[this.currentid].setAttribute('width',  diff);
-		this.areas[this.currentid].setAttribute('height', diff);
+		this.setAreaSize(this.currentid, diff, diff);
 		if (xdiff < 0) {
 			this.areas[this.currentid].style.left = (this.memory[this.currentid].downx + diff*-1) + 'px';
 		}
@@ -1548,12 +1526,7 @@ imgmap.prototype.img_mousemove = function(e) {
 			//real resize left
 			this.areas[this.currentid].style.left   = x + 1 + 'px';
 			this.areas[this.currentid].style.top    = (top    + (diff/2)) + 'px';
-			this.areas[this.currentid].style.width  = (width  + (-1 * diff)) + 'px';
-			this.areas[this.currentid].style.height = (height + (-1 * diff)) + 'px';
-			this.areas[this.currentid].width  = parseInt(width  + (-1 * diff));
-			this.areas[this.currentid].height = parseInt(height + (-1 * diff));
-			this.areas[this.currentid].setAttribute('width',   parseInt(this.areas[this.currentid].style.width));
-			this.areas[this.currentid].setAttribute('height',  parseInt(this.areas[this.currentid].style.height));
+			this.setAreaSize(this.currentid, parseInt(width  + (-1 * diff)), parseInt(height + (-1 * diff)));
 		}
 		else {
 			//jump to another state
@@ -1570,12 +1543,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		if ((width  + (diff)) - 1 > 0) {
 			//real resize right
 			this.areas[this.currentid].style.top    = (top    + (-1* diff/2)) + 'px';
-			this.areas[this.currentid].style.width  = (width  + (diff)) - 1 + 'px';
-			this.areas[this.currentid].style.height = (height + (diff)) + 'px';
-			this.areas[this.currentid].width  = parseInt(width  + (diff)) - 1;
-			this.areas[this.currentid].height = parseInt(height + (diff));
-			this.areas[this.currentid].setAttribute('width',   parseInt(this.areas[this.currentid].style.width));
-			this.areas[this.currentid].setAttribute('height',  parseInt(this.areas[this.currentid].style.height));
+			this.setAreaSize(this.currentid, (width  + (diff)) - 1, (height + (diff)));
 		}
 		else {
 			//jump to another state
@@ -1593,12 +1561,7 @@ imgmap.prototype.img_mousemove = function(e) {
 			//real resize top
 			this.areas[this.currentid].style.top    = y + 1 + 'px';
 			this.areas[this.currentid].style.left   = (left   + (diff/2)) + 'px';
-			this.areas[this.currentid].style.width  = (width  + (-1 * diff)) + 'px';
-			this.areas[this.currentid].style.height = (height + (-1 * diff)) + 'px';
-			this.areas[this.currentid].width  = parseInt(width  + (-1 * diff));
-			this.areas[this.currentid].height = parseInt(height + (-1 * diff));
-			this.areas[this.currentid].setAttribute('width',   parseInt(this.areas[this.currentid].style.width));
-			this.areas[this.currentid].setAttribute('height',  parseInt(this.areas[this.currentid].style.height));
+			this.setAreaSize(this.currentid, (width  + (-1 * diff)), (height + (-1 * diff)));
 		}
 		else {
 			//jump to another state
@@ -1615,12 +1578,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		if ((width  + (diff)) - 1 > 0) {
 			//real resize bottom
 			this.areas[this.currentid].style.left   = (left   + (-1* diff/2)) + 'px';
-			this.areas[this.currentid].style.width  = (width  + (diff)) - 1 + 'px';
-			this.areas[this.currentid].style.height = (height + (diff)) - 1 + 'px';
-			this.areas[this.currentid].width  = parseInt(width  + (diff)) - 1;
-			this.areas[this.currentid].height = parseInt(height + (diff)) - 1;
-			this.areas[this.currentid].setAttribute('width',   parseInt(this.areas[this.currentid].style.width));
-			this.areas[this.currentid].setAttribute('height',  parseInt(this.areas[this.currentid].style.height));
+			this.setAreaSize(this.currentid, (width  + (diff)) - 1 , (height + (diff)) - 1);
 		}
 		else {
 			//jump to another state
@@ -1637,9 +1595,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		if (width + (-1 * xdiff) > 0) {
 			//real resize left
 			this.areas[this.currentid].style.left = x + 1 + 'px';
-			this.areas[this.currentid].style.width = width + (-1 * xdiff) + 'px';
-			this.areas[this.currentid].width = width + (-1 * xdiff);
-			this.areas[this.currentid].setAttribute('width',  parseInt(this.areas[this.currentid].style.width));
+			this.setAreaSize(this.currentid, width + (-1 * xdiff), null);
 		}
 		else {
 			//jump to another state
@@ -1653,9 +1609,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		var xdiff = x - left - width;
 		if ((width  + (xdiff)) - 1 > 0) {
 			//real resize right
-			this.areas[this.currentid].style.width  = (width  + (xdiff)) - 1 + 'px';
-			this.areas[this.currentid].width  = (width  + (xdiff)) - 1;
-			this.areas[this.currentid].setAttribute('width',  parseInt(this.areas[this.currentid].style.width));
+			this.setAreaSize(this.currentid, (width  + (xdiff)) - 1, null);
 		}
 		else {
 			//jump to another state
@@ -1670,9 +1624,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		if ((height + (-1 * ydiff)) > 0) {
 			//real resize top
 			this.areas[this.currentid].style.top   = y + 1 + 'px';
-			this.areas[this.currentid].style.height = (height + (-1 * ydiff)) + 'px';
-			this.areas[this.currentid].height = (height + (-1 * ydiff));
-			this.areas[this.currentid].setAttribute('height', parseInt(this.areas[this.currentid].style.height));
+			this.setAreaSize(this.currentid, null, (height + (-1 * ydiff)));
 		}
 		else {
 			//jump to another state
@@ -1686,9 +1638,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		var ydiff = y - top - height;
 		if ((height + (ydiff)) - 1 > 0) {
 			//real resize bottom
-			this.areas[this.currentid].style.height = (height + (ydiff)) - 1 + 'px';
-			this.areas[this.currentid].height = (height + (ydiff)) - 1;
-			this.areas[this.currentid].setAttribute('height', parseInt(this.areas[this.currentid].style.height));
+			this.setAreaSize(this.currentid, null, (height + (ydiff)) - 1);
 		}
 		else {
 			//jump to another state
@@ -2280,17 +2230,15 @@ imgmap.prototype.setSelectionRange = function(obj, start, end) {
  */
 imgmap.prototype.img_coords_keydown = function(e) {
 	if (this.viewmode == 1) return;//exit if preview mode
-	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
-	var obj = (this.isMSIE) ? window.event.srcElement : e.originalTarget;
-	//console.log(key);
-	//console.log(obj);
+	var key = (this.isMSIE || this.isOpera) ? event.keyCode : e.keyCode;
+	var obj = (this.isMSIE || this.isOpera) ? window.event.srcElement : e.originalTarget;
+	//this.log(key);
+	//this.log(obj);
 	if (key == 40 || key == 38) {
-		this.fireEvent('onResizeArea', this.areas[this.currentid]);
 		//down or up pressed
+		this.fireEvent('onResizeArea', this.areas[this.currentid]);
 		//get the coords
-		var coords = obj.value;
-		//this.log(obj.value);
-		coords = coords.split(',');
+		var coords = obj.value.split(',');
 		var s = this.getSelectionStart(obj);
 		var j = 0;
 		for (var i=0; i<coords.length; i++) {
@@ -2299,13 +2247,15 @@ imgmap.prototype.img_coords_keydown = function(e) {
 				//this is the coord we want
 				if (key == 40 && coords[i] > 0) coords[i]--;
 				if (key == 38) coords[i]++;
-				this._recalculate(this.currentid);
 				break;
 			}
 			//jump one more because of comma
 			j++;
 		}
 		obj.value = coords.join(',');
+		if (obj.value != this.areas[this.currentid].lastInput) {
+			this._recalculate(this.currentid);//contains repaint
+		}
 		//set cursor back to its original position
 		this.setSelectionRange(obj, s);
 		return true;
@@ -2473,6 +2423,26 @@ imgmap.prototype.fireEvent = function(evt, obj) {
 	//this.log("Firing event: " + evt);
 	if (typeof this.config.custom_callbacks[evt] == 'function') {
 		return this.config.custom_callbacks[evt](obj);
+	}
+}
+
+
+/**
+ *	To set area dimensions.
+ *	@author	adam
+ *	@date	10-12-2007 22:29:41
+ */
+imgmap.prototype.setAreaSize = function(id, w, h) {
+	if (id == null) id = this.currentid;
+	if (w != null) {
+		this.areas[id].width  = w;
+		this.areas[id].style.width  = (w) + 'px';
+		this.areas[id].setAttribute('width',  w);
+	}
+	if (h != null) {
+		this.areas[id].height = h;
+		this.areas[id].style.height = (h) + 'px';
+		this.areas[id].setAttribute('height', h);
 	}
 }
 
