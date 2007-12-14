@@ -35,7 +35,7 @@ window.onload = function()
 	btn.alt = btn.title = FCKLang.imgmapPolygon ;
 
 
-	img_obj = oEditor.FCK.Selection.GetSelectedElement();
+	img_obj = oEditor.FCK.Selection.GetSelectedElement() ;
 
 	// On rare situations it's possible to launch the dialog without an image selected
 	// -> in IE select an image, click outside the editor and the button will remain enabled, 
@@ -73,7 +73,7 @@ window.onload = function()
 		bounding_box : false,
 		lang : sLang
 	});
-	
+
 	//we need this to load languages
 	myimgmap.onLoad();
 

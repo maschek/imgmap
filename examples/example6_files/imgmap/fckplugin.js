@@ -1,3 +1,11 @@
+/*
+	ImgMap plugin for FCKeditor
+	version 0.4 14/12/2007
+
+	See docs/install.html
+
+
+*/
 
 imgmapCommand_GetState = function() {
 	if ( FCK.EditMode != FCK_EDITMODE_WYSIWYG )
@@ -28,7 +36,7 @@ var imgmapButton = new FCKToolbarButton('imgmapPopup', FCKLang.imgmapBtn, null, 
 if ( /\/editor\/skins\/(.*)\//.test(FCKConfig.SkinPath) )
 	imgmapButton.IconPath = FCKPlugins.Items['imgmap'].Path + 'images/icon_' + RegExp.$1 + '.gif';
 else
-imgmapButton.IconPath = FCKPlugins.Items['imgmap'].Path + 'images/editor_icon.gif';
+	imgmapButton.IconPath = FCKPlugins.Items['imgmap'].Path + 'images/editor_icon.gif';
 
 FCKToolbarItems.RegisterItem('imgmapPopup', imgmapButton);
 
@@ -51,50 +59,50 @@ if ( !FCKRegexLib.ProtectUrlsArea )
 {
 	if ( FCKBrowserInfo.IsIE )
 	{
-// Fix behavior for IE, it doesn't read back the .name on newly created maps 
-FCKXHtml.TagProcessors['map'] = function( node, htmlNode )
-{
-	if ( ! node.attributes.getNamedItem( 'name' ) )
+		// Fix behavior for IE, it doesn't read back the .name on newly created maps 
+		FCKXHtml.TagProcessors['map'] = function( node, htmlNode )
+		{
+			if ( ! node.attributes.getNamedItem( 'name' ) )
+			{
+				var name = htmlNode.name ;
+				if ( name )
+					FCKXHtml._AppendAttribute( node, 'name', name ) ;
+			}
+
+			node = FCKXHtml._AppendChildNodes( node, htmlNode, true ) ;
+
+			return node ;
+		}
+	}
+
+	// The href in the areas might get distorted by the browser.
+
+	// Keep a reference to the default processsor:
+	var imgmap_OldAreaProcessor = FCKXHtml.TagProcessors['area'] ;
+
+	FCKXHtml.TagProcessors['area'] = function( node, htmlNode )
 	{
-		var name = htmlNode.name ;
-		if ( name )
-			FCKXHtml._AppendAttribute( node, 'name', name ) ;
+		var sSavedUrl = htmlNode.getAttribute( '_fcksavedurl' ) ;
+		if ( sSavedUrl != null )
+			FCKXHtml._AppendAttribute( node, 'href', sSavedUrl ) ;
+
+		// Call the default processor
+		if (typeof imgmap_OldAreaProcessor == 'function') 
+			node = imgmap_OldAreaProcessor ( node, htmlNode ) ;
+
+		return node ;
 	}
 
-	node = FCKXHtml._AppendChildNodes( node, htmlNode, true ) ;
+	// Saves URLs on links and images on special attributes, so they don't change when 
+	// moving around.
+	var imgmap_OldProtectUrls = FCK.ProtectUrls ;
+	FCK.ProtectUrls  = function( html )
+	{
+		html = imgmap_OldProtectUrls( html ) ;
 
-	return node ;
-}
-	}
-
-// The href in the areas might get distorted by the browser.
-
-// Keep a reference to the default processsor:
-var imgmap_OldAreaProcessor = FCKXHtml.TagProcessors['area'] ;
-
-FCKXHtml.TagProcessors['area'] = function( node, htmlNode )
-{
-	var sSavedUrl = htmlNode.getAttribute( '_fcksavedurl' ) ;
-	if ( sSavedUrl != null )
-		FCKXHtml._AppendAttribute( node, 'href', sSavedUrl ) ;
-
-	// Call the default processor
-	if (typeof imgmap_OldAreaProcessor == 'function') 
-		node = imgmap_OldAreaProcessor ( node, htmlNode ) ;
-
-	return node ;
-}
-
-// Saves URLs on links and images on special attributes, so they don't change when 
-// moving around.
-var imgmap_OldProtectUrls = FCK.ProtectUrls ;
-FCK.ProtectUrls  = function( html )
-{
-	html = imgmap_OldProtectUrls( html ) ;
-
-	// <AREA> href
+		// <AREA> href
 		html = html.replace( /<area(?=\s).*?\shref=((?:(?:\s*)("|').*?\2)|(?:[^"'][^ >]+))/gi	, '$& _fcksavedurl=$1' ) ;
 
-	return html ;
+		return html ;
 	}
 }
