@@ -22,7 +22,7 @@
  *	@date	26-02-2007 2:24:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@copyright
- *	@version 2.0beta3
+ *	@version 2.0beta4
  *	 
  *	TODO:
  *	-pic_container dynamic create(pos rel)?
@@ -47,9 +47,9 @@
 
 
 function imgmap(config) {
-	this.version = "2.0beta3";
-	this.buildDate = "03-12-2007";
-	this.buildNumber = "29";
+	this.version = "2.0beta4";
+	this.buildDate = "10-12-2007";
+	this.buildNumber = "30";
 	this.config = new Object();
 	this.is_drawing = 0;
 	this.strings   = new Array();
@@ -187,6 +187,7 @@ imgmap.prototype.setup = function(config) {
 		this.pic_container = this.assignOID(config.pic_container);
 		if (this.pic_container) {
 			this.preview = document.createElement('DIV');
+			this.preview.style.display = 'none';
 			this.pic_container.appendChild(this.preview);
 		}
 		
@@ -705,8 +706,12 @@ imgmap.prototype.getMapId = function() {
 
 //bad inputs: 035,035 075,062
 //150,217, 190,257, 150,297,110,257
-imgmap.prototype._normCoords = function(coords, shape) {
-	//console.log(coords + ' - ' + shape);
+imgmap.prototype._normCoords = function(coords, shape, flag) {
+	//console.log(coords + ' - ' + shape + ' - ' + flag);
+	coords = coords.trim();
+	if (coords == '') return '';
+	var oldcoords = coords;
+	//replace some general junk
 	coords = coords.replace(/(\d)(\D)+(\d)/g, "$1,$3");
 	coords = coords.replace(/,(\D|0)+(\d)/g, ",$2");
 	coords = coords.replace(/(\d)(\D)+,/g, "$1,");
@@ -714,25 +719,118 @@ imgmap.prototype._normCoords = function(coords, shape) {
 	//now fix other issues
 	var parts = coords.split(',');
 	if (shape == 'rectangle') {
-			if (!(parseInt(parts[1]) > 0)) parts[1] = parts[0];
-			if (!(parseInt(parts[2]) > 0)) parts[2] = parseInt(parts[0]) + 10;
-			if (!(parseInt(parts[3]) > 0)) parts[3] = parseInt(parts[1]) + 10;
-			if (parseInt(parts[0]) > parseInt(parts[2])) {
-				var temp = parts[0];
-				parts[0] = parts[2];
-				parts[2] = temp;
+		if (flag == 'fromcircle') {
+			var r = parts[2];
+			parts[0] = parts[0] - r;
+			parts[1] = parts[1] - r;
+			parts[2] = parseInt(parts[0]) + 2 * r;
+			parts[3] = parseInt(parts[1]) + 2 * r;
+		}
+		else if (flag == 'frompolygon') {
+			var sx = parseInt(parts[0]); var gx = parseInt(parts[0]);
+			var sy = parseInt(parts[1]); var gy = parseInt(parts[1]);
+			for (var i=0; i<parts.length; i++) {
+				if (i % 2 == 0 && parseInt(parts[i]) < sx) {
+					sx = parseInt(parts[i]);}
+				if (i % 2 == 1 && parseInt(parts[i]) < sy) {
+					sy = parseInt(parts[i]);}
+				if (i % 2 == 0 && parseInt(parts[i]) > gx) {
+					gx = parseInt(parts[i]);}
+				if (i % 2 == 1 && parseInt(parts[i]) > gy) {
+					gy = parseInt(parts[i]);}
+				//console.log(sx+","+sy+","+gx+","+gy);
 			}
-			if (parseInt(parts[1]) > parseInt(parts[3])) {
-				var temp = parts[1];
-				parts[1] = parts[3];
-				parts[3] = temp;
-			}
-			coords = parts[0]+","+parts[1]+","+parts[2]+","+parts[3];
+			parts[0] = sx; parts[1] = sy;
+			parts[2] = gx; parts[3] = gy;
+		}
+		if (!(parseInt(parts[1]) > 0)) parts[1] = parts[0];
+		if (!(parseInt(parts[2]) > 0)) parts[2] = parseInt(parts[0]) + 10;
+		if (!(parseInt(parts[3]) > 0)) parts[3] = parseInt(parts[1]) + 10;
+		if (parseInt(parts[0]) > parseInt(parts[2])) {
+			var temp = parts[0];
+			parts[0] = parts[2];
+			parts[2] = temp;
+		}
+		if (parseInt(parts[1]) > parseInt(parts[3])) {
+			var temp = parts[1];
+			parts[1] = parts[3];
+			parts[3] = temp;
+		}
+		coords = parts[0]+","+parts[1]+","+parts[2]+","+parts[3];
+		//console.log(coords);
 	}
 	else if (shape == 'circle') {
-			if (!(parseInt(parts[1]) > 0)) parts[1] = parts[0];
-			if (!(parseInt(parts[2]) > 0)) parts[2] = 10;
-			coords = parts[0]+","+parts[1]+","+parts[2];
+		if (flag == 'fromrectangle') {
+			var sx = parseInt(parts[0]); var gx = parseInt(parts[2]);
+			var sy = parseInt(parts[1]); var gy = parseInt(parts[3]);
+			//use smaller side
+			parts[2] = (gx - sx < gy - sy) ? gx - sx : gy - sy;
+			parts[2] = Math.floor(parts[2] / 2);//radius
+			parts[0] = sx + parts[2];
+			parts[1] = sy + parts[2];
+		}
+		else if (flag == 'frompolygon') {
+			var sx = parseInt(parts[0]); var gx = parseInt(parts[0]);
+			var sy = parseInt(parts[1]); var gy = parseInt(parts[1]);
+			for (var i=0; i<parts.length; i++) {
+				if (i % 2 == 0 && parseInt(parts[i]) < sx) {
+					sx = parseInt(parts[i]);}
+				if (i % 2 == 1 && parseInt(parts[i]) < sy) {
+					sy = parseInt(parts[i]);}
+				if (i % 2 == 0 && parseInt(parts[i]) > gx) {
+					gx = parseInt(parts[i]);}
+				if (i % 2 == 1 && parseInt(parts[i]) > gy) {
+					gy = parseInt(parts[i]);}
+				//console.log(sx+","+sy+","+gx+","+gy);
+			}
+			//use smaller side
+			parts[2] = (gx - sx < gy - sy) ? gx - sx : gy - sy;
+			parts[2] = Math.floor(parts[2] / 2);//radius
+			parts[0] = sx + parts[2];
+			parts[1] = sy + parts[2];
+		}
+		if (!(parseInt(parts[1]) > 0)) parts[1] = parts[0];
+		if (!(parseInt(parts[2]) > 0)) parts[2] = 10;
+		coords = parts[0]+","+parts[1]+","+parts[2];
+	}
+	else if (shape == 'polygon') {
+		if (flag == 'fromrectangle') {
+			parts[4] = parts[2];
+			parts[5] = parts[3];
+			parts[2] = parts[0];
+			parts[6] = parts[4];
+			parts[7] = parts[1];
+		}
+		else if (flag == 'fromcircle') {
+			//@url http://www.pixelwit.com/blog/2007/06/29/basic-circle-drawing-actionscript/
+			var centerX = parseInt(parts[0]);
+			var centerY = parseInt(parts[1]);
+			var radius  = parseInt(parts[2]);
+			var j = 0;
+			parts[j++] = centerX + radius;
+			parts[j++] = centerY;
+			var sides = 60;
+			for (var i=0; i<=sides; i++) {
+				var pointRatio = i/sides;
+				var xSteps = Math.cos(pointRatio*2*Math.PI);
+				var ySteps = Math.sin(pointRatio*2*Math.PI);
+				var pointX = centerX + xSteps * radius;
+				var pointY = centerY + ySteps * radius;
+				parts[j++] = Math.round(pointX);
+				parts[j++] = Math.round(pointY);
+			}
+			//console.log(parts);
+		}
+		coords = '';
+		for (var i=0; i<parts.length; i++) {
+			coords+= parts[i]+",";
+		}
+		coords = coords.substring(0, coords.length - 1);
+	}
+	if (flag == 'preserve' && oldcoords != coords) {
+		//return original and throw error
+		throw "invalid coords";
+		return oldcoords;
 	}
 	return coords;
 }
@@ -864,6 +962,7 @@ imgmap.prototype.togglePreview = function() {
 		}
 		//activate image map
 		this.preview.innerHTML = this.getMapHTML();
+		this.pic.setAttribute('border', '0', 0);
 		this.pic.setAttribute('usemap', '#' + this.mapname, 0);
 		//detach event handlers
 		//this.removeEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
@@ -963,7 +1062,8 @@ imgmap.prototype.addNewArea = function() {
 			this.addEvent(this.props[id].getElementsByTagName('input')[2],  'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('input')[3],  'blur', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('input')[4],  'blur', this.img_area_blur.bind(this));
-			this.addEvent(this.props[id].getElementsByTagName('select')[0], 'blur', this.img_area_blur.bind(this));
+			this.addEvent(this.props[id].getElementsByTagName('select')[0], 'blur',   this.img_area_blur.bind(this));
+			this.addEvent(this.props[id].getElementsByTagName('select')[0], 'change', this.img_area_blur.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
 			if (this.isSafari) {
 				//need these for safari
@@ -1234,24 +1334,26 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 		var height =  parseInt(area.style.height);
 		var left   =  parseInt(area.style.left);
 		var top    =  parseInt(area.style.top);
-		//get canvas context
-		var ctx = area.getContext("2d");
-		//clear canvas
-		ctx.clearRect(0, 0, width, height);
-		//draw polygon
-		ctx.beginPath();
-		ctx.strokeStyle = color;
-		ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
-		for (var i=1; i<area.xpoints.length; i++) {
-			ctx.lineTo(area.xpoints[i] - left , area.ypoints[i] - top);
+		if (area.xpoints) {
+			//get canvas context
+			var ctx = area.getContext("2d");
+			//clear canvas
+			ctx.clearRect(0, 0, width, height);
+			//draw polygon
+			ctx.beginPath();
+			ctx.strokeStyle = color;
+			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
+			for (var i=1; i<area.xpoints.length; i++) {
+				ctx.lineTo(area.xpoints[i] - left , area.ypoints[i] - top);
+			}
+			if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_POLYGON_LASTDRAW) {
+				//only draw to current position if not moving
+				ctx.lineTo(x - left - 5 , y - top - 5);
+			}
+			ctx.lineTo(area.xpoints[0] - left , area.ypoints[0] - top);
+			ctx.stroke();
+			ctx.closePath();
 		}
-		if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_POLYGON_LASTDRAW) {
-			//only draw to current position if not moving
-			ctx.lineTo(x - left - 5 , y - top - 5);
-		}
-		ctx.lineTo(area.xpoints[0] - left , area.ypoints[0] - top);
-		ctx.stroke();
-		ctx.closePath();
 		//put label
 		this._putlabel(area.aid);
 		this._puthint(area.aid);
@@ -1284,10 +1386,12 @@ imgmap.prototype._updatecoords = function() {
 	}
 	else if (this.areas[this.currentid].shape == 'polygon') {
 		value = '';
-		for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
-			value+= this.areas[this.currentid].xpoints[i] + ',' + this.areas[this.currentid].ypoints[i] + ',';
+		if (this.areas[this.currentid].xpoints) {
+			for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
+				value+= this.areas[this.currentid].xpoints[i] + ',' + this.areas[this.currentid].ypoints[i] + ',';
+			}
+			value = value.substring(0, value.length - 1);
 		}
-		value = value.substring(0, value.length - 1);
 		this.areas[this.currentid].lastInput = value;
 	}
 
@@ -1308,17 +1412,17 @@ imgmap.prototype._updatecoords = function() {
 imgmap.prototype._recalculate = function(id) {
 	var coords = '';
 	var input = null;
-	if (this.props[id])
-	{
-		var input   = this.props[id].getElementsByTagName('input')[2];
-		input.value = this._normCoords(input.value, this.areas[id].shape);
-		coords  = input.value;
-	}
-	else
-		coords = this.areas[id].lastInput || '' ;
-
-	var parts   = coords.split(',');
 	try {
+		if (this.props[id]) {
+			var input   = this.props[id].getElementsByTagName('input')[2];
+			input.value = this._normCoords(input.value, this.areas[id].shape, 'preserve');
+			coords  = input.value;
+		}
+		else {
+			coords = this.areas[id].lastInput || '' ;
+		}
+	
+		var parts   = coords.split(',');
 		if (this.areas[id].shape == 'rectangle') {
 			if (parts.length != 4)   throw "invalid coords";
 			if (parseInt(parts[0]) > parseInt(parts[2])) throw "invalid coords";
@@ -1352,7 +1456,8 @@ imgmap.prototype._recalculate = function(id) {
 		}
 	}
 	catch (err) {
-		this.log(err.message, 1);
+		var msg = (err.message) ? err.message : 'error calculating coordinates';
+		this.log(msg, 1);
 		this.statusMessage(this.strings['ERR_INVALID_COORDS']);
 		if (this.areas[id].lastInput && input) input.value = this.areas[id].lastInput;
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
@@ -1511,9 +1616,11 @@ imgmap.prototype.img_mousemove = function(e) {
 		if (x < 0 || y < 0) return;
 		var xdiff = x - left;
 		var ydiff = y - top;
-		for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
-			this.areas[this.currentid].xpoints[i] = this.memory[this.currentid].xpoints[i] + xdiff;
-			this.areas[this.currentid].ypoints[i] = this.memory[this.currentid].ypoints[i] + ydiff;
+		if (this.areas[this.currentid].xpoints) {
+			for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
+				this.areas[this.currentid].xpoints[i] = this.memory[this.currentid].xpoints[i] + xdiff;
+				this.areas[this.currentid].ypoints[i] = this.memory[this.currentid].ypoints[i] + ydiff;
+			}
 		}
 		this.areas[this.currentid].style.left = x + 1 + 'px';
 		this.areas[this.currentid].style.top  = y + 1 + 'px';
@@ -1745,7 +1852,7 @@ imgmap.prototype.img_mousedown = function(e) {
 		//console.log("init: " + this.nextShape);
 		this.initArea(this.currentid, this.nextShape);
 	}
-	else {
+	else if (this.areas[this.currentid].shape == 'undefined' || this.areas[this.currentid].shape == 'polygon') {
 		var shape = (this.props[this.currentid]) ? this.props[this.currentid].getElementsByTagName('select')[0].value : this.nextShape;
 		if (shape == '') shape = 'rectangle';
 		//console.log("init: " + shape);
@@ -1926,7 +2033,21 @@ imgmap.prototype.img_area_blur = function(e) {
 	if (obj.name == 'img_alt')    this.areas[id].aalt    = obj.value;
 	if (obj.name == 'img_title')  this.areas[id].atitle  = obj.value;
 	if (obj.name == 'img_target') this.areas[id].atarget = obj.value;
-	if (obj.name == 'img_shape')  this.areas[id].shape   = obj.value;
+	if (obj.name == 'img_shape' && this.areas[id].shape != obj.value && this.areas[id].shape != 'undefined') {
+		//shape changed, adjust coords intelligently inside _normCoords
+		var coords = '';
+		if (this.props[id]) {
+			coords  =  this.props[id].getElementsByTagName('input')[2].value;
+		}
+		else {
+			coords = this.areas[id].lastInput || '' ;
+		}
+		coords = this._normCoords(coords, obj.value, 'from'+this.areas[id].shape);
+		if (this.props[id])
+			this.props[id].getElementsByTagName('input')[2].value  = coords;
+		this.areas[id].lastInput = coords;
+		this.areas[id].shape = obj.value;
+	}
 	if (this.areas[id]  && this.areas[id].shape != 'undefined') {
 		this._recalculate(id);
 		if (this.html_container) this.html_container.value = this.getMapHTML();
@@ -2088,9 +2209,11 @@ imgmap.prototype.area_mousemove = function(e) {
 				this.memory[this.currentid].rdowny = ydiff;
 			}
 			else if (this.areas[this.currentid].shape == 'polygon') {
-				for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
-					this.memory[this.currentid].xpoints[i] = this.areas[this.currentid].xpoints[i];
-					this.memory[this.currentid].ypoints[i] = this.areas[this.currentid].ypoints[i];
+				if (this.areas[this.currentid].xpoints) {
+					for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
+						this.memory[this.currentid].xpoints[i] = this.areas[this.currentid].xpoints[i];
+						this.memory[this.currentid].ypoints[i] = this.areas[this.currentid].ypoints[i];
+					}
 				}
 				this.is_drawing = this.DM_POLYGON_MOVE;
 				this.statusMessage(this.strings['POLYGON_MOVE']);
