@@ -1,5 +1,5 @@
+#summary changelog of the new releases
 #labels Featured
-# changelog of the new releases
 
 = Changelog =
 
