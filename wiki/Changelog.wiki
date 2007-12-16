@@ -1,6 +1,13 @@
+#labels Featured
 # changelog of the new releases
 
 = Changelog =
+
+Version 2.0beta5
+ * Added support for converting area types
+
+Version 2.0beta4
+ * Added Opera support
 
 Version 2.0beta3
  * Added MAP id attribute support apart from existing MAP name usage.
