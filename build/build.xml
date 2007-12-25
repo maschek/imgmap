@@ -1,0 +1,195 @@
+
+
+<project name="imgmap" default="zipall" basedir=".">
+	<description>
+	    imgmap build file
+	</description>
+	
+	<!-- set global properties for this build -->
+	<property name="src" location=".." />
+
+	<target name="init">
+		<propertyfile
+		    file="build.properties"
+		    comment="Build properties">
+		  <entry key="buildDate" type="date" value="now"/>
+		  <entry key="buildNumber" default="1" type="int" operation="+"/>
+		</propertyfile>
+		<property file="build.properties"/>
+		<echo>Preparing to build ${ant.project.name} ${version} (build ${buildNumber})</echo>
+	</target>
+
+	<target name="jslint">
+		<echo>Checking main javascript for errors (using jslint)</echo>
+		<java jar="custom_rhino.jar" fork="true" failonerror="true">
+			<arg value="jslint.js" />
+			<arg file="../imgmap.js" />
+			<redirector output="jslint.txt" />
+		</java>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: Add version, build and release date information
+         - - - - - - - - - - - - - - - - - -->
+    <target name="release" description="Add version, build and release date information" depends="init,jslint">
+    	<echo>Replacing release information in main sourcefile</echo>
+		<replaceregexp file="${src}/imgmap.js"
+		                         match="this.buildNumber\s*=\s*&#34;(\d*)&#34;"
+		                         replace="this.buildNumber = &#34;${buildNumber}&#34;"
+		                         byline="true"/>
+		<replaceregexp file="${src}/imgmap.js"
+		                         match="this.buildDate\s*=\s*&#34;(.*?)&#34;"
+		                         replace="this.buildDate = &#34;${buildDate}&#34;"
+		                         byline="true"/>
+		<replaceregexp file="${src}/imgmap.js"
+		                         match="this.version\s*=\s*&#34;(.*?)&#34;"
+		                         replace="this.version = &#34;${version}&#34;"
+		                         byline="true"/>
+		<replaceregexp file="${src}/imgmap.js"
+		                         match="\@version\s([\w\.]*)"
+		                         replace="@version ${version}"
+		                         byline="true"/>
+    </target>
+
+	<target name="compress" description="Compress javascript file">
+		<echo>Compressing javascript main sourcefile (rhino -c)</echo>
+		<java jar="custom_rhino.jar" fork="true" failonerror="true">
+			<arg value="-c" />
+			<arg file="../imgmap.js" />
+			<redirector output="../imgmap_packed.js" />
+		</java>
+	</target>
+	
+	<!-- =================================
+          target: Make Tiny package
+         ================================= -->
+    <target name="build_tiny" description="Make Tiny package" depends="init,release,compress">
+    	<echo>Creating TinyMCE package...</echo>
+    	<delete dir="${src}/temp" />
+    	<mkdir dir="${src}/temp"/>
+		<copy todir="${src}/temp">
+			<fileset dir="${src}/examples/example3_files/tinymce/jscripts/tiny_mce/plugins/imgmap"/>
+		</copy>
+		
+    	<mkdir dir="${src}/temp/licenses"/>
+    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
+
+    	<copy file="${src}/imgmap.js" todir="${src}/temp"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp"></copy>
+    	<copy file="${src}/changelog" todir="${src}/temp"></copy>
+    	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
+
+		<replaceregexp file="${src}/temp/popup.html"
+				match="\.\./\.\./\.\./\.\./\.\./\.\./\.\./imgmap\.js"
+				replace="jscripts/imgmap_packed.js"
+				flags="i"
+				byline="true"/>
+    	<echo>Packaging ZIP: plugin_tinymce${buildNumber}.zip</echo>
+    	<zip destfile="${src}/plugin_tinymce${buildNumber}.zip"
+    		 basedir="${src}/temp"
+    	/>
+    	<delete dir="${src}/temp" />
+    </target>
+
+	<!-- =================================
+          target: Make FCK package
+         ================================= -->
+    <target name="build_fck" description="Make FCK package" depends="init,release,compress">
+    	<echo>Creating FCKEditor package...</echo>
+    	<delete dir="${src}/temp" />
+    	<mkdir dir="${src}/temp"/>
+		<copy todir="${src}/temp">
+			<fileset dir="${src}/examples/example6_files/imgmap"/>
+		</copy>
+		
+    	<mkdir dir="${src}/temp/licenses"/>
+    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
+
+    	<copy file="${src}/imgmap.js" todir="${src}/temp"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp"></copy>
+    	<copy file="${src}/changelog" todir="${src}/temp"></copy>
+    	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
+
+		<replaceregexp file="${src}/temp/popup.html"
+				match="\.\./\.\./\.\./imgmap\.js"
+				replace="jscripts/imgmap_packed.js"
+				flags="i"
+				byline="true"/>
+    	<echo>Packaging ZIP: plugin_fck${buildNumber}.zip</echo>
+    	<zip destfile="${src}/plugin_fck${buildNumber}.zip"
+    		 basedir="${src}/temp"
+    	/>
+    	<delete dir="${src}/temp" />
+    </target>
+
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: Create release ZIP file
+         - - - - - - - - - - - - - - - - - -->
+    <target name="zipall" description="Create release ZIP file" depends="init,compress">
+    	<echo>Creating final ZIP package as: imgmap${version}${buildNumber}.zip</echo>
+    	<zip destfile="${src}/imgmap${version}${buildNumber}.zip"
+    		 basedir="${src}"
+    		 excludes="build/**, temp/**, **/imgmap*.zip" />
+    </target>
+	
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: Upload to googlecode
+         - - - - - - - - - - - - - - - - - -->
+	<taskdef name="GoogleCodeUploadTask" classname="net.bluecow.googlecode.ant.GoogleCodeUploadTask" classpath="ant-googlecode-0.0.0test.jar"/>
+    <target name="upload" description="Upload to googlecode" depends="zipall">
+    	<echo>Uploading final ZIP file to googlecode</echo>
+    	<!--
+    	these will be skipped if coming from property file
+    	 -->
+    	<input
+    	    message="Please enter googlecode username:"
+    	    addproperty="googlecode.username"
+    	    defaultvalue="${user.name}"
+    	/>
+	  	<input
+	  	    message="Please enter googlecode password (NOT google account password!):"
+	  	    addproperty="googlecode.password"
+	  	/>
+	  	<input
+	  	    message="Please enter summary of new release:"
+	  	    addproperty="googlecode.summary"
+	  	  	defaultvalue="Latest version"
+	  	/>
+    	<GoogleCodeUploadTask description="Uploads code to googlecode"
+			projectname="imgmap"
+			summary="${googlecode.summary}"
+			username="${googlecode.username}"
+			password="${googlecode.password}"
+			verbose="true"
+    		filename="${src}/imgmap${version}20.zip"
+    		targetfilename="imgmap${version}20.zip"
+    	/>
+	  <input
+	    message="Do you want to store your googlecode username and password in the build propertyfile (y/n)?"
+	    validargs="y,n"
+	    addproperty="build.storegooglecodeyn"
+	  />
+	  <condition property="build.storegooglecode">
+	    <equals arg1="y" arg2="${build.storegooglecodeyn}"/>
+	  </condition>
+    </target>
+	
+	<!-- - - - - - - - - - - - - - - - - -
+          target: Googlecode info save
+         - - - - - - - - - - - - - - - - - -->
+    <target name="upload_save" description="Googlecode info save" depends="upload" if="build.storegooglecode">
+		<propertyfile file="build.properties" >
+		  <entry key="googlecode.username" type="string" value="${googlecode.username}"/>
+		  <entry key="googlecode.password" type="string" value="${googlecode.password}"/>
+		</propertyfile>
+    </target>
+	
+	<target name="all" depends="upload_save">
+		<!-- all build tasks -->
+	</target>
+
+	<target name="clean" description="Clean up temporary build files">
+		<delete dir="${tempdir}" />
+	</target>
+</project>
