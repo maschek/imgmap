@@ -1,3 +1,5 @@
+/*jslint nomen: true, evil: true, browser: true, adsafe: true */
+
 /**
  *	Image Map Editor (imgmap) - in-browser imagemap editor
  *	Copyright (C) 2006 - 2007 Adam Maschek (adam.maschek @ gmail.com)
@@ -45,24 +47,25 @@
  *	-prepare for default shape http://www.w3.org/TR/html4/struct/objects.html#edef-AREA
  */
 
-
 function imgmap(config) {
 	this.version = "2.0beta4";
 	this.buildDate = "10-12-2007";
 	this.buildNumber = "30";
-	this.config = new Object();
+	this.config = {};
 	this.is_drawing = 0;
-	this.strings   = new Array();
-	this.memory    = new Array();
-	this.areas     = new Array();
-	this.props     = new Array();
-	this.logStore  = new Array();
+	this.strings   = [];
+	this.memory    = [];
+	this.areas     = [];
+	this.props     = [];
+	this.logStore  = [];
 	this.currentid = 0;
 	this.draggedId  = null;
 	this.selectedId = null;
 	this.nextShape = 'rectangle';
 	this.viewmode  = 0;
-	this.loadedScripts = new Array();
+	//possible values: 0 - normal, 1 - preview
+	
+	this.loadedScripts = [];
 	this.isLoaded   = false;
 	this.cntReloads = 0;
 	this.mapname    = '';
@@ -96,7 +99,7 @@ function imgmap(config) {
 	this.config.lang     = "en";
 	this.config.loglevel = 0;
 	this.config.buttons          = ['add','delete','preview','html'];
-	this.config.custom_callbacks = new Object();
+	this.config.custom_callbacks = {};
 	//possible values: onPreview, onClipboard, onHtml, onAddArea, onRemoveArea, onDrawArea, onResizeArea, onRelaxArea, onFocusArea, onBlurArea, onMoveArea, onSelectRow, onLoadImage, onSetMap, onGetMap, onSelectArea
 
 	this.config.CL_DRAW_BOX        = '#dd2400';
@@ -140,7 +143,9 @@ function imgmap(config) {
 	this.addEvent(document, 'keyup',     this.doc_keyup.bind(this));
 	this.addEvent(document, 'mousedown', this.doc_mousedown.bind(this));
 	
-	if (config) this.setup(config);
+	if (config) {
+		this.setup(config);
+	}
 	
 }
 
@@ -167,7 +172,7 @@ imgmap.prototype.assignOID = function(objorid) {
 		this.log("Error in assignOID", 1);
 	}
 	return null;
-}
+};
 
 
 /**
@@ -215,17 +220,19 @@ imgmap.prototype.setup = function(config) {
 		//for the first non-empty
 		var bases = document.getElementsByTagName('base');
 		var base  = '';
-		for (var i=0; i<bases.length; i++) {
-			if (bases[i].href != '') {
+		for (i=0; i<bases.length; i++) {//i declared earlier
+			if (bases[i].href) {
 				base = bases[i].href;
 				//append slash if missing
-				if (base.charAt(base.length-1) != '/') base+='/';
+				if (base.charAt(base.length-1) != '/') {
+					base+= '/';
+				}
 				break;
 			}
 		}
 		//search for scripts
 		var scripts = document.getElementsByTagName('script');
-		for (var i=0; i<scripts.length; i++) {
+		for (i=0; i<scripts.length; i++) {//i declared earlier
 			if (scripts[i].src && scripts[i].src.match(/imgmap\w*\.js(\?.*?)?$/)) {
 				var src = scripts[i].src;
 				//cut filename part, leave last slash
@@ -252,7 +259,9 @@ imgmap.prototype.setup = function(config) {
 	//alert(this.config.baseroot);
 
 	//load language js - as soon as possible
-	if (this.config.lang == '') this.config.lang = 'en';
+	if (this.config.lang == '') {
+		this.config.lang = 'en';
+	}
 	this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
 	
 	if (!this.config.imgroot) {
@@ -263,12 +272,12 @@ imgmap.prototype.setup = function(config) {
 	//hook onload event - as late as possible
 	this.addEvent(window, 'load', this.onLoad.bind(this));
 	return true;
-}
+};
 
 
 //currently unused
 imgmap.prototype.retryDelayed = function(fn, delay, tries) {
-	if (typeof fn.tries == 'undefined') fn.tries = 0;
+	if (typeof fn.tries == 'undefined') {fn.tries = 0;}
 	//alert(fn.tries+1);
 	if (fn.tries++ < tries) {
 		//alert('ss');
@@ -276,7 +285,7 @@ imgmap.prototype.retryDelayed = function(fn, delay, tries) {
 		fn.apply(this);
 		}, delay);
 	}
-}
+};
 
 
 /**
@@ -285,7 +294,7 @@ imgmap.prototype.retryDelayed = function(fn, delay, tries) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype.onLoad = function(e) {
-	if (this.isLoaded) return true;
+	if (this.isLoaded) {return true;}
 	//this.log('readystate: ' +  document.readyState);
 	if (typeof imgmapStrings == 'undefined') {
 		if (this.cntReloads++ < 5) {
@@ -293,9 +302,7 @@ imgmap.prototype.onLoad = function(e) {
 			//this.retryDelayed(_this.onLoad(), 1000, 3);
 			window.setTimeout(function () {
 				_this.onLoad(e);
-				}
-				,1200
-				);
+				} ,1200);
 			this.log('Delaying onload (language not loaded, try: ' + this.cntReloads + ')');
 			return false;
 		}
@@ -329,7 +336,7 @@ imgmap.prototype.onLoad = function(e) {
 				return false;
 			}
 			*/
-			this.log(this.strings['ERR_EXCANVAS_LOAD'], 2);//critical error
+			this.log(this.strings.ERR_EXCANVAS_LOAD, 2);//critical error
 		}
 	}
 	
@@ -340,14 +347,15 @@ imgmap.prototype.onLoad = function(e) {
 	
 	else {
 		if (this.button_container) {
+			var img;//button image
 			for (var i=0; i<this.config.buttons.length; i++) {
 				if (this.config.buttons[i] == 'add') {
 					try {
-						var img = document.createElement('IMG');
+						img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'add.gif';
 						this.addEvent(img, 'click', this.addNewArea.bind(this));
-						img.alt     = this.strings['HINT_ADD'];
-						img.title   = this.strings['HINT_ADD'];
+						img.alt     = this.strings.HINT_ADD;
+						img.title   = this.strings.HINT_ADD;
 						img.style.cursor = 'pointer';
 						img.style.margin = '0 2px';
 						this.button_container.appendChild(img);
@@ -358,11 +366,11 @@ imgmap.prototype.onLoad = function(e) {
 				}
 				else if (this.config.buttons[i] == 'delete') {
 					try {
-						var img = document.createElement('IMG');
+						img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'delete.gif';
 						this.addEvent(img, 'click', this.removeArea.bind(this));
-						img.alt     = this.strings['HINT_DELETE'];
-						img.title   = this.strings['HINT_DELETE'];
+						img.alt     = this.strings.HINT_DELETE;
+						img.title   = this.strings.HINT_DELETE;
 						img.style.cursor = 'pointer';
 						img.style.margin = '0 2px';
 						this.button_container.appendChild(img);
@@ -373,11 +381,11 @@ imgmap.prototype.onLoad = function(e) {
 				}
 				else if (this.config.buttons[i] == 'preview') {
 					try {
-						var img = document.createElement('IMG');
+						img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'zoom.gif';
 						this.addEvent(img, 'click', this.togglePreview.bind(this));
-						img.alt     = this.strings['HINT_PREVIEW'];
-						img.title   = this.strings['HINT_PREVIEW'];
+						img.alt     = this.strings.HINT_PREVIEW;
+						img.title   = this.strings.HINT_PREVIEW;
 						img.style.cursor = 'pointer';
 						img.style.margin = '0 2px';
 						this.i_preview = img;
@@ -389,11 +397,11 @@ imgmap.prototype.onLoad = function(e) {
 				}
 				else if (this.config.buttons[i] == 'html') {
 					try {
-						var img = document.createElement('IMG');
+						img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'html.gif';
 						this.addEvent(img, 'click', this.clickHtml.bind(this));
-						img.alt     = this.strings['HINT_HTML'];
-						img.title   = this.strings['HINT_HTML'];
+						img.alt     = this.strings.HINT_HTML;
+						img.title   = this.strings.HINT_HTML;
 						img.style.cursor = 'pointer';
 						img.style.margin = '0 2px';
 						this.button_container.appendChild(img);
@@ -404,11 +412,11 @@ imgmap.prototype.onLoad = function(e) {
 				}
 				else if (this.config.buttons[i] == 'clipboard') {
 					try {
-						var img = document.createElement('IMG');
+						img = document.createElement('IMG');
 						img.src     = this.config.imgroot + 'clipboard.gif';
 						this.addEvent(img, 'click', this.toClipBoard.bind(this));
-						img.alt     = this.strings['HINT_CLIPBOARD'];
-						img.title   = this.strings['HINT_CLIPBOARD'];
+						img.alt     = this.strings.HINT_CLIPBOARD;
+						img.title   = this.strings.HINT_CLIPBOARD;
 						img.style.cursor = 'pointer';
 						img.style.margin = '0 2px';
 						this.button_container.appendChild(img);
@@ -422,7 +430,7 @@ imgmap.prototype.onLoad = function(e) {
 	}
 	this.isLoaded = true;
 	return true;
-}
+};
 
 
 /**
@@ -443,7 +451,7 @@ imgmap.prototype.addEvent = function(obj, evt, callback) {
 	else {
 		obj['on' + evt] = callback;
 	}
-}
+};
 
 
 /**
@@ -464,7 +472,7 @@ imgmap.prototype.removeEvent = function(obj, evt, callback) {
 	else {
 		obj['on' + evt] = null;
 	}
-}
+};
 
 
 /**
@@ -484,9 +492,9 @@ imgmap.prototype.addLoadEvent = function(obj, callback) {
 		return true;
 	}
 	else {
-		obj['onload'] = callback;
+		obj.onload = callback;
 	}
-}
+};
 
 
 /**
@@ -495,8 +503,8 @@ imgmap.prototype.addLoadEvent = function(obj, callback) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype.loadScript = function(url) {
-	if (url == '') return false;
-	if (this.loadedScripts[url] == 1) return true;//script already loaded
+	if (url == '') {return false;}
+	if (this.loadedScripts[url] == 1) {return true;}//script already loaded
 	this.log('Loading script: ' + url);
 	//we might need this someday for safari?
 	//var temp = '<script language="javascript" type="text/javascript" src="' + url + '"></script>';
@@ -512,7 +520,7 @@ imgmap.prototype.loadScript = function(url) {
 	//this.loadedScripts[url] = 1;
 	this.addLoadEvent(temp, this.script_load.bind(this));
 	return true;
-}
+};
 
 
 imgmap.prototype.script_load = function(e) {
@@ -535,14 +543,14 @@ imgmap.prototype.script_load = function(e) {
 		this.log('Loaded script: ' + url);
 		return true;
 	}
-}
+};
 
 
 imgmap.prototype.loadStrings = function(obj) {
 	for (var key in obj) {
 		this.strings[key] = obj[key];
 	}
-}
+};
 
 
 imgmap.prototype.loadImage = function(img, imgw, imgh) {
@@ -550,7 +558,7 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 	this.removeAllAreas();
 	if (!this._getLastArea()) {
 		//init with one new area if there was none editable
-		if (this.config.mode != "editor2") this.addNewArea();
+		if (this.config.mode != "editor2") {this.addNewArea();}
 	}
 	if (typeof img == 'string') {
 		//there is an image given with url to load
@@ -567,8 +575,8 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		this.log('Loading image: ' + img, 0);
 		//calculate timestamp to bypass browser cache mechanism
 		this.pic.src = img + '? '+ (new Date().getTime());
-		if (imgw && imgw > 0) this.pic.setAttribute('width',  imgw);
-		if (imgh && imgh > 0) this.pic.setAttribute('height', imgh);
+		if (imgw && imgw > 0) {this.pic.setAttribute('width',  imgw);}
+		if (imgh && imgh > 0) {this.pic.setAttribute('height', imgh);}
 		this.fireEvent('onLoadImage', this.pic);
 	}
 	else if (typeof img == 'object') {
@@ -583,14 +591,15 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 			src = img.getAttribute('_fcksavedurl');
 		}
 		// Get the displayed dimensions of the image
-		if (!imgw)
+		if (!imgw) {
 			imgw = img.clientWidth;
-		if (!imgh)
+		}
+		if (!imgh) {
 			imgh = img.clientHeight;
-
+		}
 		this.loadImage(src, imgw, imgh);
 	}
-}
+};
 
 
 //there is an existing image object we want to handle with imgmap
@@ -599,7 +608,7 @@ imgmap.prototype.useImage = function(img) {
 	this.removeAllAreas();
 	if (!this._getLastArea()) {
 		//init with one new area if there was none editable
-		if (this.config.mode != "editor2") this.addNewArea();
+		if (this.config.mode != "editor2") {this.addNewArea();}
 	}
 	img = this.assignOID(img);
 	if (typeof img == 'object') {
@@ -612,7 +621,7 @@ imgmap.prototype.useImage = function(img) {
 		this.pic_container = this.pic.parentNode;
 		this.fireEvent('onLoadImage', this.pic);
 	}
-}
+};
 
 
 /**
@@ -621,9 +630,9 @@ imgmap.prototype.useImage = function(img) {
  *	@date	2006.10.29. 14:59:17
  */   
 imgmap.prototype.statusMessage = function(str) {
-	if (this.status_container) this.status_container.innerHTML = str;
+	if (this.status_container) {this.status_container.innerHTML = str;}
 	window.defaultStatus = str;
-}
+};
 
 
 /**
@@ -632,9 +641,10 @@ imgmap.prototype.statusMessage = function(str) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */   
 imgmap.prototype.log = function(obj, level) {
-	if (level == '' || typeof level == 'undefined') level = 0;
-	if (this.config.loglevel != -1 && level >= this.config.loglevel)
-	this.logStore.push({level: level, obj: obj});
+	if (level == '' || typeof level == 'undefined') {level = 0;}
+	if (this.config.loglevel != -1 && level >= this.config.loglevel) {
+		this.logStore.push({level: level, obj: obj});
+	}
 	if (typeof console == 'object') {
 		console.log(obj);
 	}
@@ -651,9 +661,11 @@ imgmap.prototype.log = function(obj, level) {
 			}
 			alert(msg);
 		}
-		else window.defaultStatus = (level + ': ' + obj);
+		else {
+			window.defaultStatus = (level + ': ' + obj);
+		}
 	}
-}
+};
 
 
 /**
@@ -666,7 +678,7 @@ imgmap.prototype.getMapHTML = function() {
 	this.fireEvent('onGetMap', html);
 	//alert(html);
 	return(html);
-}
+};
 
 
 imgmap.prototype.getMapInnerHTML = function() {
@@ -686,30 +698,30 @@ imgmap.prototype.getMapInnerHTML = function() {
 	}
 	//alert(html);
 	return(html);
-}
+};
 
 imgmap.prototype.getMapName = function() {
 	if (this.mapname == '') {
-		if (this.mapid != '') return this.mapid;
+		if (this.mapid != '') {return this.mapid;}
 		var now = new Date();
 		this.mapname = 'imgmap' + now.getFullYear() + (now.getMonth()+1) + now.getDate() + now.getHours() + now.getMinutes() + now.getSeconds();
 	}
 	return this.mapname;
-}
+};
 
 imgmap.prototype.getMapId = function() {
 	if (this.mapid == '') {
 		this.mapid = this.getMapName();
 	}
 	return this.mapid;
-}
+};
 
 //bad inputs: 035,035 075,062
 //150,217, 190,257, 150,297,110,257
 imgmap.prototype._normCoords = function(coords, shape, flag) {
 	//console.log(coords + ' - ' + shape + ' - ' + flag);
 	coords = coords.trim();
-	if (coords == '') return '';
+	if (coords == '') {return '';}
 	var oldcoords = coords;
 	//replace some general junk
 	coords = coords.replace(/(\d)(\D)+(\d)/g, "$1,$3");
@@ -723,35 +735,35 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			var r = parts[2];
 			parts[0] = parts[0] - r;
 			parts[1] = parts[1] - r;
-			parts[2] = parseInt(parts[0]) + 2 * r;
-			parts[3] = parseInt(parts[1]) + 2 * r;
+			parts[2] = parseInt(parts[0], 10) + 2 * r;
+			parts[3] = parseInt(parts[1], 10) + 2 * r;
 		}
 		else if (flag == 'frompolygon') {
-			var sx = parseInt(parts[0]); var gx = parseInt(parts[0]);
-			var sy = parseInt(parts[1]); var gy = parseInt(parts[1]);
+			var sx = parseInt(parts[0], 10); var gx = parseInt(parts[0], 10);
+			var sy = parseInt(parts[1], 10); var gy = parseInt(parts[1], 10);
 			for (var i=0; i<parts.length; i++) {
-				if (i % 2 == 0 && parseInt(parts[i]) < sx) {
-					sx = parseInt(parts[i]);}
-				if (i % 2 == 1 && parseInt(parts[i]) < sy) {
-					sy = parseInt(parts[i]);}
-				if (i % 2 == 0 && parseInt(parts[i]) > gx) {
-					gx = parseInt(parts[i]);}
-				if (i % 2 == 1 && parseInt(parts[i]) > gy) {
-					gy = parseInt(parts[i]);}
+				if (i % 2 == 0 && parseInt(parts[i], 10) < sx) {
+					sx = parseInt(parts[i], 10);}
+				if (i % 2 == 1 && parseInt(parts[i], 10) < sy) {
+					sy = parseInt(parts[i], 10);}
+				if (i % 2 == 0 && parseInt(parts[i], 10) > gx) {
+					gx = parseInt(parts[i], 10);}
+				if (i % 2 == 1 && parseInt(parts[i], 10) > gy) {
+					gy = parseInt(parts[i], 10);}
 				//console.log(sx+","+sy+","+gx+","+gy);
 			}
 			parts[0] = sx; parts[1] = sy;
 			parts[2] = gx; parts[3] = gy;
 		}
-		if (!(parseInt(parts[1]) > 0)) parts[1] = parts[0];
-		if (!(parseInt(parts[2]) > 0)) parts[2] = parseInt(parts[0]) + 10;
-		if (!(parseInt(parts[3]) > 0)) parts[3] = parseInt(parts[1]) + 10;
-		if (parseInt(parts[0]) > parseInt(parts[2])) {
+		if (!(parseInt(parts[1], 10) > 0)) {parts[1] = parts[0];}
+		if (!(parseInt(parts[2], 10) > 0)) {parts[2] = parseInt(parts[0], 10) + 10;}
+		if (!(parseInt(parts[3], 10) > 0)) {parts[3] = parseInt(parts[1], 10) + 10;}
+		if (parseInt(parts[0], 10) > parseInt(parts[2], 10)) {
 			var temp = parts[0];
 			parts[0] = parts[2];
 			parts[2] = temp;
 		}
-		if (parseInt(parts[1]) > parseInt(parts[3])) {
+		if (parseInt(parts[1], 10) > parseInt(parts[3], 10)) {
 			var temp = parts[1];
 			parts[1] = parts[3];
 			parts[3] = temp;
@@ -761,8 +773,8 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	}
 	else if (shape == 'circle') {
 		if (flag == 'fromrectangle') {
-			var sx = parseInt(parts[0]); var gx = parseInt(parts[2]);
-			var sy = parseInt(parts[1]); var gy = parseInt(parts[3]);
+			var sx = parseInt(parts[0], 10); var gx = parseInt(parts[2], 10);
+			var sy = parseInt(parts[1], 10); var gy = parseInt(parts[3], 10);
 			//use smaller side
 			parts[2] = (gx - sx < gy - sy) ? gx - sx : gy - sy;
 			parts[2] = Math.floor(parts[2] / 2);//radius
@@ -770,17 +782,17 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[1] = sy + parts[2];
 		}
 		else if (flag == 'frompolygon') {
-			var sx = parseInt(parts[0]); var gx = parseInt(parts[0]);
-			var sy = parseInt(parts[1]); var gy = parseInt(parts[1]);
+			var sx = parseInt(parts[0], 10); var gx = parseInt(parts[0], 10);
+			var sy = parseInt(parts[1], 10); var gy = parseInt(parts[1], 10);
 			for (var i=0; i<parts.length; i++) {
-				if (i % 2 == 0 && parseInt(parts[i]) < sx) {
-					sx = parseInt(parts[i]);}
-				if (i % 2 == 1 && parseInt(parts[i]) < sy) {
-					sy = parseInt(parts[i]);}
-				if (i % 2 == 0 && parseInt(parts[i]) > gx) {
-					gx = parseInt(parts[i]);}
-				if (i % 2 == 1 && parseInt(parts[i]) > gy) {
-					gy = parseInt(parts[i]);}
+				if (i % 2 == 0 && parseInt(parts[i], 10) < sx) {
+					sx = parseInt(parts[i], 10);}
+				if (i % 2 == 1 && parseInt(parts[i], 10) < sy) {
+					sy = parseInt(parts[i], 10);}
+				if (i % 2 == 0 && parseInt(parts[i], 10) > gx) {
+					gx = parseInt(parts[i], 10);}
+				if (i % 2 == 1 && parseInt(parts[i], 10) > gy) {
+					gy = parseInt(parts[i], 10);}
 				//console.log(sx+","+sy+","+gx+","+gy);
 			}
 			//use smaller side
@@ -789,8 +801,8 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[0] = sx + parts[2];
 			parts[1] = sy + parts[2];
 		}
-		if (!(parseInt(parts[1]) > 0)) parts[1] = parts[0];
-		if (!(parseInt(parts[2]) > 0)) parts[2] = 10;
+		if (!(parseInt(parts[1], 10) > 0)) {parts[1] = parts[0];}
+		if (!(parseInt(parts[2], 10) > 0)) {parts[2] = 10;}
 		coords = parts[0]+","+parts[1]+","+parts[2];
 	}
 	else if (shape == 'polygon') {
@@ -803,9 +815,9 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 		}
 		else if (flag == 'fromcircle') {
 			//@url http://www.pixelwit.com/blog/2007/06/29/basic-circle-drawing-actionscript/
-			var centerX = parseInt(parts[0]);
-			var centerY = parseInt(parts[1]);
-			var radius  = parseInt(parts[2]);
+			var centerX = parseInt(parts[0], 10);
+			var centerY = parseInt(parts[1], 10);
+			var radius  = parseInt(parts[2], 10);
 			var j = 0;
 			parts[j++] = centerX + radius;
 			parts[j++] = centerY;
@@ -829,11 +841,11 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	}
 	if (flag == 'preserve' && oldcoords != coords) {
 		//return original and throw error
-		throw "invalid coords";
+		//throw "invalid coords";
 		return oldcoords;
 	}
 	return coords;
-}
+};
 
 
 /**
@@ -855,7 +867,7 @@ imgmap.prototype.setMapHTML = function(map) {
 	else if (typeof map == 'object') {
 		oMap = map;
 	}
-	if (!oMap || oMap.nodeName.toLowerCase() !== 'map') return false;
+	if (!oMap || oMap.nodeName.toLowerCase() !== 'map') {return false;}
 	this.mapname = oMap.name;
 	this.mapid   = oMap.id;
 	var newareas = oMap.getElementsByTagName('area');	
@@ -865,23 +877,25 @@ imgmap.prototype.setMapHTML = function(map) {
 
 		if (newareas[i].getAttribute('shape', 2)) {
 			shape = newareas[i].getAttribute('shape', 2).toLowerCase();
-			if (shape == 'rect')      shape = 'rectangle'
-			else if (shape == 'circ') shape = 'circle'
-			else if (shape == 'poly') shape = 'polygon';
+			if (shape == 'rect')      {shape = 'rectangle';}
+			else if (shape == 'circ') {shape = 'circle';}
+			else if (shape == 'poly') {shape = 'polygon';}
 		}
 		else {
 			shape = 'rectangle';
 		} 
-		if (this.props[id])
+		if (this.props[id]) {
 			this.props[id].getElementsByTagName('select')[0].value = shape;
+		}
 
 		this.initArea(id, shape);
 		
 		if (newareas[i].getAttribute('coords', 2)) {
 			//normalize coords
 			var coords = this._normCoords(newareas[i].getAttribute('coords', 2), shape);
-			if (this.props[id])
+			if (this.props[id]) {
 				this.props[id].getElementsByTagName('input')[2].value  = coords;
+			}
 			this.areas[id].lastInput = coords;
 			//for area this one will be set in recalculate
 		}
@@ -889,39 +903,46 @@ imgmap.prototype.setMapHTML = function(map) {
 		var href = newareas[i].getAttribute('href', 2);
 		// FCKeditor stored url to prevent mangling from the browser.
 		var sSavedUrl = newareas[i].getAttribute( '_fcksavedurl' ) ;
-		if ( sSavedUrl != null )
+		if (sSavedUrl) {
 			href = sSavedUrl ;
+		}
 
 		if (href) {
-			if (this.props[id])
+			if (this.props[id]) {
 				this.props[id].getElementsByTagName('input')[3].value  = href;
+			}
 			this.areas[id].ahref = href;
 		}
 		
 		var alt = newareas[i].getAttribute('alt');
 		if (alt) {
-			if (this.props[id])
+			if (this.props[id]) {
 				this.props[id].getElementsByTagName('input')[4].value  = alt;
+			}
 			this.areas[id].aalt = alt;
 		}
 		
 		var title = newareas[i].getAttribute('title');
-		if (!title) title = alt;
-		if (title)
-		this.areas[id].atitle = title;
+		if (!title) {title = alt;}
+		if (title) {
+			this.areas[id].atitle = title;
+		}
 
 		var target = newareas[i].getAttribute('target');
-		if (target) target = target.toLowerCase();
+		if (target) {target = target.toLowerCase();}
 //		if (target == '') target = '_self';
-		if (this.props[id])
+		if (this.props[id]) {
 			this.props[id].getElementsByTagName('select')[1].value = target;
+		}
 		this.areas[id].atarget = target;
 		
 		this._recalculate(id);//contains repaint
 		this.relaxArea(id);
-		if (this.html_container) this.html_container.value = this.getMapHTML();
+		if (this.html_container) {
+			this.html_container.value = this.getMapHTML();
+		}
 	}
-}
+};
 
 
 /**
@@ -930,7 +951,7 @@ imgmap.prototype.setMapHTML = function(map) {
 imgmap.prototype.clickHtml = function() {
 	this.fireEvent('onHtml');
 	return true;
-}
+};
 
 
 /**
@@ -940,14 +961,14 @@ imgmap.prototype.clickHtml = function() {
  *	@url	http://www.quirksmode.org/bugreports/archives/2005/03/Usemap_attribute_wrongly_case_sensitive.html 
  */
 imgmap.prototype.togglePreview = function() {
-	if (!this.pic) return false;//exit if pic is undefined
-	if (this.viewmode == 0) {
+	if (!this.pic) {return false;}//exit if pic is undefined
+	if (this.viewmode === 0) {
 		this.fireEvent('onPreview');
 		//hide canvas elements and labels
 		for (var i=0; i<this.areas.length; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = 'none';
-				if (this.areas[i].label) this.areas[i].label.style.display = 'none';
+				if (this.areas[i].label) {this.areas[i].label.style.display = 'none';}
 			}
 		}
 		//disable form elements (inputs and selects)
@@ -972,14 +993,14 @@ imgmap.prototype.togglePreview = function() {
 		//change preview button
 		this.viewmode = 1;
 		this.i_preview.src = this.config.imgroot + 'edit.gif';
-		this.statusMessage(this.strings['PREVIEW_MODE']);
+		this.statusMessage(this.strings.PREVIEW_MODE);
 	}
 	else {
 		//show canvas elements
 		for (var i=0; i<this.areas.length; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = '';
-				if (this.areas[i].label && this.config.label) this.areas[i].label.style.display = '';
+				if (this.areas[i].label && this.config.label) {this.areas[i].label.style.display = '';}
 			}
 		}
 		//enable form elements
@@ -1002,10 +1023,10 @@ imgmap.prototype.togglePreview = function() {
 		//change preview button
 		this.viewmode = 0;
 		this.i_preview.src = this.config.imgroot + 'zoom.gif';
-		this.statusMessage(this.strings['DESIGN_MODE']);
+		this.statusMessage(this.strings.DESIGN_MODE);
 		this.is_drawing = 0;
 	}
-}
+};
 
 
 /**
@@ -1014,7 +1035,7 @@ imgmap.prototype.togglePreview = function() {
  *	@date	2006-06-06 16:49:25  
  */ 
 imgmap.prototype.addNewArea = function() {
-		if (this.viewmode == 1) return;//exit if preview mode
+		if (this.viewmode === 1) {return;}//exit if preview mode
 		var lastarea = this._getLastArea();
 		var id = (lastarea) ? lastarea.aid + 1 : 0;
 		this.fireEvent('onAddArea', id);
@@ -1039,23 +1060,23 @@ imgmap.prototype.addNewArea = function() {
 			this.addEvent(this.props[id], 'mouseover', this.img_area_mouseover.bind(this));
 			this.addEvent(this.props[id], 'mouseout',  this.img_area_mouseout.bind(this));
 			this.addEvent(this.props[id], 'click',     this.img_area_click.bind(this));
-			this.props[id].innerHTML = '\
-				<input type="text"  name="img_id" class="img_id" value="' + id + '" readonly="1"/>\
-				<input type="radio" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">\
-				Shape:	<select name="img_shape" class="img_shape">\
-					<option value="rectangle" >rectangle</option>\
-					<option value="circle"    >circle</option>\
-					<option value="polygon"   >polygon</option>\
-					</select>\
-				Coords: <input type="text" name="img_coords" class="img_coords" value="">\
-				Href: <input type="text" name="img_href" class="img_href" value="">\
-				Alt: <input type="text" name="img_alt" class="img_alt" value="">\
-				Target:	<select name="img_target" class="img_target">\
-					<option value=""  >&lt;not set&gt;</option>\
-					<option value="_self"  >this window</option>\
-					<option value="_blank" >new window</option>\
-					<option value="_top"   >top window</option>\
-					</select>';
+			var temp = '<input type="text"  name="img_id" class="img_id" value="' + id + '" readonly="1"/>';
+			temp+= '<input type="radio" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">';
+			temp+= 'Shape: <select name="img_shape" class="img_shape">';
+			temp+= '<option value="rectangle" >rectangle</option>';
+			temp+= '<option value="circle"    >circle</option>';
+			temp+= '<option value="polygon"   >polygon</option>';
+			temp+= '</select>';
+			temp+= 'Coords: <input type="text" name="img_coords" class="img_coords" value="">';
+			temp+= 'Href: <input type="text" name="img_href" class="img_href" value="">';
+			temp+= 'Alt: <input type="text" name="img_alt" class="img_alt" value="">';
+			temp+= 'Target: <select name="img_target" class="img_target">';
+			temp+= '<option value=""  >&lt;not set&gt;</option>';
+			temp+= '<option value="_self"  >this window</option>';
+			temp+= '<option value="_blank" >new window</option>';
+			temp+= '<option value="_top"   >top window</option>';
+			temp+= '</select>';
+			this.props[id].innerHTML = temp;
 			//hook more event handlers
 			this.addEvent(this.props[id].getElementsByTagName('input')[1],  'keydown', this.img_area_keydown.bind(this));
 			this.addEvent(this.props[id].getElementsByTagName('input')[2],  'keydown', this.img_coords_keydown.bind(this));
@@ -1076,21 +1097,21 @@ imgmap.prototype.addNewArea = function() {
 			}
 			else {
 				//set shape as nextshape if set
-				if (this.nextShape) this.props[id].getElementsByTagName('select')[0].value = this.nextShape;
+				if (this.nextShape) {this.props[id].getElementsByTagName('select')[0].value = this.nextShape;}
 			}
 			//alert(this.props[id].parentNode.innerHTML);
 			this.form_selectRow(id, true);
 		}
 		this.currentid = id;
 		return(id);
-}
+};
 
 
 imgmap.prototype.initArea = function(id, shape) {
-	if (!this.areas[id]) return false;//if all was erased, return
+	if (!this.areas[id]) {return false;}//if all was erased, return
 	//remove preinited dummy div or already placed canvas
-	if (this.areas[id].parentNode) this.areas[id].parentNode.removeChild(this.areas[id]);
-	if (this.areas[id].label) this.areas[id].label.parentNode.removeChild(this.areas[id].label);
+	if (this.areas[id].parentNode) {this.areas[id].parentNode.removeChild(this.areas[id]);}
+	if (this.areas[id].label) {this.areas[id].label.parentNode.removeChild(this.areas[id].label);}
 	this.areas[id] = null;
 	//create CANVAS node
 	this.areas[id] = document.createElement('CANVAS');
@@ -1118,22 +1139,22 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id].onmouseup   = this.area_mouseup.bind(this);
 	this.areas[id].onmousemove = this.area_mousemove.bind(this);
 	//initialize memory object
-	this.memory[id] = new Object();
+	this.memory[id] = {};
 	this.memory[id].downx   = 0;
 	this.memory[id].downy   = 0;
 	this.memory[id].left    = 0;
 	this.memory[id].top     = 0;
 	this.memory[id].width   = 0;
 	this.memory[id].height  = 0;
-	this.memory[id].xpoints = new Array();
-	this.memory[id].ypoints = new Array();
+	this.memory[id].xpoints = [];
+	this.memory[id].ypoints = [];
 	//create label node
 	this.areas[id].label = document.createElement('DIV');
 	this.pic.parentNode.appendChild(this.areas[id].label);
 	this.areas[id].label.className      = this.config.label_class;
 	this.assignCSS(this.areas[id].label,  this.config.label_style);
 	this.areas[id].label.style.position = 'absolute';
-}
+};
 
 
 /**
@@ -1142,7 +1163,7 @@ imgmap.prototype.initArea = function(id, shape) {
  *	@date	15-02-2007 22:07:28
  */
 imgmap.prototype.relaxArea = function(id) {
-	if (!this.areas[id]) return;
+	if (!this.areas[id]) {return;}
 	this.fireEvent('onRelaxArea', id);
 	if (this.areas[id].shape == 'rectangle') {
 		this.areas[id].style.borderWidth = '1px';
@@ -1150,7 +1171,7 @@ imgmap.prototype.relaxArea = function(id) {
 		this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
 	}
 	else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'polygon') {
-		if (this.config.bounding_box == true) {
+		if (this.config.bounding_box) {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
 			this.areas[id].style.borderColor = this.config.CL_NORM_BOX;
@@ -1161,7 +1182,7 @@ imgmap.prototype.relaxArea = function(id) {
 		}
 	}
 	this._setopacity(this.areas[id], this.config.CL_NORM_BG, this.config.norm_opacity);
-}
+};
 
 
 /**
@@ -1175,14 +1196,14 @@ imgmap.prototype.relaxAllAreas = function() {
 			this.relaxArea(i);
 		}
 	}
-}
+};
 
 
 imgmap.prototype._setopacity = function(area, bgcolor, pct) {
 	area.style.backgroundColor = bgcolor;
 	area.style.opacity = '.'+pct;
 	area.style.filter  = 'alpha(opacity='+pct+')';
-}
+};
 
 
 /**
@@ -1191,7 +1212,7 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
  *	@date	11-02-2007 20:40:58
  */
 imgmap.prototype.removeArea = function() {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	var id = this.currentid;
 	this.fireEvent('onRemoveArea', id);
 	if (this.props[id]) {
@@ -1219,8 +1240,8 @@ imgmap.prototype.removeArea = function() {
 	}
 	this.areas[id] = null;
 	//update grand html
-	if (this.html_container) this.html_container.value = this.getMapHTML();
-}
+	if (this.html_container) {this.html_container.value = this.getMapHTML();}
+};
 
 
 /**
@@ -1231,22 +1252,22 @@ imgmap.prototype.removeArea = function() {
 imgmap.prototype.removeAllAreas = function() {
 	for (var i = 0; i < this.props.length; i++) {
 		if (this.props[i]) {
-			if (this.props[i].parentNode) this.props[i].parentNode.removeChild(this.props[i]);
-			if (this.areas[i].parentNode) this.areas[i].parentNode.removeChild(this.areas[i]);
-			if (this.areas[i].label) this.areas[i].label.parentNode.removeChild(this.areas[i].label);
+			if (this.props[i].parentNode) {this.props[i].parentNode.removeChild(this.props[i]);}
+			if (this.areas[i].parentNode) {this.areas[i].parentNode.removeChild(this.areas[i]);}
+			if (this.areas[i].label) {this.areas[i].label.parentNode.removeChild(this.areas[i].label);}
 			this.props[i] = null;
 			this.areas[i] = null;
-			if (this.props.length > 0 && this.props[i]) this.form_selectRow((this.props.length - 1), true);
+			if (this.props.length > 0 && this.props[i]) {this.form_selectRow((this.props.length - 1), true);}
 		}
 	}
-}
+};
 
 
 imgmap.prototype._putlabel = function(id) {
-	if (this.viewmode == 1) return;//exit if preview mode
-	if (!this.areas[id].label) return;//not yet inited
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (!this.areas[id].label) {return;}//not yet inited
 	try {
-		if (this.config.label == '' || this.config.label == false) {
+		if (!this.config.label) {
 			this.areas[id].label.innerHTML     = '';
 			this.areas[id].label.style.display = 'none';
 		}
@@ -1267,12 +1288,12 @@ imgmap.prototype._putlabel = function(id) {
 	catch (err) {
 		this.log("Error putting label", 1);
 	}
-}
+};
 
 
 imgmap.prototype._puthint = function(id) {
 	try {
-		if (this.config.hint == '' || this.config.hint == false) {
+		if (!this.config.hint) {
 			this.areas[id].title = '';
 			this.areas[id].alt   = '';
 		}
@@ -1290,7 +1311,7 @@ imgmap.prototype._puthint = function(id) {
 	catch (err) {
 		this.log("Error putting hint", 1);
 	}
-}
+};
 
 
 imgmap.prototype._repaintAll = function() {
@@ -1299,16 +1320,19 @@ imgmap.prototype._repaintAll = function() {
 			this._repaint(this.areas[i], this.config.CL_NORM_SHAPE);
 		}
 	}
-}
+};
 
 
 imgmap.prototype._repaint = function(area, color, x, y) {
+	var ctx;//canvas context
+	var width;//canvas width
+	var height;//canvas height
 	if (area.shape == 'circle') {
-		var width  = parseInt(area.style.width);
+		width  = parseInt(area.style.width, 10);
 		var radius = Math.floor(width/2) - 1;
 		//get canvas context
 		//alert(area.tagName);
-		var ctx = area.getContext("2d");
+		ctx = area.getContext("2d");
 		//clear canvas
 		ctx.clearRect(0, 0, width, width);
 		//draw circle
@@ -1330,13 +1354,13 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 		this._puthint(area.aid);
 	}
 	else if (area.shape == 'polygon') {
-		var width  =  parseInt(area.style.width);
-		var height =  parseInt(area.style.height);
-		var left   =  parseInt(area.style.left);
-		var top    =  parseInt(area.style.top);
+		width  =  parseInt(area.style.width, 10);
+		height =  parseInt(area.style.height, 10);
+		var left   =  parseInt(area.style.left, 10);
+		var top    =  parseInt(area.style.top, 10);
 		if (area.xpoints) {
 			//get canvas context
-			var ctx = area.getContext("2d");
+			ctx = area.getContext("2d");
 			//clear canvas
 			ctx.clearRect(0, 0, width, height);
 			//draw polygon
@@ -1358,7 +1382,7 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 		this._putlabel(area.aid);
 		this._puthint(area.aid);
 	}
-}
+};
 
 
 /**
@@ -1369,10 +1393,10 @@ imgmap.prototype._repaint = function(area, color, x, y) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype._updatecoords = function() {
-	var left   = parseInt(this.areas[this.currentid].style.left);
-	var top    = parseInt(this.areas[this.currentid].style.top);
-	var height = parseInt(this.areas[this.currentid].style.height);
-	var width  = parseInt(this.areas[this.currentid].style.width);
+	var left   = parseInt(this.areas[this.currentid].style.left, 10);
+	var top    = parseInt(this.areas[this.currentid].style.top, 10);
+	var height = parseInt(this.areas[this.currentid].style.height, 10);
+	var width  = parseInt(this.areas[this.currentid].style.width, 10);
 	
 	var value = '' ;
 	if (this.areas[this.currentid].shape == 'rectangle') {
@@ -1395,12 +1419,14 @@ imgmap.prototype._updatecoords = function() {
 		this.areas[this.currentid].lastInput = value;
 	}
 
-	if (this.props[this.currentid])
+	if (this.props[this.currentid]) {
 		this.props[this.currentid].getElementsByTagName('input')[2].value = value;
-
+	}
 	
-	if (this.html_container) this.html_container.value = this.getMapHTML();
-}
+	if (this.html_container) {
+		this.html_container.value = this.getMapHTML();
+	}
+};
 
 
 /**
@@ -1424,32 +1450,32 @@ imgmap.prototype._recalculate = function(id) {
 	
 		var parts   = coords.split(',');
 		if (this.areas[id].shape == 'rectangle') {
-			if (parts.length != 4)   throw "invalid coords";
-			if (parseInt(parts[0]) > parseInt(parts[2])) throw "invalid coords";
-			if (parseInt(parts[1]) > parseInt(parts[3])) throw "invalid coords";
-			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0]) + 'px';
-			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1]) + 'px';
+			if (parts.length != 4 ||
+				parseInt(parts[0], 10) > parseInt(parts[2], 10) ||
+				parseInt(parts[1], 10) > parseInt(parts[3], 10)) {throw "invalid coords";}
+			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0], 10) + 'px';
+			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1], 10) + 'px';
 			this.setAreaSize(id, (parts[2] - parts[0]), (parts[3] - parts[1]));
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
 		else if (this.areas[id].shape == 'circle') {
-			if (parts.length != 3)      throw "invalid coords";
-			if (parseInt(parts[2]) < 0) throw "invalid coords";
+			if (parts.length != 3 ||
+				parseInt(parts[2], 10) < 0) {throw "invalid coords";}
 			var width = 2 * (1 * parts[2] + 1);
 			//alert(parts[2]);
 			//alert(width);
 			this.setAreaSize(id, width, width);
-			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0]) - width/2 + 'px';
-			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1]) - width/2 + 'px';
+			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0], 10) - width/2 + 'px';
+			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1], 10) - width/2 + 'px';
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
 		else if (this.areas[id].shape == 'polygon') {
-			if (parts.length < 2) throw "invalid coords";
-			this.areas[id].xpoints = new Array();
-			this.areas[id].ypoints = new Array();
+			if (parts.length < 2) {throw "invalid coords";}
+			this.areas[id].xpoints = [];
+			this.areas[id].ypoints = [];
 			for (var i=0; i<parts.length; i+=2) {
-				this.areas[id].xpoints[this.areas[id].xpoints.length]  = this.pic.offsetLeft + parseInt(parts[i]);
-				this.areas[id].ypoints[this.areas[id].ypoints.length]  = this.pic.offsetTop  + parseInt(parts[i+1]); 
+				this.areas[id].xpoints[this.areas[id].xpoints.length]  = this.pic.offsetLeft + parseInt(parts[i], 10);
+				this.areas[id].ypoints[this.areas[id].ypoints.length]  = this.pic.offsetTop  + parseInt(parts[i+1], 10); 
 				this._polygongrow(this.areas[id], parts[i], parts[i+1]);
 			}
 			this._polygonshrink(this.areas[id]);//includes repaint
@@ -1458,14 +1484,14 @@ imgmap.prototype._recalculate = function(id) {
 	catch (err) {
 		var msg = (err.message) ? err.message : 'error calculating coordinates';
 		this.log(msg, 1);
-		this.statusMessage(this.strings['ERR_INVALID_COORDS']);
-		if (this.areas[id].lastInput && input) input.value = this.areas[id].lastInput;
+		this.statusMessage(this.strings.ERR_INVALID_COORDS);
+		if (this.areas[id].lastInput && input) {input.value = this.areas[id].lastInput;}
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		return;
 	}
 	//on success update lastInput
 	this.areas[id].lastInput = coords;
-}
+};
 
 
 /**
@@ -1474,26 +1500,26 @@ imgmap.prototype._recalculate = function(id) {
  */
 imgmap.prototype._polygongrow = function(area, newx, newy) {
 	//this.log('pgrow');
-	var xdiff = newx - parseInt(area.style.left);
-	var ydiff = newy - parseInt(area.style.top );
+	var xdiff = newx - parseInt(area.style.left, 10);
+	var ydiff = newy - parseInt(area.style.top , 10);
 	var pad   = 3;//padding on the edges
 	var pad2  = 6;//twice the padding
 	
-	if (newx < parseInt(area.style.left)) {
+	if (newx < parseInt(area.style.left, 10)) {
 		area.style.left   = (newx - pad) + 'px';
-		this.setAreaSize(area.aid, parseInt(area.style.width)  + Math.abs(xdiff) + pad2, null);
+		this.setAreaSize(area.aid, parseInt(area.style.width, 10)  + Math.abs(xdiff) + pad2, null);
 	}
-	else if (newx > parseInt(area.style.left) + parseInt(area.style.width)) {
-		this.setAreaSize(area.aid, newx - parseInt(area.style.left) + pad2, null);
+	else if (newx > parseInt(area.style.left, 10) + parseInt(area.style.width, 10)) {
+		this.setAreaSize(area.aid, newx - parseInt(area.style.left, 10) + pad2, null);
 	}
-	if (newy < parseInt(area.style.top)) {
+	if (newy < parseInt(area.style.top, 10)) {
 		area.style.top    = (newy - pad) + 'px';
-		this.setAreaSize(area.aid, null, parseInt(area.style.height) + Math.abs(ydiff) + pad2);
+		this.setAreaSize(area.aid, null, parseInt(area.style.height, 10) + Math.abs(ydiff) + pad2);
 	}
-	else if (newy > parseInt(area.style.top) + parseInt(area.style.height)) {
-		this.setAreaSize(area.aid, null, newy - parseInt(area.style.top) + pad2);
+	else if (newy > parseInt(area.style.top, 10) + parseInt(area.style.height, 10)) {
+		this.setAreaSize(area.aid, null, newy - parseInt(area.style.top, 10) + pad2);
 	}
-}
+};
 
 
 /**
@@ -1510,11 +1536,11 @@ imgmap.prototype._polygonshrink = function(area) {
 		this._polygongrow(area, area.xpoints[i], area.ypoints[i]);
 	}
 	this._repaint(area, this.config.CL_NORM_SHAPE);
-}
+};
 
 
 imgmap.prototype.img_mousemove = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	//event.x is relative to parent element, but page.x is NOT
 	//pos coordinates are the same absolute coords, offset coords are relative to parent
 	var pos = this._getPos(this.pic);
@@ -1526,7 +1552,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	//this.log(x + ' - ' + y + ': ' + this.memory[this.currentid].downx + ' - ' +this.memory[this.currentid].downy);
 	
 	//exit if outside image
-	if (x<0 || y<0 || x>this.pic.width || y>this.pic.height) return;
+	if (x<0 || y<0 || x>this.pic.width || y>this.pic.height) {return;}
 	
 	//old dimensions that need to be updated in this function
 	if (this.memory[this.currentid]) {
@@ -1544,7 +1570,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		{
 	if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
 				this.is_drawing = this.DM_SQUARE_DRAW;
-				this.statusMessage(this.strings['SQUARE2_DRAW']);
+				this.statusMessage(this.strings.SQUARE2_DRAW);
 			}
 		} 
 		else
@@ -1552,7 +1578,7 @@ imgmap.prototype.img_mousemove = function(e) {
 			if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
 				//not for circle!
 				this.is_drawing = this.DM_RECTANGLE_DRAW;
-				this.statusMessage(this.strings['RECTANGLE_DRAW']);
+				this.statusMessage(this.strings.RECTANGLE_DRAW);
 			}
 		}
 	}
@@ -1579,10 +1605,10 @@ imgmap.prototype.img_mousemove = function(e) {
 		var ydiff = y - this.memory[this.currentid].downy;
 		var diff;
 		if (Math.abs(xdiff) < Math.abs(ydiff)) {
-			diff = Math.abs(parseInt(xdiff));
+			diff = Math.abs(parseInt(xdiff, 10));
 		}
 		else {
-			diff = Math.abs(parseInt(ydiff));
+			diff = Math.abs(parseInt(ydiff, 10));
 		}
 		//alert(xdiff);
 		this.setAreaSize(this.currentid, diff, diff);
@@ -1602,8 +1628,8 @@ imgmap.prototype.img_mousemove = function(e) {
 		this.fireEvent('onMoveArea', this.currentid);
 		var x = x - this.memory[this.currentid].rdownx;
 		var y = y - this.memory[this.currentid].rdowny;
-		if (x + width > this.pic.width || y + height > this.pic.height) return;
-		if (x < 0 || y < 0) return;
+		if (x + width > this.pic.width || y + height > this.pic.height) {return;}
+		if (x < 0 || y < 0) {return;}
 		//this.log(x + ' - '+width+ '+'+this.memory[this.currentid].rdownx +'='+xdiff );
 		this.areas[this.currentid].style.left = x + 1 + 'px';
 		this.areas[this.currentid].style.top  = y + 1 + 'px';
@@ -1612,8 +1638,8 @@ imgmap.prototype.img_mousemove = function(e) {
 		this.fireEvent('onMoveArea', this.currentid);
 		var x = x - this.memory[this.currentid].rdownx;
 		var y = y - this.memory[this.currentid].rdowny;
-		if (x + width > this.pic.width || y + height > this.pic.height) return;
-		if (x < 0 || y < 0) return;
+		if (x + width > this.pic.width || y + height > this.pic.height) {return;}
+		if (x < 0 || y < 0) {return;}
 		var xdiff = x - left;
 		var ydiff = y - top;
 		if (this.areas[this.currentid].xpoints) {
@@ -1633,7 +1659,7 @@ imgmap.prototype.img_mousemove = function(e) {
 			//real resize left
 			this.areas[this.currentid].style.left   = x + 1 + 'px';
 			this.areas[this.currentid].style.top    = (top    + (diff/2)) + 'px';
-			this.setAreaSize(this.currentid, parseInt(width  + (-1 * diff)), parseInt(height + (-1 * diff)));
+			this.setAreaSize(this.currentid, parseInt(width  + (-1 * diff), 10), parseInt(height + (-1 * diff), 10));
 		}
 		else {
 			//jump to another state
@@ -1761,11 +1787,11 @@ imgmap.prototype.img_mousemove = function(e) {
 		this._updatecoords();
 	}
 
-}
+};
 
 
 imgmap.prototype.img_mouseup = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	//console.log('img_mouseup');
 	//if (!this.props[this.currentid]) return;
 	var pos = this._getPos(this.pic);
@@ -1777,13 +1803,12 @@ imgmap.prototype.img_mouseup = function(e) {
 	if (this.is_drawing != this.DM_RECTANGLE_DRAW &&
 		this.is_drawing != this.DM_SQUARE_DRAW &&
 		this.is_drawing != this.DM_POLYGON_DRAW &&
-		this.is_drawing != this.DM_POLYGON_LASTDRAW
-		) {
+		this.is_drawing != this.DM_POLYGON_LASTDRAW) {
 		//end dragging
 		this.draggedId = null;
 		//finish state
 		this.is_drawing = 0;
-		this.statusMessage(this.strings['READY']);
+		this.statusMessage(this.strings.READY);
 		this.relaxArea(this.currentid);
 		if (this.areas[this.currentid] == this._getLastArea()) {
 			//if (this.config.mode != "editor2") this.addNewArea();
@@ -1792,12 +1817,12 @@ imgmap.prototype.img_mouseup = function(e) {
 		this.memory[this.currentid].downx  = x;
 		this.memory[this.currentid].downy  = y;
 	}
-}
+};
 
 
 imgmap.prototype.img_mousedown = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
-	if (!this.areas[this.currentid] && this.config.mode != "editor2") return;
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (!this.areas[this.currentid] && this.config.mode != "editor2") {return;}
 	//console.log('img_mousedown');
 	var pos = this._getPos(this.pic);
 
@@ -1807,8 +1832,9 @@ imgmap.prototype.img_mousedown = function(e) {
 	y = y + this.pic_container.scrollTop;
 	
 	// Handle the Shift state
-	if ( !e )
+	if (!e) {
 		e = window.event;
+	}
 
 	if (e.shiftKey)	{
 		if (this.is_drawing == this.DM_POLYGON_DRAW) {
@@ -1836,49 +1862,49 @@ imgmap.prototype.img_mousedown = function(e) {
 			this._polygonshrink(this.areas[this.currentid]);
 		}
 		this.is_drawing = 0;
-		this.statusMessage(this.strings['READY']);
+		this.statusMessage(this.strings.READY);
 		this.relaxArea(this.currentid);
 		if (this.areas[this.currentid] == this._getLastArea()) {
 			//editor mode adds next area automatically
-			if (this.config.mode != "editor2") this.addNewArea();
+			if (this.config.mode != "editor2") {this.addNewArea();}
 			return;
 		}
 		return;
 	}
 	
 	if (this.config.mode == "editor2") {
-		if (this.nextShape == '') return;
+		if (this.nextShape == '') {return;}
 		this.addNewArea();
 		//console.log("init: " + this.nextShape);
 		this.initArea(this.currentid, this.nextShape);
 	}
 	else if (this.areas[this.currentid].shape == 'undefined' || this.areas[this.currentid].shape == 'polygon') {
 		var shape = (this.props[this.currentid]) ? this.props[this.currentid].getElementsByTagName('select')[0].value : this.nextShape;
-		if (shape == '') shape = 'rectangle';
+		if (!shape) {shape = 'rectangle';}
 		//console.log("init: " + shape);
 		this.initArea(this.currentid, shape);
 	}
 	if (this.areas[this.currentid].shape == 'polygon') {
 		this.is_drawing = this.DM_POLYGON_DRAW;
-		this.statusMessage(this.strings['POLYGON_DRAW']);
+		this.statusMessage(this.strings.POLYGON_DRAW);
 		
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		if (this.config.bounding_box == true) {
+		if (this.config.bounding_box) {
 			this.areas[this.currentid].style.borderWidth = '1px';
 			this.areas[this.currentid].style.borderStyle = 'dotted';
 			this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 		}
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
-		this.areas[this.currentid].xpoints = new Array();
-		this.areas[this.currentid].ypoints = new Array();
+		this.areas[this.currentid].xpoints = [];
+		this.areas[this.currentid].ypoints = [];
 		this.areas[this.currentid].xpoints[0] = x;
 		this.areas[this.currentid].ypoints[0] = y;
 	}
 	else if (this.areas[this.currentid].shape == 'rectangle') {
 		this.is_drawing = this.DM_RECTANGLE_DRAW;
-		this.statusMessage(this.strings['RECTANGLE_DRAW']);
+		this.statusMessage(this.strings.RECTANGLE_DRAW);
 		
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
@@ -1890,11 +1916,11 @@ imgmap.prototype.img_mousedown = function(e) {
 	}
 	else if (this.areas[this.currentid].shape == 'circle') {
 		this.is_drawing = this.DM_SQUARE_DRAW;
-		this.statusMessage(this.strings['SQUARE_DRAW']);
+		this.statusMessage(this.strings.SQUARE_DRAW);
 				
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		if (this.config.bounding_box == true) {
+		if (this.config.bounding_box) {
 			this.areas[this.currentid].style.borderWidth = '1px';
 			this.areas[this.currentid].style.borderStyle = 'dotted';
 			this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
@@ -1906,14 +1932,14 @@ imgmap.prototype.img_mousedown = function(e) {
 	this.memory[this.currentid].downx  = x;
 	this.memory[this.currentid].downy  = y;
 	
-}
+};
 
 
 imgmap.prototype.img_area_mouseover = function(e) {
-	if (this.is_drawing) return;//exit if in drawing state
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.is_drawing) {return;}//exit if in drawing state
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
+	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
 	var id = obj.aid;
 	
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
@@ -1925,7 +1951,7 @@ imgmap.prototype.img_area_mouseover = function(e) {
 			this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_SHAPE;
 		}
 		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'polygon') {
-			if (this.config.bounding_box == true) {
+			if (this.config.bounding_box) {
 				this.areas[id].style.borderWidth = '1px';
 				this.areas[id].style.borderStyle = 'solid';
 				this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_BOX;
@@ -1934,14 +1960,14 @@ imgmap.prototype.img_area_mouseover = function(e) {
 		this._setopacity(this.areas[id], this.config.CL_HIGHLIGHT_BG, this.config.highlight_opacity);
 		this._repaint(this.areas[id], this.config.CL_HIGHLIGHT_SHAPE);
 	}
-}
+};
 
 
 imgmap.prototype.img_area_mouseout = function(e) {
-	if (this.is_drawing) return;//exit if in drawing state
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.is_drawing) {return;}//exit if in drawing state
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
+	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
 	var id = obj.aid;
 
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
@@ -1953,7 +1979,7 @@ imgmap.prototype.img_area_mouseout = function(e) {
 			this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
 		}
 		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'polygon') {
-			if (this.config.bounding_box == true) {
+			if (this.config.bounding_box) {
 				this.areas[id].style.borderWidth = '1px';
 				this.areas[id].style.borderStyle = 'solid';
 				this.areas[id].style.borderColor = this.config.CL_NORM_BOX;
@@ -1962,16 +1988,16 @@ imgmap.prototype.img_area_mouseout = function(e) {
 		this._setopacity(this.areas[id], this.config.CL_NORM_BG, this.config.norm_opacity);
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 	}
-}
+};
 
 
 imgmap.prototype.img_area_click = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') obj = obj.parentNode;
+	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
 	this.form_selectRow(obj.aid, false);
 	this.currentid = obj.aid;
-}
+};
 
 
 /**
@@ -1981,12 +2007,12 @@ imgmap.prototype.img_area_click = function(e) {
  *	@date	2006-06-06 16:55:29
  */
 imgmap.prototype.form_selectRow = function(id, setfocus) {
-	if (this.is_drawing) return;//exit if in drawing state
-	if (this.viewmode == 1) return;//exit if preview mode
-	if (!this.form_container) return;//exit if no form container
-	if (!document.getElementById('img_active_'+id)) return;
+	if (this.is_drawing) {return;}//exit if in drawing state
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (!this.form_container) {return;}//exit if no form container
+	if (!document.getElementById('img_active_'+id)) {return;}
 	document.getElementById('img_active_'+id).checked = 1;
-	if (setfocus) document.getElementById('img_active_'+id).focus();
+	if (setfocus) {document.getElementById('img_active_'+id).focus();}
 	//remove all background styles
 	for (var i = 0; i < this.props.length; i++) {
 		if (this.props[i]) {
@@ -1997,7 +2023,7 @@ imgmap.prototype.form_selectRow = function(id, setfocus) {
 	this.props[id].style.background = this.config.CL_HIGHLIGHT_PROPS;
 	//fire custom event
 	this.fireEvent('onSelectRow', this.props[id]);
-}
+};
 
 
 /**
@@ -2005,14 +2031,14 @@ imgmap.prototype.form_selectRow = function(id, setfocus) {
  *	@author	adam 
  */
 imgmap.prototype.img_area_keydown = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
 	//alert(key);
 	if (key == 46) {
 		//delete pressed
 		this.removeArea();
 	}
-}
+};
 
 
 /**
@@ -2022,18 +2048,18 @@ imgmap.prototype.img_area_keydown = function(e) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype.img_area_blur = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
-	if (this.is_drawing != 0) return;//exit if drawing
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (this.is_drawing != 0) {return;}//exit if drawing
 	//console.log('blur');
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	//console.log(obj);
 	var id = obj.parentNode.aid;
 	//console.log(this.areas[id]);
-	if (obj.name == 'img_href')   this.areas[id].ahref   = obj.value;
-	if (obj.name == 'img_alt')    this.areas[id].aalt    = obj.value;
-	if (obj.name == 'img_title')  this.areas[id].atitle  = obj.value;
-	if (obj.name == 'img_target') this.areas[id].atarget = obj.value;
-	if (obj.name == 'img_shape' && this.areas[id].shape != obj.value && this.areas[id].shape != 'undefined') {
+	if (obj.name == 'img_href')        {this.areas[id].ahref   = obj.value;}
+	else if (obj.name == 'img_alt')    {this.areas[id].aalt    = obj.value;}
+	else if (obj.name == 'img_title')  {this.areas[id].atitle  = obj.value;}
+	else if (obj.name == 'img_target') {this.areas[id].atarget = obj.value;}
+	else if (obj.name == 'img_shape' && this.areas[id].shape != obj.value && this.areas[id].shape != 'undefined') {
 		//shape changed, adjust coords intelligently inside _normCoords
 		var coords = '';
 		if (this.props[id]) {
@@ -2043,16 +2069,17 @@ imgmap.prototype.img_area_blur = function(e) {
 			coords = this.areas[id].lastInput || '' ;
 		}
 		coords = this._normCoords(coords, obj.value, 'from'+this.areas[id].shape);
-		if (this.props[id])
+		if (this.props[id]) {
 			this.props[id].getElementsByTagName('input')[2].value  = coords;
+		}
 		this.areas[id].lastInput = coords;
 		this.areas[id].shape = obj.value;
 	}
 	if (this.areas[id]  && this.areas[id].shape != 'undefined') {
 		this._recalculate(id);
-		if (this.html_container) this.html_container.value = this.getMapHTML();
+		if (this.html_container) {this.html_container.value = this.getMapHTML();}
 	}
-}
+};
 
 
 /**
@@ -2063,10 +2090,10 @@ imgmap.prototype.img_area_blur = function(e) {
 imgmap.prototype.html_container_blur = function(e) {
 	var oldvalue = this.html_container.getAttribute('oldvalue');
 	if (oldvalue != this.html_container.value) {
-		if (this.viewmode == 1) return;//exit if preview mode
+		if (this.viewmode === 1) {return;}//exit if preview mode
 		this.setMapHTML(this.html_container.value);
 	}
-}
+};
 
 
 /**
@@ -2079,14 +2106,14 @@ imgmap.prototype.html_container_blur = function(e) {
 imgmap.prototype.html_container_focus = function(e) {
 	this.html_container.setAttribute('oldvalue', this.html_container.value);
 	this.html_container.select();
-}
+};
 
 
 /**
  *	@url	http://evolt.org/article/Mission_Impossible_mouse_position/17/23335/index.html
  */
 imgmap.prototype.area_mousemove = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	if (this.is_drawing == 0) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
@@ -2112,7 +2139,7 @@ imgmap.prototype.area_mousemove = function(e) {
 				obj.style.cursor = 'w-resize';
 			}
 		}
-		else if (xdiff > parseInt(obj.style.width) - 6  && ydiff > 6) {
+		else if (xdiff > parseInt(obj.style.width, 10) - 6  && ydiff > 6) {
 			//move right
 			if (obj.shape != 'polygon') {
 				obj.style.cursor = 'e-resize';
@@ -2124,7 +2151,7 @@ imgmap.prototype.area_mousemove = function(e) {
 				obj.style.cursor = 'n-resize';
 			}
 		}
-		else if (ydiff > parseInt(obj.style.height) - 6  && xdiff > 6) {
+		else if (ydiff > parseInt(obj.style.height, 10) - 6  && xdiff > 6) {
 			//move bottom
 			if (obj.shape != 'polygon') {
 				obj.style.cursor = 's-resize';
@@ -2136,7 +2163,7 @@ imgmap.prototype.area_mousemove = function(e) {
 		}
 		if (obj.aid != this.draggedId) {
 			//not dragged or different
-			if (obj.style.cursor == 'move') obj.style.cursor = 'default';
+			if (obj.style.cursor == 'move') {obj.style.cursor = 'default';}
 			return;
 		}
 		//moved here from mousedown
@@ -2144,25 +2171,29 @@ imgmap.prototype.area_mousemove = function(e) {
 			//move left
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_LEFT;
-				this.statusMessage(this.strings['SQUARE_RESIZE_LEFT']);
-				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				this.statusMessage(this.strings.SQUARE_RESIZE_LEFT);
+				if (this.config.bounding_box) {
+					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				}
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_LEFT;
-				this.statusMessage(this.strings['RECTANGLE_RESIZE_LEFT']);
+				this.statusMessage(this.strings.RECTANGLE_RESIZE_LEFT);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
-		else if (xdiff > parseInt(this.areas[this.currentid].style.width) - 6  && ydiff > 6) {
+		else if (xdiff > parseInt(this.areas[this.currentid].style.width, 10) - 6  && ydiff > 6) {
 			//move right
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_RIGHT;
-				this.statusMessage(this.strings['SQUARE_RESIZE_RIGHT']);
-				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				this.statusMessage(this.strings.SQUARE_RESIZE_RIGHT);
+				if (this.config.bounding_box) {
+					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				}
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_RIGHT;
-				this.statusMessage(this.strings['RECTANGLE_RESIZE_RIGHT']);
+				this.statusMessage(this.strings.RECTANGLE_RESIZE_RIGHT);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
@@ -2170,25 +2201,29 @@ imgmap.prototype.area_mousemove = function(e) {
 			//move top
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_TOP;
-				this.statusMessage(this.strings['SQUARE_RESIZE_TOP']);
-				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				this.statusMessage(this.strings.SQUARE_RESIZE_TOP);
+				if (this.config.bounding_box) {
+					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				}
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_TOP;
-				this.statusMessage(this.strings['RECTANGLE_RESIZE_TOP']);
+				this.statusMessage(this.strings.RECTANGLE_RESIZE_TOP);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
-		else if (ydiff > parseInt(this.areas[this.currentid].style.height) - 6  && xdiff > 6) {
+		else if (ydiff > parseInt(this.areas[this.currentid].style.height, 10) - 6  && xdiff > 6) {
 			//move bottom
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_BOTTOM;
-				this.statusMessage(this.strings['SQUARE_RESIZE_BOTTOM']);
-				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				this.statusMessage(this.strings.SQUARE_RESIZE_BOTTOM);
+				if (this.config.bounding_box) {
+					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				}
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_BOTTOM;
-				this.statusMessage(this.strings['RECTANGLE_RESIZE_BOTTOM']);
+				this.statusMessage(this.strings.RECTANGLE_RESIZE_BOTTOM);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
@@ -2196,14 +2231,16 @@ imgmap.prototype.area_mousemove = function(e) {
 			//move all
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_MOVE;
-				this.statusMessage(this.strings['SQUARE_MOVE']);
-				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				this.statusMessage(this.strings.SQUARE_MOVE);
+				if (this.config.bounding_box) {
+					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				}
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
 			else if (this.areas[this.currentid].shape == 'rectangle') {
 				this.is_drawing = this.DM_RECTANGLE_MOVE;
-				this.statusMessage(this.strings['RECTANGLE_MOVE']);
+				this.statusMessage(this.strings.RECTANGLE_MOVE);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
@@ -2216,24 +2253,26 @@ imgmap.prototype.area_mousemove = function(e) {
 					}
 				}
 				this.is_drawing = this.DM_POLYGON_MOVE;
-				this.statusMessage(this.strings['POLYGON_MOVE']);
-				if (this.config.bounding_box == true) this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				this.statusMessage(this.strings.POLYGON_MOVE);
+				if (this.config.bounding_box) {
+					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				}
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
 		}
 		
 		//common memory settings (preparing to move or resize)
-		this.memory[this.currentid].width  = parseInt(this.areas[this.currentid].style.width);
-		this.memory[this.currentid].height = parseInt(this.areas[this.currentid].style.height);
-		this.memory[this.currentid].top    = parseInt(this.areas[this.currentid].style.top);
-		this.memory[this.currentid].left   = parseInt(this.areas[this.currentid].style.left);
+		this.memory[this.currentid].width  = parseInt(this.areas[this.currentid].style.width, 10);
+		this.memory[this.currentid].height = parseInt(this.areas[this.currentid].style.height, 10);
+		this.memory[this.currentid].top    = parseInt(this.areas[this.currentid].style.top, 10);
+		this.memory[this.currentid].left   = parseInt(this.areas[this.currentid].style.left, 10);
 		if (this.areas[this.currentid].shape == 'rectangle') {
 			this.areas[this.currentid].style.borderWidth = '1px';
 			this.areas[this.currentid].style.borderStyle = 'dotted';
 		}
 		else if (this.areas[this.currentid].shape == 'circle' || this.areas[this.currentid].shape == 'polygon') {
-			if (this.config.bounding_box == true) {
+			if (this.config.bounding_box) {
 				this.areas[this.currentid].style.borderWidth = '1px';
 				this.areas[this.currentid].style.borderStyle = 'dotted';
 			}
@@ -2244,10 +2283,10 @@ imgmap.prototype.area_mousemove = function(e) {
 		//if drawing and not ie, have to propagate to image event
 		this.img_mousemove(e);
 	}
-}
+};
 
 imgmap.prototype.area_mouseup = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	//console.log('area_mouseup');
 	if (this.is_drawing == 0) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
@@ -2276,10 +2315,10 @@ imgmap.prototype.area_mouseup = function(e) {
 		//console.log('propup');
 		this.img_mouseup(e);
 	}
-}
+};
 
 imgmap.prototype.area_mousedown = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	//console.log('area_mousedown');
 	if (this.is_drawing == 0) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
@@ -2312,7 +2351,7 @@ imgmap.prototype.area_mousedown = function(e) {
 		//console.log('propdown');
 		this.img_mousedown(e);
 	}
-}
+};
 
 
 /**
@@ -2321,16 +2360,19 @@ imgmap.prototype.area_mousedown = function(e) {
  */
 imgmap.prototype.getSelectionStart = function(obj) {
 	if (obj.createTextRange) {
-		var r = document.selection.createRange().duplicate()
-		r.moveEnd('character', obj.value.length)
-		if (r.text == '') return obj.value.length
-		return obj.value.lastIndexOf(r.text)
-	} else return obj.selectionStart;
-}
+		var r = document.selection.createRange().duplicate();
+		r.moveEnd('character', obj.value.length);
+		if (r.text == '') {return obj.value.length;}
+		return obj.value.lastIndexOf(r.text);
+	}
+	else {
+		return obj.selectionStart;
+	}
+};
 
 
 imgmap.prototype.setSelectionRange = function(obj, start, end) {
-	if (typeof end == "undefined") end = start;
+	if (typeof end == "undefined") {end = start;}
 	if (obj.selectionStart) {
 		obj.setSelectionRange(start, end);
 		obj.focus(); // to make behaviour consistent with IE
@@ -2342,7 +2384,7 @@ imgmap.prototype.setSelectionRange = function(obj, start, end) {
 		range.moveEnd("character", end - start);
 		range.select();
 	}
-}
+};
 
 
 /**
@@ -2352,7 +2394,7 @@ imgmap.prototype.setSelectionRange = function(obj, start, end) {
  *	@date	25-09-2007 17:12:43
  */
 imgmap.prototype.img_coords_keydown = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	var key = (this.isMSIE || this.isOpera) ? event.keyCode : e.keyCode;
 	var obj = (this.isMSIE || this.isOpera) ? window.event.srcElement : e.originalTarget;
 	//this.log(key);
@@ -2368,8 +2410,8 @@ imgmap.prototype.img_coords_keydown = function(e) {
 			j+=coords[i].length;
 			if (j > s) {
 				//this is the coord we want
-				if (key == 40 && coords[i] > 0) coords[i]--;
-				if (key == 38) coords[i]++;
+				if (key == 40 && coords[i] > 0) {coords[i]--;}
+				if (key == 38) {coords[i]++;}
 				break;
 			}
 			//jump one more because of comma
@@ -2383,7 +2425,7 @@ imgmap.prototype.img_coords_keydown = function(e) {
 		this.setSelectionRange(obj, s);
 		return true;
 	}
-}
+};
 
 // Safari doesn't generate keyboard events for modifiers: http://bugs.webkit.org/show_bug.cgi?id=11696
 /**
@@ -2391,21 +2433,21 @@ imgmap.prototype.img_coords_keydown = function(e) {
  *	@author	adam
  */
 imgmap.prototype.doc_keydown = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
 	//console.log(key);
 	if (key == 46) {
 		//delete key pressed
-		if (this.selectedId != null && !this.is_drawing) this.removeArea();
+		if (this.selectedId !== null && !this.is_drawing) {this.removeArea();}
 	}
 	else if (key == 16) {
 		//shift key pressed
 		if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
 			this.is_drawing = this.DM_SQUARE_DRAW;
-			this.statusMessage(this.strings['SQUARE2_DRAW']);
+			this.statusMessage(this.strings.SQUARE2_DRAW);
 		}
 	}
-}
+};
 
 
 /**
@@ -2420,17 +2462,17 @@ imgmap.prototype.doc_keyup = function(e) {
 		if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
 			//not for circle!
 			this.is_drawing = this.DM_RECTANGLE_DRAW;
-			this.statusMessage(this.strings['RECTANGLE_DRAW']);
+			this.statusMessage(this.strings.RECTANGLE_DRAW);
 		}
 	}
-}
+};
 
 imgmap.prototype.doc_mousedown = function(e) {
-	if (this.viewmode == 1) return;//exit if preview mode
+	if (this.viewmode === 1) {return;}//exit if preview mode
 	if (this.is_drawing == 0) {
 		this.selectedId = null;
 	}
-}
+};
 
 imgmap.prototype._getPos = function(element) {
 	var xpos = 0;
@@ -2451,8 +2493,8 @@ imgmap.prototype._getPos = function(element) {
 			ypos = element.offsetTop;
 		}
 	}
-	return new Object({x: xpos, y: ypos});
-}
+	return {x: xpos, y: ypos};
+};
 
 
 /**
@@ -2462,10 +2504,12 @@ imgmap.prototype._getPos = function(element) {
  */
 imgmap.prototype._getLastArea = function() {
 	for (var i = this.areas.length-1; i>=0; i--) {
-		if (this.areas[i]) return this.areas[i];
+		if (this.areas[i]) {
+			return this.areas[i];
+		}
 	}
 	return null;
-}
+};
 
 
 /**
@@ -2474,7 +2518,7 @@ imgmap.prototype._getLastArea = function() {
  */
 imgmap.prototype.toClipBoard = function(text) {
 	this.fireEvent('onClipboard', text);
-	if (typeof text == 'undefined') text = this.getMapHTML();
+	if (typeof text == 'undefined') {text = this.getMapHTML();}
 	//alert(typeof window.clipboardData);
 	try {
 		if (window.clipboardData) {
@@ -2488,12 +2532,12 @@ imgmap.prototype.toClipBoard = function(text) {
 			
 			// Store support string in an object.
 			var str = Components.classes["@mozilla.org/supports-string;1"].createInstance(Components.interfaces.nsISupportsString);
-			if (!str) return false;
+			if (!str) {return false;}
 			str.data = text;
 			
 			// Make transferable.
 			var trans = Components.classes["@mozilla.org/widget/transferable;1"].createInstance(Components.interfaces.nsITransferable);
-			if (!trans) return false;
+			if (!trans) {return false;}
 			
 			// Specify what datatypes we want to obtain, which is text in this case.
 			trans.addDataFlavor("text/unicode");
@@ -2501,7 +2545,7 @@ imgmap.prototype.toClipBoard = function(text) {
 			
 			var clipid = Components.interfaces.nsIClipboard;
 			var clip   = Components.classes["@mozilla.org/widget/clipboard;1"].getService(clipid);
-			if (!clip) return false;
+			if (!clip) {return false;}
 	
 			clip.setData(trans, null, clipid.kGlobalClipboard);
 		}
@@ -2509,7 +2553,7 @@ imgmap.prototype.toClipBoard = function(text) {
 	catch (err) {
 		this.log("Unable to set clipboard data", 1);
 	}
-}
+};
 
 
 /**
@@ -2534,7 +2578,7 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
 		//eval is evil, but we have no other choice
 		eval('obj.style.' + prop + ' = \'' + value + '\';');
 	}
-}
+};
 
 
 /**
@@ -2547,7 +2591,7 @@ imgmap.prototype.fireEvent = function(evt, obj) {
 	if (typeof this.config.custom_callbacks[evt] == 'function') {
 		return this.config.custom_callbacks[evt](obj);
 	}
-}
+};
 
 
 /**
@@ -2567,7 +2611,7 @@ imgmap.prototype.setAreaSize = function(id, w, h) {
 		this.areas[id].style.height = (h) + 'px';
 		this.areas[id].setAttribute('height', h);
 	}
-}
+};
 
 
 /**
@@ -2579,8 +2623,8 @@ Function.prototype.bind = function(object) {
 	var method = this;
 	return function () {
 		return method.apply(object, arguments);
-	}
-}
+	};
+};
 
 
 /**
@@ -2589,19 +2633,19 @@ Function.prototype.bind = function(object) {
  */
 String.prototype.trim = function() {
 	return this.replace(/^\s+|\s+$/g,"");
-}
+};
 String.prototype.ltrim = function() {
 	return this.replace(/^\s+/,"");
-}
+};
 String.prototype.rtrim = function() {
 	return this.replace(/\s+$/,"");
-}
+};
 
 function imgmap_spawnObjects(config) {
 	//console.log('spawnobjects');
 	var maps = document.getElementsByTagName('map');
 	var imgs = document.getElementsByTagName('img');
-	var imaps = new Array();
+	var imaps = [];
 	//console.log(maps.length);
 	for (var i=0; i<maps.length; i++) {
 		for (var j=0; j<imgs.length; j++) {
