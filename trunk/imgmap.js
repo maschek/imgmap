@@ -1,8 +1,6 @@
-/*jslint nomen: true, evil: true, browser: true, adsafe: true */
-
 /**
  *	Image Map Editor (imgmap) - in-browser imagemap editor
- *	Copyright (C) 2006 - 2007 Adam Maschek (adam.maschek @ gmail.com)
+ *	Copyright (C) 2006 - 2008 Adam Maschek (adam.maschek @ gmail.com)
  *	
  *	This program is free software; you can redistribute it and/or
  *	modify it under the terms of the GNU General Public License
@@ -31,16 +29,12 @@
  *	-scriptload race condition fix
  *	-destroy/cleanup function ?
  *	-testing highlighter
- *	-testing in more browsers  
  *	-cursor area_mousemove in opera not refreshing quite well
- *	-test in safari 
  *	-get rid of memo array
  *	-merge props and areas arrays
- *	-highlight which control point is edited in html or form mode, up/down keys to change them   
+ *	-highlight which control point is edited in html or form mode   
  *	-more comments, especially on config vars
  *	-make function names more logical
- *	- auto language detection
- *	- hooks
  *	- dumpconfig   
  *	-prepare for bad input /poly not properly closed?
  *	-prepare for % values in coords  
@@ -63,7 +57,7 @@ function imgmap(config) {
 	this.selectedId = null;
 	this.nextShape = 'rectangle';
 	this.viewmode  = 0;
-	//possible values: 0 - normal, 1 - preview
+	//possible values: 0 - edit, 1 - preview
 	
 	this.loadedScripts = [];
 	this.isLoaded   = false;
@@ -94,10 +88,11 @@ function imgmap(config) {
 	this.config.mode     = "editor";
 	//possible values: editor - classical editor, editor2 - dreamweaver style editor, highlighter - map highlighter
 	
-	this.config.imgroot  = "";
-	this.config.baseroot = "";
-	this.config.lang     = "en";
-	this.config.loglevel = 0;
+	this.config.imgroot     = '';
+	this.config.baseroot    = '';
+	this.config.lang        = '';
+	this.config.defaultLang = 'en';
+	this.config.loglevel    = 0;
 	this.config.buttons          = ['add','delete','preview','html'];
 	this.config.custom_callbacks = {};
 	//possible values: onPreview, onClipboard, onHtml, onAddArea, onRemoveArea, onDrawArea, onResizeArea, onRelaxArea, onFocusArea, onBlurArea, onMoveArea, onSelectRow, onLoadImage, onSetMap, onGetMap, onSelectArea
@@ -116,18 +111,25 @@ function imgmap(config) {
 
 	this.config.bounding_box       = true;
 	this.config.label              = '%n';
-	//possible values: %n - number, %c - coords, %h - href, %a - alt, %t - title
+	//the format string of the area labels - possible values: %n - number, %c - coords, %h - href, %a - alt, %t - title
 	
 	this.config.label_class        = 'imgmap_label';
+	//the css class to apply on labels
 	this.config.label_style        = 'font: bold 10px Arial';
-	//this.config.label_style        = 'font-weight: bold; font-size: 10px; font-family: Arial';
+	//this.config.label_style        = 'font-weight: bold; font-size: 10px; font-family: Arial; color: #964';
+	//the css style(s) to apply on labels
+	
 	this.config.hint               = '#%n %h';
-	//possible values: %n - number, %c - coords, %h - href, %a - alt, %t - title
+	//the format string of the area mouseover hints - possible values: %n - number, %c - coords, %h - href, %a - alt, %t - title
 
-	this.config.draw_opacity       = '35';	
-	this.config.norm_opacity       = '50';	
-	this.config.highlight_opacity  = '65';
-	this.config.cursor_default     = 'crosshair';		//auto/pointer	
+	this.config.draw_opacity       = '35';
+	//the opacity value of the area while drawing, moving or resizing - possible values 0 - 100 or range "(x)-y"	
+	this.config.norm_opacity       = '50';
+	//the opacity value of the area while relaxed - possible values 0 - 100	or range "(x)-y"
+	this.config.highlight_opacity  = '70';
+	//the opacity value of the area while highlighted - possible values 0 - 100 or range "(x)-y"
+	this.config.cursor_default     = 'crosshair';		//auto/pointer
+	//the css cursor while hovering over the image
 	
 	//browser sniff
 	var ua = navigator.userAgent;
@@ -238,7 +240,7 @@ imgmap.prototype.setup = function(config) {
 				//cut filename part, leave last slash
 				src = src.substring(0, src.lastIndexOf('/') + 1);
 				//set final baseroot path
-				if (base != '' && src.indexOf('://') == -1) {
+				if (base && src.indexOf('://') == -1) {
 					this.config.baseroot = base + src;
 				}
 				else {
@@ -259,8 +261,8 @@ imgmap.prototype.setup = function(config) {
 	//alert(this.config.baseroot);
 
 	//load language js - as soon as possible
-	if (this.config.lang == '') {
-		this.config.lang = 'en';
+	if (!this.config.lang) {
+		this.config.lang = this.detectLanguage();
 	}
 	this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
 	
@@ -295,15 +297,29 @@ imgmap.prototype.retryDelayed = function(fn, delay, tries) {
  */
 imgmap.prototype.onLoad = function(e) {
 	if (this.isLoaded) {return true;}
+	var _this = this;
 	//this.log('readystate: ' +  document.readyState);
 	if (typeof imgmapStrings == 'undefined') {
 		if (this.cntReloads++ < 5) {
-			var _this = this;
 			//this.retryDelayed(_this.onLoad(), 1000, 3);
-			window.setTimeout(function () {
-				_this.onLoad(e);
-				} ,1200);
-			this.log('Delaying onload (language not loaded, try: ' + this.cntReloads + ')');
+			window.setTimeout(function () {_this.onLoad(e);} ,1200);
+			this.log('Delaying onload (language ' + this.config.lang + ' not loaded, try: ' + this.cntReloads + ')');
+			return false;
+		}
+		else if (this.config.lang != this.config.defaultLang && this.config.defaultLang != 'en') {
+			this.log('Falling back to default language: ' + this.config.defaultLang);
+			this.cntReloads = 0;
+			this.config.lang = this.config.defaultLang;
+			this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
+			window.setTimeout(function () {_this.onLoad(e);} ,1200);
+			return false;
+		}
+		else if (this.config.lang != 'en') {
+			this.log('Falling back to english language');
+			this.cntReloads = 0;
+			this.config.lang = 'en';
+			this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
+			window.setTimeout(function () {_this.onLoad(e);} ,1200);
 			return false;
 		}
 	}
@@ -503,26 +519,33 @@ imgmap.prototype.addLoadEvent = function(obj, callback) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 imgmap.prototype.loadScript = function(url) {
-	if (url == '') {return false;}
+	if (url === '') {return false;}
 	if (this.loadedScripts[url] == 1) {return true;}//script already loaded
 	this.log('Loading script: ' + url);
 	//we might need this someday for safari?
 	//var temp = '<script language="javascript" type="text/javascript" src="' + url + '"></script>';
 	//document.write(temp);
-		
-	var head = document.getElementsByTagName('head')[0];
-	var temp = document.createElement('SCRIPT');
-	temp.setAttribute('language', 'javascript');
-	temp.setAttribute('type', 'text/javascript');
-	temp.setAttribute('src', url);
-	//temp.setAttribute('defer', true);
-	head.appendChild(temp);
-	//this.loadedScripts[url] = 1;
-	this.addLoadEvent(temp, this.script_load.bind(this));
+	try {
+		var head = document.getElementsByTagName('head')[0];
+		var temp = document.createElement('SCRIPT');
+		temp.setAttribute('language', 'javascript');
+		temp.setAttribute('type', 'text/javascript');
+		temp.setAttribute('src', url);
+		//temp.setAttribute('defer', true);
+		head.appendChild(temp);
+		//this.loadedScripts[url] = 1;
+		this.addLoadEvent(temp, this.script_load.bind(this));
+	}
+	catch (err) {
+		this.log('Error loading script: ' + url);
+	}
 	return true;
 };
 
 
+/**
+ *	Event handler of external script loaded.
+ */
 imgmap.prototype.script_load = function(e) {
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	var url = obj.src;
@@ -582,11 +605,11 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 	else if (typeof img == 'object') {
 		//we have to use the src of the image object
 		var src = img.src; //img.getAttribute('src');
-		if (src == '' && img.getAttribute('mce_src') != '') {
+		if (src === '' && img.getAttribute('mce_src') !== '') {
 			//if it is a tinymce object, it has no src but mce_src attribute!
 			src = img.getAttribute('mce_src');
 		}
-		else if (src == '' && img.getAttribute('_fcksavedurl') != '') {
+		else if (src === '' && img.getAttribute('_fcksavedurl') !== '') {
 			//if it is an fck object, it might have only _fcksavedurl attribute!
 			src = img.getAttribute('_fcksavedurl');
 		}
@@ -641,7 +664,7 @@ imgmap.prototype.statusMessage = function(str) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */   
 imgmap.prototype.log = function(obj, level) {
-	if (level == '' || typeof level == 'undefined') {level = 0;}
+	if (level === '' || typeof level == 'undefined') {level = 0;}
 	if (this.config.loglevel != -1 && level >= this.config.loglevel) {
 		this.logStore.push({level: level, obj: obj});
 	}
@@ -677,16 +700,19 @@ imgmap.prototype.getMapHTML = function() {
 	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML() + '</map>';
 	this.fireEvent('onGetMap', html);
 	//alert(html);
-	return(html);
+	return html;
 };
 
 
+/**
+ *	Get the map areas part only of the current imagemap.
+ */
 imgmap.prototype.getMapInnerHTML = function() {
 	var html = '';
 	//foreach area properties
 	for (var i=0; i<this.areas.length; i++) {
 		if (this.areas[i]) {
-			if (this.areas[i].shape != '' && this.areas[i].shape != 'undefined') {
+			if (this.areas[i].shape && this.areas[i].shape != 'undefined') {
 					html+= '<area shape="' + this.areas[i].shape + '"' +
 						' alt="' + this.areas[i].aalt + '"' +
 						' title="' + this.areas[i].atitle + '"' +
@@ -697,20 +723,28 @@ imgmap.prototype.getMapInnerHTML = function() {
 		}
 	}
 	//alert(html);
-	return(html);
+	return html;
 };
 
+
+/**
+ *	Get the map name of the current imagemap.
+ */
 imgmap.prototype.getMapName = function() {
-	if (this.mapname == '') {
-		if (this.mapid != '') {return this.mapid;}
+	if (this.mapname === '') {
+		if (this.mapid !== '') {return this.mapid;}
 		var now = new Date();
 		this.mapname = 'imgmap' + now.getFullYear() + (now.getMonth()+1) + now.getDate() + now.getHours() + now.getMinutes() + now.getSeconds();
 	}
 	return this.mapname;
 };
 
+
+/**
+ *	Get the map id of the current imagemap.
+ */
 imgmap.prototype.getMapId = function() {
-	if (this.mapid == '') {
+	if (this.mapid === '') {
 		this.mapid = this.getMapName();
 	}
 	return this.mapid;
@@ -718,10 +752,24 @@ imgmap.prototype.getMapId = function() {
 
 //bad inputs: 035,035 075,062
 //150,217, 190,257, 150,297,110,257
+/**
+ *	Try to normalize coordinates that came from:
+ *	1. html textarea
+ *	2. user input in the active area's input field
+ *	3. from the html source in case of plugins or highlighter
+ */
 imgmap.prototype._normCoords = function(coords, shape, flag) {
+	//function level var declarations
+	var i;//generic cycle counter
+	var sx;//smallest x
+	var sy;//smallest y
+	var gx;//greatest x
+	var gy;//greatest y
+	var temp;
+	
 	//console.log(coords + ' - ' + shape + ' - ' + flag);
 	coords = coords.trim();
-	if (coords == '') {return '';}
+	if (coords === '') {return '';}
 	var oldcoords = coords;
 	//replace some general junk
 	coords = coords.replace(/(\d)(\D)+(\d)/g, "$1,$3");
@@ -739,16 +787,16 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[3] = parseInt(parts[1], 10) + 2 * r;
 		}
 		else if (flag == 'frompolygon') {
-			var sx = parseInt(parts[0], 10); var gx = parseInt(parts[0], 10);
-			var sy = parseInt(parts[1], 10); var gy = parseInt(parts[1], 10);
-			for (var i=0; i<parts.length; i++) {
-				if (i % 2 == 0 && parseInt(parts[i], 10) < sx) {
+			sx = parseInt(parts[0], 10); gx = parseInt(parts[0], 10);
+			sy = parseInt(parts[1], 10); gy = parseInt(parts[1], 10);
+			for (i=0; i<parts.length; i++) {
+				if (i % 2 === 0 && parseInt(parts[i], 10) < sx) {
 					sx = parseInt(parts[i], 10);}
-				if (i % 2 == 1 && parseInt(parts[i], 10) < sy) {
+				if (i % 2 === 1 && parseInt(parts[i], 10) < sy) {
 					sy = parseInt(parts[i], 10);}
-				if (i % 2 == 0 && parseInt(parts[i], 10) > gx) {
+				if (i % 2 === 0 && parseInt(parts[i], 10) > gx) {
 					gx = parseInt(parts[i], 10);}
-				if (i % 2 == 1 && parseInt(parts[i], 10) > gy) {
+				if (i % 2 === 1 && parseInt(parts[i], 10) > gy) {
 					gy = parseInt(parts[i], 10);}
 				//console.log(sx+","+sy+","+gx+","+gy);
 			}
@@ -759,12 +807,12 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 		if (!(parseInt(parts[2], 10) > 0)) {parts[2] = parseInt(parts[0], 10) + 10;}
 		if (!(parseInt(parts[3], 10) > 0)) {parts[3] = parseInt(parts[1], 10) + 10;}
 		if (parseInt(parts[0], 10) > parseInt(parts[2], 10)) {
-			var temp = parts[0];
+			temp = parts[0];
 			parts[0] = parts[2];
 			parts[2] = temp;
 		}
 		if (parseInt(parts[1], 10) > parseInt(parts[3], 10)) {
-			var temp = parts[1];
+			temp = parts[1];
 			parts[1] = parts[3];
 			parts[3] = temp;
 		}
@@ -773,8 +821,8 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	}
 	else if (shape == 'circle') {
 		if (flag == 'fromrectangle') {
-			var sx = parseInt(parts[0], 10); var gx = parseInt(parts[2], 10);
-			var sy = parseInt(parts[1], 10); var gy = parseInt(parts[3], 10);
+			sx = parseInt(parts[0], 10); gx = parseInt(parts[2], 10);
+			sy = parseInt(parts[1], 10); gy = parseInt(parts[3], 10);
 			//use smaller side
 			parts[2] = (gx - sx < gy - sy) ? gx - sx : gy - sy;
 			parts[2] = Math.floor(parts[2] / 2);//radius
@@ -782,16 +830,16 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[1] = sy + parts[2];
 		}
 		else if (flag == 'frompolygon') {
-			var sx = parseInt(parts[0], 10); var gx = parseInt(parts[0], 10);
-			var sy = parseInt(parts[1], 10); var gy = parseInt(parts[1], 10);
-			for (var i=0; i<parts.length; i++) {
-				if (i % 2 == 0 && parseInt(parts[i], 10) < sx) {
+			sx = parseInt(parts[0], 10); gx = parseInt(parts[0], 10);
+			sy = parseInt(parts[1], 10); gy = parseInt(parts[1], 10);
+			for (i=0; i<parts.length; i++) {
+				if (i % 2 === 0 && parseInt(parts[i], 10) < sx) {
 					sx = parseInt(parts[i], 10);}
-				if (i % 2 == 1 && parseInt(parts[i], 10) < sy) {
+				if (i % 2 === 1 && parseInt(parts[i], 10) < sy) {
 					sy = parseInt(parts[i], 10);}
-				if (i % 2 == 0 && parseInt(parts[i], 10) > gx) {
+				if (i % 2 === 0 && parseInt(parts[i], 10) > gx) {
 					gx = parseInt(parts[i], 10);}
-				if (i % 2 == 1 && parseInt(parts[i], 10) > gy) {
+				if (i % 2 === 1 && parseInt(parts[i], 10) > gy) {
 					gy = parseInt(parts[i], 10);}
 				//console.log(sx+","+sy+","+gx+","+gy);
 			}
@@ -822,7 +870,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[j++] = centerX + radius;
 			parts[j++] = centerY;
 			var sides = 60;
-			for (var i=0; i<=sides; i++) {
+			for (i=0; i<=sides; i++) {
 				var pointRatio = i/sides;
 				var xSteps = Math.cos(pointRatio*2*Math.PI);
 				var ySteps = Math.sin(pointRatio*2*Math.PI);
@@ -834,7 +882,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			//console.log(parts);
 		}
 		coords = '';
-		for (var i=0; i<parts.length; i++) {
+		for (i=0; i<parts.length; i++) {
 			coords+= parts[i]+",";
 		}
 		coords = coords.substring(0, coords.length - 1);
@@ -961,24 +1009,28 @@ imgmap.prototype.clickHtml = function() {
  *	@url	http://www.quirksmode.org/bugreports/archives/2005/03/Usemap_attribute_wrongly_case_sensitive.html 
  */
 imgmap.prototype.togglePreview = function() {
+	//function level var declarations
+	var i;//generic cycle counter
+	var nodes;//html nodes array
+	
 	if (!this.pic) {return false;}//exit if pic is undefined
 	if (this.viewmode === 0) {
 		this.fireEvent('onPreview');
 		//hide canvas elements and labels
-		for (var i=0; i<this.areas.length; i++) {
+		for (i=0; i<this.areas.length; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = 'none';
 				if (this.areas[i].label) {this.areas[i].label.style.display = 'none';}
 			}
 		}
 		//disable form elements (inputs and selects)
-		var nodes = this.form_container.getElementsByTagName("input");
+		nodes = this.form_container.getElementsByTagName("input");
 		//nodes = nodes.join(this.form_container.getElementsByTagName("select"));
-		for (var i=0; i<nodes.length; i++) {
+		for (i=0; i<nodes.length; i++) {
 			nodes[i].disabled = true;
 		}
-		var nodes = this.form_container.getElementsByTagName("select");
-		for (var i=0; i<nodes.length; i++) {
+		nodes = this.form_container.getElementsByTagName("select");
+		for (i=0; i<nodes.length; i++) {
 			nodes[i].disabled = true;
 		}
 		//activate image map
@@ -997,19 +1049,19 @@ imgmap.prototype.togglePreview = function() {
 	}
 	else {
 		//show canvas elements
-		for (var i=0; i<this.areas.length; i++) {
+		for (i=0; i<this.areas.length; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = '';
 				if (this.areas[i].label && this.config.label) {this.areas[i].label.style.display = '';}
 			}
 		}
 		//enable form elements
-		var nodes = this.form_container.getElementsByTagName("input");
-		for (var i=0; i<nodes.length; i++) {
+		nodes = this.form_container.getElementsByTagName("input");
+		for (i=0; i<nodes.length; i++) {
 			nodes[i].disabled = false;
 		}
-		var nodes = this.form_container.getElementsByTagName("select");
-		for (var i=0; i<nodes.length; i++) {
+		nodes = this.form_container.getElementsByTagName("select");
+		for (i=0; i<nodes.length; i++) {
 			nodes[i].disabled = false;
 		}
 		//clear image map
@@ -1103,7 +1155,7 @@ imgmap.prototype.addNewArea = function() {
 			this.form_selectRow(id, true);
 		}
 		this.currentid = id;
-		return(id);
+		return id;
 };
 
 
@@ -1138,6 +1190,8 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id].onmousedown = this.area_mousedown.bind(this);
 	this.areas[id].onmouseup   = this.area_mouseup.bind(this);
 	this.areas[id].onmousemove = this.area_mousemove.bind(this);
+	this.areas[id].onmouseover = this.area_mouseover.bind(this);
+	this.areas[id].onmouseout  = this.area_mouseout.bind(this);
 	//initialize memory object
 	this.memory[id] = {};
 	this.memory[id].downx   = 0;
@@ -1199,10 +1253,51 @@ imgmap.prototype.relaxAllAreas = function() {
 };
 
 
+/**
+ *	Set opacity of area to the given percentage, as well as set the background color.
+ */
 imgmap.prototype._setopacity = function(area, bgcolor, pct) {
-	area.style.backgroundColor = bgcolor;
+	if (bgcolor) {area.style.backgroundColor = bgcolor;}
+	if (pct && typeof pct == 'string' && pct.match(/^\d*\-\d+$/)) {
+		//gradual fade
+		var parts = pct.split('-');
+		if (parts[0]) {
+			//set initial opacity
+			this._setopacity(area, bgcolor, parts[0]);
+		}
+		if (parts[1]) {
+			parts[1] = parseInt(parts[1], 10);
+			var curr = this._getopacity(area);
+			var _this = this;
+			var diff = parts[1] - curr;
+			if (diff > 5) {
+				window.setTimeout(function () {_this._setopacity(area, null, '-'+parts[1]);}, 20);
+				pct = 1*curr + 5;
+			}
+			else if (diff < -3) {
+				window.setTimeout(function () {_this._setopacity(area, null, '-'+parts[1]);}, 20);
+				pct = 1*curr - 3;
+			}
+			else {
+				//final set
+				pct = parts[1];
+			}
+		}
+	}
+	//this.log('set ('+area.aid+'): ' + pct);
+	pct = parseInt(pct, 10);
 	area.style.opacity = '.'+pct;
 	area.style.filter  = 'alpha(opacity='+pct+')';
+};
+
+
+/**
+ *	Get the currently set opacity of a given area.
+ */
+imgmap.prototype._getopacity = function(area) {
+	if (area.style.opacity) {
+		return parseInt(area.style.opacity * 100, 10);
+	}
 };
 
 
@@ -1440,7 +1535,7 @@ imgmap.prototype._recalculate = function(id) {
 	var input = null;
 	try {
 		if (this.props[id]) {
-			var input   = this.props[id].getElementsByTagName('input')[2];
+			input   = this.props[id].getElementsByTagName('input')[2];
 			input.value = this._normCoords(input.value, this.areas[id].shape, 'preserve');
 			coords  = input.value;
 		}
@@ -1540,14 +1635,22 @@ imgmap.prototype._polygonshrink = function(area) {
 
 
 imgmap.prototype.img_mousemove = function(e) {
+	//function level var declarations
+	var x;
+	var y;
+	var xdiff;
+	var ydiff;
+	var diff;
+
 	if (this.viewmode === 1) {return;}//exit if preview mode
 	//event.x is relative to parent element, but page.x is NOT
 	//pos coordinates are the same absolute coords, offset coords are relative to parent
 	var pos = this._getPos(this.pic);
-	var x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
-	var y = (this.isMSIE) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
+	x = (this.isMSIE) ? (window.event.x - this.pic.offsetLeft) : (e.pageX - pos.x);
+	y = (this.isMSIE) ? (window.event.y - this.pic.offsetTop)  : (e.pageY - pos.y);
 	x = x + this.pic_container.scrollLeft;
 	y = y + this.pic_container.scrollTop;
+	
 	
 	//this.log(x + ' - ' + y + ': ' + this.memory[this.currentid].downx + ' - ' +this.memory[this.currentid].downy);
 	
@@ -1564,17 +1667,14 @@ imgmap.prototype.img_mousemove = function(e) {
 	
 	// Handle shift state for Safari
 	// Safari doesn't generate keyboard events for modifiers: http://bugs.webkit.org/show_bug.cgi?id=11696
-	if (this.isSafari)
-	{
-		if (e.shiftKey)
-		{
-	if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
+	if (this.isSafari) {
+		if (e.shiftKey) {
+			if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
 				this.is_drawing = this.DM_SQUARE_DRAW;
 				this.statusMessage(this.strings.SQUARE2_DRAW);
 			}
-		} 
-		else
-		{
+		}
+		else {
 			if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
 				//not for circle!
 				this.is_drawing = this.DM_RECTANGLE_DRAW;
@@ -1587,8 +1687,8 @@ imgmap.prototype.img_mousemove = function(e) {
 	if (this.is_drawing == this.DM_RECTANGLE_DRAW) {
 		//rectangle mode
 		this.fireEvent('onDrawArea', this.currentid);
-		var xdiff = x - this.memory[this.currentid].downx;
-		var ydiff = y - this.memory[this.currentid].downy;
+		xdiff = x - this.memory[this.currentid].downx;
+		ydiff = y - this.memory[this.currentid].downy;
 		//alert(xdiff);
 		this.setAreaSize(this.currentid, Math.abs(xdiff), Math.abs(ydiff));
 		if (xdiff < 0) {
@@ -1601,9 +1701,8 @@ imgmap.prototype.img_mousemove = function(e) {
 	else if (this.is_drawing == this.DM_SQUARE_DRAW) {
 		//square mode - align to shorter side
 		this.fireEvent('onDrawArea', this.currentid);
-		var xdiff = x - this.memory[this.currentid].downx;
-		var ydiff = y - this.memory[this.currentid].downy;
-		var diff;
+		xdiff = x - this.memory[this.currentid].downx;
+		ydiff = y - this.memory[this.currentid].downy;
 		if (Math.abs(xdiff) < Math.abs(ydiff)) {
 			diff = Math.abs(parseInt(xdiff, 10));
 		}
@@ -1626,8 +1725,8 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_MOVE || this.is_drawing == this.DM_SQUARE_MOVE) {
 		this.fireEvent('onMoveArea', this.currentid);
-		var x = x - this.memory[this.currentid].rdownx;
-		var y = y - this.memory[this.currentid].rdowny;
+		x = x - this.memory[this.currentid].rdownx;
+		y = y - this.memory[this.currentid].rdowny;
 		if (x + width > this.pic.width || y + height > this.pic.height) {return;}
 		if (x < 0 || y < 0) {return;}
 		//this.log(x + ' - '+width+ '+'+this.memory[this.currentid].rdownx +'='+xdiff );
@@ -1636,12 +1735,12 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_POLYGON_MOVE) {
 		this.fireEvent('onMoveArea', this.currentid);
-		var x = x - this.memory[this.currentid].rdownx;
-		var y = y - this.memory[this.currentid].rdowny;
+		x = x - this.memory[this.currentid].rdownx;
+		y = y - this.memory[this.currentid].rdowny;
 		if (x + width > this.pic.width || y + height > this.pic.height) {return;}
 		if (x < 0 || y < 0) {return;}
-		var xdiff = x - left;
-		var ydiff = y - top;
+		xdiff = x - left;
+		ydiff = y - top;
 		if (this.areas[this.currentid].xpoints) {
 			for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
 				this.areas[this.currentid].xpoints[i] = this.memory[this.currentid].xpoints[i] + xdiff;
@@ -1653,7 +1752,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_LEFT) {
 		this.fireEvent('onResizeArea', this.currentid);
-		var diff = x - left;
+		diff = x - left;
 		//alert(diff);
 		if ((width  + (-1 * diff)) > 0) {
 			//real resize left
@@ -1672,7 +1771,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_RIGHT) {
 		this.fireEvent('onResizeArea', this.currentid);
-		var diff = x - left - width;
+		diff = x - left - width;
 		if ((width  + (diff)) - 1 > 0) {
 			//real resize right
 			this.areas[this.currentid].style.top    = (top    + (-1* diff/2)) + 'px';
@@ -1689,7 +1788,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_TOP) {
 		this.fireEvent('onResizeArea', this.currentid);
-		var diff = y - top;
+		diff = y - top;
 		if ((width  + (-1 * diff)) > 0) {
 			//real resize top
 			this.areas[this.currentid].style.top    = y + 1 + 'px';
@@ -1707,7 +1806,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_BOTTOM) {
 		this.fireEvent('onResizeArea', this.currentid);
-		var diff = y - top - height;
+		diff = y - top - height;
 		if ((width  + (diff)) - 1 > 0) {
 			//real resize bottom
 			this.areas[this.currentid].style.left   = (left   + (-1* diff/2)) + 'px';
@@ -1724,7 +1823,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_LEFT) {
 		this.fireEvent('onResizeArea', this.currentid);
-		var xdiff = x - left;
+		xdiff = x - left;
 		if (width + (-1 * xdiff) > 0) {
 			//real resize left
 			this.areas[this.currentid].style.left = x + 1 + 'px';
@@ -1739,7 +1838,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_RIGHT) {
 		this.fireEvent('onResizeArea', this.currentid);
-		var xdiff = x - left - width;
+		xdiff = x - left - width;
 		if ((width  + (xdiff)) - 1 > 0) {
 			//real resize right
 			this.setAreaSize(this.currentid, (width  + (xdiff)) - 1, null);
@@ -1753,7 +1852,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_TOP) {
 		this.fireEvent('onResizeArea', this.currentid);
-		var ydiff = y - top;
+		ydiff = y - top;
 		if ((height + (-1 * ydiff)) > 0) {
 			//real resize top
 			this.areas[this.currentid].style.top   = y + 1 + 'px';
@@ -1768,7 +1867,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	}
 	else if (this.is_drawing == this.DM_RECTANGLE_RESIZE_BOTTOM) {
 		this.fireEvent('onResizeArea', this.currentid);
-		var ydiff = y - top - height;
+		ydiff = y - top - height;
 		if ((height + (ydiff)) - 1 > 0) {
 			//real resize bottom
 			this.setAreaSize(this.currentid, null, (height + (ydiff)) - 1);
@@ -1873,7 +1972,7 @@ imgmap.prototype.img_mousedown = function(e) {
 	}
 	
 	if (this.config.mode == "editor2") {
-		if (this.nextShape == '') {return;}
+		if (!this.nextShape) {return;}
 		this.addNewArea();
 		//console.log("init: " + this.nextShape);
 		this.initArea(this.currentid, this.nextShape);
@@ -1928,20 +2027,18 @@ imgmap.prototype.img_mousedown = function(e) {
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 	}
-	
+
 	this.memory[this.currentid].downx  = x;
 	this.memory[this.currentid].downy  = y;
-	
 };
 
 
-imgmap.prototype.img_area_mouseover = function(e) {
+/**
+ *	Highlights a given area.
+ *	@date	2007.12.28. 18:23:00
+ */
+imgmap.prototype.highlightArea = function(id, flag) {
 	if (this.is_drawing) {return;}//exit if in drawing state
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
-	var id = obj.aid;
-	
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - highlight it
 		this.fireEvent('onFocusArea', this.areas[id]);
@@ -1957,19 +2054,23 @@ imgmap.prototype.img_area_mouseover = function(e) {
 				this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_BOX;
 			}
 		}
-		this._setopacity(this.areas[id], this.config.CL_HIGHLIGHT_BG, this.config.highlight_opacity);
+		var opacity = this.config.highlight_opacity;
+		if (flag == 'grad') {
+			//apply gradient opacity
+			opacity = '-' + opacity;
+		}
+		this._setopacity(this.areas[id], this.config.CL_HIGHLIGHT_BG, opacity);
 		this._repaint(this.areas[id], this.config.CL_HIGHLIGHT_SHAPE);
 	}
 };
 
 
-imgmap.prototype.img_area_mouseout = function(e) {
+/**
+ *	Blurs a given area.
+ *	@date	2007.12.28. 18:23:26
+ */
+imgmap.prototype.blurArea = function(id, flag) {
 	if (this.is_drawing) {return;}//exit if in drawing state
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
-	var id = obj.aid;
-
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - fade it back
 		this.fireEvent('onBlurArea', this.areas[id]);
@@ -1985,9 +2086,38 @@ imgmap.prototype.img_area_mouseout = function(e) {
 				this.areas[id].style.borderColor = this.config.CL_NORM_BOX;
 			}
 		}
-		this._setopacity(this.areas[id], this.config.CL_NORM_BG, this.config.norm_opacity);
+		var opacity = this.config.norm_opacity;
+		if (flag == 'grad') {
+			//apply gradient opacity
+			opacity = '-' + opacity;
+		}
+		this._setopacity(this.areas[id], this.config.CL_NORM_BG, opacity);
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 	}
+};
+
+
+/**
+ *	Handles mouseover on props row.
+ */
+imgmap.prototype.img_area_mouseover = function(e) {
+	if (this.is_drawing) {return;}//exit if in drawing state
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
+	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
+	this.highlightArea(obj.aid);
+};
+
+
+/**
+ *	Handles mouseout on props row.
+ */
+imgmap.prototype.img_area_mouseout = function(e) {
+	if (this.is_drawing) {return;}//exit if in drawing state
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
+	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
+	this.blurArea(obj.aid);
 };
 
 
@@ -2049,7 +2179,7 @@ imgmap.prototype.img_area_keydown = function(e) {
  */
 imgmap.prototype.img_area_blur = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
-	if (this.is_drawing != 0) {return;}//exit if drawing
+	if (this.is_drawing) {return;}//exit if drawing
 	//console.log('blur');
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	//console.log(obj);
@@ -2110,11 +2240,12 @@ imgmap.prototype.html_container_focus = function(e) {
 
 
 /**
+ *	Handles event of mousemove on imgmap areas.
  *	@url	http://evolt.org/article/Mission_Impossible_mouse_position/17/23335/index.html
  */
 imgmap.prototype.area_mousemove = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
-	if (this.is_drawing == 0) {
+	if (!this.is_drawing) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
 			//do this because of label
@@ -2285,10 +2416,14 @@ imgmap.prototype.area_mousemove = function(e) {
 	}
 };
 
+
+/**
+ *	Handles event of mouseup on imgmap areas.
+ */
 imgmap.prototype.area_mouseup = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
 	//console.log('area_mouseup');
-	if (this.is_drawing == 0) {
+	if (!this.is_drawing) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
 			//do this because of label
@@ -2317,10 +2452,57 @@ imgmap.prototype.area_mouseup = function(e) {
 	}
 };
 
+
+/**
+ *	Handles event of mouseover on imgmap areas.
+ */
+imgmap.prototype.area_mouseover = function(e) {
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (!this.is_drawing) {
+		//this.log('area_mouseover');
+		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
+		if (obj.tagName == 'DIV') {
+			//do this because of label
+			obj = obj.parentNode;
+		}
+		if (obj.tagName == 'image' || obj.tagName == 'group' ||
+			obj.tagName == 'shape' || obj.tagName == 'stroke') {
+			//do this because of excanvas
+			obj = obj.parentNode.parentNode;
+		}
+		if (this.areas[this.currentid] != obj) {
+			//trying to draw on a different canvas, switch to this one
+			if (typeof obj.aid == 'undefined') {
+				this.log('Cannot identify target area', 1);
+				return;
+			}
+			this.form_selectRow(obj.aid, true);
+			this.currentid = obj.aid;
+		}
+		this.highlightArea(this.currentid, 'grad');
+	}
+};
+
+
+/**
+ *	Handles event of mouseout on imgmap areas.
+ */
+imgmap.prototype.area_mouseout = function(e) {
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (!this.is_drawing) {
+		//this.log('area_mouseout');
+		this.blurArea(this.currentid, 'grad');
+	}
+};
+
+
+/**
+ *	Handles event of mousedown on imgmap areas.
+ */
 imgmap.prototype.area_mousedown = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
 	//console.log('area_mousedown');
-	if (this.is_drawing == 0) {
+	if (!this.is_drawing) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
 			//do this because of label
@@ -2341,10 +2523,16 @@ imgmap.prototype.area_mousedown = function(e) {
 			this.currentid = obj.aid;
 		}
 		this.fireEvent('onSelectArea', this.areas[this.currentid]);
+		//this.log('selected = '+this.currentid);
 		this.draggedId  = this.currentid;
 		this.selectedId = this.currentid;
 		//stop event propagation to document level
-		(this.isMSIE) ? window.event.cancelBubble = true : e.stopPropagation();
+		if (this.isMSIE) {
+			window.event.cancelBubble = true;
+		}
+		else {
+			e.stopPropagation();
+		}
 	}
 	else {
 		//if drawing and not ie, have to propagate to image event
@@ -2355,6 +2543,7 @@ imgmap.prototype.area_mousedown = function(e) {
 
 
 /**
+ *	Gets the position of the cursor in the input box.
  *	@author	Diego Perlini
  *	@url	http://javascript.nwbox.com/cursor_position/
  */
@@ -2362,7 +2551,7 @@ imgmap.prototype.getSelectionStart = function(obj) {
 	if (obj.createTextRange) {
 		var r = document.selection.createRange().duplicate();
 		r.moveEnd('character', obj.value.length);
-		if (r.text == '') {return obj.value.length;}
+		if (r.text === '') {return obj.value.length;}
 		return obj.value.lastIndexOf(r.text);
 	}
 	else {
@@ -2427,9 +2616,10 @@ imgmap.prototype.img_coords_keydown = function(e) {
 	}
 };
 
-// Safari doesn't generate keyboard events for modifiers: http://bugs.webkit.org/show_bug.cgi?id=11696
+
 /**
  *	Handles SHIFT hold while drawing.
+ *	Note: Safari doesn't generate keyboard events for modifiers: http://bugs.webkit.org/show_bug.cgi?id=11696 
  *	@author	adam
  */
 imgmap.prototype.doc_keydown = function(e) {
@@ -2467,13 +2657,22 @@ imgmap.prototype.doc_keyup = function(e) {
 	}
 };
 
+
+/**
+ *	Handles event mousedown on document.
+ *	@author	adam
+ */
 imgmap.prototype.doc_mousedown = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
-	if (this.is_drawing == 0) {
+	if (!this.is_drawing) {
 		this.selectedId = null;
 	}
 };
 
+
+/**
+ *	Get the real position of the element.
+ */
 imgmap.prototype._getPos = function(element) {
 	var xpos = 0;
 	var ypos = 0;
@@ -2482,7 +2681,7 @@ imgmap.prototype._getPos = function(element) {
 		// If the element has an offset parent
 		if (elementOffsetParent) {
 			// While there is an offset parent
-			while ((elementOffsetParent = element.offsetParent) != null) {
+			while ((elementOffsetParent = element.offsetParent)) {
 				xpos += element.offsetLeft;
 				ypos += element.offsetTop;
 				element = elementOffsetParent;
@@ -2572,11 +2771,7 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
 			//replace first letters to uppercase
 			prop+= pp[j].replace(/^./, pp[j].substring(0,1).toUpperCase());
 		}
-		prop = prop.trim();
-		value = p[1].trim();
-		//alert('obj.style.' + prop + ' = \'' + value + '\';');
-		//eval is evil, but we have no other choice
-		eval('obj.style.' + prop + ' = \'' + value + '\';');
+		obj.style[prop.trim()] = p[1].trim();
 	}
 };
 
@@ -2600,17 +2795,41 @@ imgmap.prototype.fireEvent = function(evt, obj) {
  *	@date	10-12-2007 22:29:41
  */
 imgmap.prototype.setAreaSize = function(id, w, h) {
-	if (id == null) id = this.currentid;
-	if (w != null) {
+	if (!id) {id = this.currentid;}
+	if (w) {
 		this.areas[id].width  = w;
 		this.areas[id].style.width  = (w) + 'px';
 		this.areas[id].setAttribute('width',  w);
 	}
-	if (h != null) {
+	if (h) {
 		this.areas[id].height = h;
 		this.areas[id].style.height = (h) + 'px';
 		this.areas[id].setAttribute('height', h);
 	}
+};
+
+
+/**
+ *	Tries to detect preferred language of user.
+ *	@date	2007.12.28. 15:43:46
+ */
+imgmap.prototype.detectLanguage = function() {
+	var lang;
+	if (navigator.userLanguage) {
+		lang = navigator.userLanguage.toLowerCase();
+	}
+	else if (navigator.language) {
+		lang = navigator.language.toLowerCase();
+	}
+	else {
+		return this.config.defaultLang;
+	}
+	//this.log(lang, 2);
+	if (lang.length >= 2) {
+		lang = lang.substring(0,2);
+		return lang;
+	}
+	return this.config.defaultLang;
 };
 
 
@@ -2641,6 +2860,10 @@ String.prototype.rtrim = function() {
 	return this.replace(/\s+$/,"");
 };
 
+
+/**
+ *	Spawn an imgmap object for each imagemap found in the document.
+ */
 function imgmap_spawnObjects(config) {
 	//console.log('spawnobjects');
 	var maps = document.getElementsByTagName('map');

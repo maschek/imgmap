@@ -51,6 +51,9 @@
 		                         byline="true"/>
     </target>
 
+	<!-- - - - - - - - - - - - - - - - - -
+          target: Compress javascript file
+         - - - - - - - - - - - - - - - - - -->
 	<target name="compress" description="Compress javascript file">
 		<echo>Compressing javascript main sourcefile (rhino -c)</echo>
 		<java jar="custom_rhino.jar" fork="true" failonerror="true">
@@ -58,6 +61,12 @@
 			<arg file="../imgmap.js" />
 			<redirector output="../imgmap_packed.js" />
 		</java>
+		<echo>Minifying javascript main sourcefile (jsmin)</echo>
+		<!-- @url http://code.google.com/p/jsmin-ant-task/ -->
+		<taskdef name="jsmin"
+		        classname="net.matthaynes.jsmin.JSMin_Task"
+		        classpath="jsmin.0.2.2.jar"/>
+		<jsmin srcfile="../imgmap_packed.js" force="true"/>
 	</target>
 	
 	<!-- =================================
@@ -127,34 +136,35 @@
           target: Create release ZIP file
          - - - - - - - - - - - - - - - - - -->
     <target name="zipall" description="Create release ZIP file" depends="init,compress">
-    	<echo>Creating final ZIP package as: imgmap${version}${buildNumber}.zip</echo>
-    	<zip destfile="${src}/imgmap${version}${buildNumber}.zip"
+    	<property name="build.zipfile" value="imgmap${version}r${buildNumber}.zip"/>
+    	<echo>Creating final ZIP package as: ${build.zipfile}</echo>
+    	<zip destfile="${src}/${build.zipfile}"
     		 basedir="${src}"
     		 excludes="build/**, temp/**, **/imgmap*.zip" />
+    	<checksum file="${src}/${build.zipfile}" property="build.md5"/>
     </target>
 	
-	<!-- - - - - - - - - - - - - - - - - - 
-          target: Upload to googlecode
+	<!-- - - - - - - - - - - - - - - - - -
+          target: Upload to googlecode.com
          - - - - - - - - - - - - - - - - - -->
 	<taskdef name="GoogleCodeUploadTask" classname="net.bluecow.googlecode.ant.GoogleCodeUploadTask" classpath="ant-googlecode-0.0.0test.jar"/>
-    <target name="upload" description="Upload to googlecode" depends="zipall">
-    	<echo>Uploading final ZIP file to googlecode</echo>
+    <target name="upload_google" description="Upload to googlecode.com" depends="zipall">
+    	<echo>Uploading final ZIP file to googlecode.com</echo>
     	<!--
     	these will be skipped if coming from property file
     	 -->
     	<input
-    	    message="Please enter googlecode username:"
+    	    message="Please enter googlecode.com username:"
     	    addproperty="googlecode.username"
     	    defaultvalue="${user.name}"
     	/>
 	  	<input
-	  	    message="Please enter googlecode password (NOT google account password!):"
+	  	    message="Please enter googlecode.com password (NOT google account password!):"
 	  	    addproperty="googlecode.password"
 	  	/>
 	  	<input
 	  	    message="Please enter summary of new release:"
 	  	    addproperty="googlecode.summary"
-	  	  	defaultvalue="Latest version"
 	  	/>
     	<GoogleCodeUploadTask description="Uploads code to googlecode"
 			projectname="imgmap"
@@ -162,11 +172,11 @@
 			username="${googlecode.username}"
 			password="${googlecode.password}"
 			verbose="true"
-    		filename="${src}/imgmap${version}20.zip"
-    		targetfilename="imgmap${version}20.zip"
+    		filename="${src}/${build.zipfile}"
+    		targetfilename="${build.zipfile}"
     	/>
 	  <input
-	    message="Do you want to store your googlecode username and password in the build propertyfile (y/n)?"
+	    message="Do you want to store your googlecode.com username and password in the build propertyfile (y/n)?"
 	    validargs="y,n"
 	    addproperty="build.storegooglecodeyn"
 	  />
@@ -176,20 +186,50 @@
     </target>
 	
 	<!-- - - - - - - - - - - - - - - - - -
-          target: Googlecode info save
+          target: Googlecode.com info save
          - - - - - - - - - - - - - - - - - -->
-    <target name="upload_save" description="Googlecode info save" depends="upload" if="build.storegooglecode">
+    <target name="upload_save" description="Googlecode.com info save" depends="upload_google" if="build.storegooglecode">
 		<propertyfile file="build.properties" >
 		  <entry key="googlecode.username" type="string" value="${googlecode.username}"/>
 		  <entry key="googlecode.password" type="string" value="${googlecode.password}"/>
 		</propertyfile>
     </target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: Upload to maschek.hu
+         - - - - - - - - - - - - - - - - - -->
+    <target name="upload_maschek" description="Upload to maschek.hu" depends="init,zipall">
+    	<echo>Uploading final ZIP file to maschek.hu</echo>
+    	<input
+    	    message="Please enter SCP username:"
+    	    addproperty="maschek.username"
+    	    defaultvalue="${user.name}"
+    	/>
+	  	<input
+	  	    message="Please enter SCP password:"
+	  	    addproperty="maschek.password"
+	  	/>
+	  	<input
+	  	    message="Please enter summary of new release:"
+	  	    addproperty="maschek.summary"
+	  	/>
+    	<!-- upload zipfile -->
+    	<scp
+    		file="${src}/${build.zipfile}"
+    		todir="${maschek.username}:${maschek.password}@maschek.hu:/home/maschek/public_html/imgmap/downloaddir"
+    		trust="true"
+    		verbose="true"
+   		/>
+    	<!-- append info to descript.ion file -->
+    	<sshexec
+    		host="maschek.hu"
+    		username="${maschek.username}"
+    		password="${maschek.password}"
+    		command="echo &#34;${build.zipfile} ${maschek.summary} (MD5: ${build.md5})&#34; >> /home/maschek/public_html/imgmap/downloaddir/descript.ion"/>
+    </target>
 	
-	<target name="all" depends="upload_save">
+	<target name="all" depends="init,zipall,upload_save,upload_maschek">
 		<!-- all build tasks -->
 	</target>
 
-	<target name="clean" description="Clean up temporary build files">
-		<delete dir="${tempdir}" />
-	</target>
 </project>
