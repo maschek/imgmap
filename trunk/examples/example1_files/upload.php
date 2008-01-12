@@ -22,7 +22,7 @@ INPUT {
 
 <?php
 
-$basedir   = 'imgmap/';
+$basedir   = 'example1_files/';
 $targetdir = 'temp/';
 
 if ($_POST['btn_add']) {

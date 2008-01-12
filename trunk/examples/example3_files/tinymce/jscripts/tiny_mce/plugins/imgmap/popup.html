@@ -1,0 +1,123 @@
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>{$lang_imgmap_title}</title>
+	<script language="javascript" type="text/javascript" src="../../tiny_mce_popup.js"></script>
+	<!--[if gte IE 6]>
+	<script language="javascript" type="text/javascript" src="jscripts/excanvas.js"></script>
+	<![endif]-->
+	<script language="javascript" type="text/javascript" src="../../../../../../../imgmap.js"></script>
+	<script language="javascript" type="text/javascript" src="jscripts/functions.js"></script>
+	<link rel="stylesheet" href="css/imgmap.css" type="text/css"/>
+	<meta http-equiv="imagetoolbar" content="no"/>
+</head>
+<body id="imgmap" onload="delayedLoad()">
+	<form id="img_area_form">
+		<fieldset>
+			<legend>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image map areas</a>
+			</legend>
+			<div style="border-bottom: solid 1px #efefef">
+			<div id="button_container" style="float: left;">
+			<!-- buttons come here -->
+			</div>
+			<div style="float: right; margin: 0 5px">
+				<select onchange="changelabeling(this)">
+				<option value=''>No labeling</option>
+				<option value='%n' selected='1'>Label with numbers</option>
+				<option value='%a'>Label with alt text</option>
+				<option value='%h'>Label with href</option>
+				<option value='%c'>Label with coords</option>
+				</select>
+			</div>
+			<div style="float: right; margin: 0 5px">
+				<input type="checkbox" onClick="toggleBoundingBox(this)"/>
+				bounding box
+			</div>
+			</div>
+			<div id="form_container" style="clear: both;">
+			<!-- form elements come here -->
+		 	</div>
+		</fieldset>
+		<fieldset>
+			<legend>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image</a>
+			</legend>
+			<div id="pic_container">
+			</div>			
+		</fieldset>
+		<fieldset>
+			<legend>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)">Status</a>
+			</legend>
+			<div id="status_container"></div>
+		</fieldset>
+		<fieldset id="fieldset_html" class="fieldset_off">
+			<legend>
+				<a onclick="toggleFieldset(this.parentNode.parentNode)">Code</a>
+			</legend>
+			<div>
+			<textarea id="html_container" xstyle="float: left; clear: left;"></textarea></div>
+		</fieldset>
+
+		<div class="mceActionPanel">
+			<div style="float: left">
+				<input type="button" id="insert" name="update" value="{$lang_update}" onclick="updateAction();" />
+			</div>
+
+			<div style="float: right">
+				<input type="button" id="remove" class="button1" style="background-image:url(../../themes/{$theme}/images/cancel_button_bg.gif);" name="remove" value="{$lang_imgmap_remove}" onclick="removeAction();" />
+				<input type="button" id="cancel" name="cancel" value="{$lang_cancel}" onclick="cancelAction();" />
+			</div>
+		</div>
+		
+	</form>
+
+
+<script type="text/javascript">
+
+function delayedLoad(){
+	if(navigator.appName=="Microsoft Internet Explorer")
+	{
+	//ie load
+		tinyMCEPopup.onLoadEval = 'init();';
+	}
+	else
+	{
+		tinyMCEPopup.executeOnLoad('init();');
+	}
+	
+}
+
+function htmlShow() {
+	toggleFieldset(document.getElementById('fieldset_html'), 1);
+	document.getElementById('html_container').focus();
+}
+
+function changelabeling(obj) {
+	myimgmap.config.label = obj.value;
+	myimgmap._repaintAll();
+}
+
+function toggleBoundingBox(obj) {
+	//console.log(obj.checked);
+	myimgmap.config.bounding_box = obj.checked;
+	myimgmap.relaxAllAreas();
+}
+
+function toggleFieldset(fieldset, on) {
+	if (fieldset) {
+		if (fieldset.className == 'fieldset_off' || on == 1) {
+			fieldset.className = '';
+			tinyMCEPopup.resizeToContent();
+		}
+		else {
+			fieldset.className = 'fieldset_off';
+		}
+	}
+}
+
+
+</script>
+
+</body>
+</html>

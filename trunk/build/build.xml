@@ -83,8 +83,15 @@
     	<mkdir dir="${src}/temp/licenses"/>
     	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
 
-    	<copy file="${src}/imgmap.js" todir="${src}/temp"></copy>
-    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp"></copy>
+    	<copy file="${src}/imgmap.js" todir="${src}/temp/jscripts"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/jscripts"></copy>
+    	<!-- copy language files -->
+		<copy todir="${src}/temp/jscripts">
+			<fileset dir="${src}">
+			<include name="lang_*.js"/>
+			</fileset>
+		</copy>
+    	
     	<copy file="${src}/changelog" todir="${src}/temp"></copy>
     	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
 
@@ -114,8 +121,15 @@
     	<mkdir dir="${src}/temp/licenses"/>
     	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
 
-    	<copy file="${src}/imgmap.js" todir="${src}/temp"></copy>
-    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp"></copy>
+    	<copy file="${src}/imgmap.js" todir="${src}/temp/jscripts"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/jscripts"></copy>
+    	<!-- copy language files -->
+		<copy todir="${src}/temp/jscripts">
+			<fileset dir="${src}">
+			<include name="lang_*.js"/>
+			</fileset>
+		</copy>
+
     	<copy file="${src}/changelog" todir="${src}/temp"></copy>
     	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
 
