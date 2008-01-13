@@ -228,7 +228,8 @@ function updateAreaValues()
 		myimgmap.areas[currentAreaId].ahref = $( 'txtUrl' ).value ;
 		myimgmap.areas[currentAreaId].aalt = $( 'txtAlt' ).value ;
 		myimgmap.areas[currentAreaId].atitle = $( 'txtAttTitle' ).value ;
-		myimgmap._recalculate(currentAreaId);
+		//do we need this? adam - 13-01-2008 17:23:45
+		//myimgmap._recalculate(currentAreaId);
 	}
 }
 
