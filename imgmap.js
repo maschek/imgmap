@@ -22,7 +22,7 @@
  *	@date	26-02-2007 2:24:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@copyright
- *	@version 2.0beta4
+ *	@version 2.0beta6
  *	 
  *	TODO:
  *	-pic_container dynamic create(pos rel)?
@@ -42,9 +42,9 @@
  */
 
 function imgmap(config) {
-	this.version = "2.0beta4";
-	this.buildDate = "10-12-2007";
-	this.buildNumber = "30";
+	this.version = "2.0beta6";
+	this.buildDate = "2008/01/12 22:14";
+	this.buildNumber = "39";
 	this.config = {};
 	this.is_drawing = 0;
 	this.strings   = [];
@@ -579,6 +579,9 @@ imgmap.prototype.loadStrings = function(obj) {
 imgmap.prototype.loadImage = function(img, imgw, imgh) {
 	//wipe all
 	this.removeAllAreas();
+	if (this.html_container) {
+		this.html_container.value = '';
+	}
 	if (!this._getLastArea()) {
 		//init with one new area if there was none editable
 		if (this.config.mode != "editor2") {this.addNewArea();}
@@ -986,9 +989,9 @@ imgmap.prototype.setMapHTML = function(map) {
 		
 		this._recalculate(id);//contains repaint
 		this.relaxArea(id);
-		if (this.html_container) {
-			this.html_container.value = this.getMapHTML();
-		}
+	}//end for areas
+	if (this.html_container) {
+		this.html_container.value = this.getMapHTML();
 	}
 };
 
@@ -1261,15 +1264,17 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
 	if (pct && typeof pct == 'string' && pct.match(/^\d*\-\d+$/)) {
 		//gradual fade
 		var parts = pct.split('-');
-		if (parts[0]) {
+		if (typeof parts[0] != 'undefined') {
 			//set initial opacity
+			parts[0] = parseInt(parts[0], 10);
 			this._setopacity(area, bgcolor, parts[0]);
 		}
-		if (parts[1]) {
+		if (typeof parts[1] != 'undefined') {
 			parts[1] = parseInt(parts[1], 10);
 			var curr = this._getopacity(area);
+			//this.log('curr: '+curr);
 			var _this = this;
-			var diff = parts[1] - curr;
+			var diff = Math.round(parts[1] - curr);
 			if (diff > 5) {
 				window.setTimeout(function () {_this._setopacity(area, null, '-'+parts[1]);}, 20);
 				pct = 1*curr + 5;
@@ -1284,10 +1289,12 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
 			}
 		}
 	}
-	//this.log('set ('+area.aid+'): ' + pct);
-	pct = parseInt(pct, 10);
-	area.style.opacity = '.'+pct;
-	area.style.filter  = 'alpha(opacity='+pct+')';
+	if (!isNaN(pct)) {
+		pct = Math.round(parseInt(pct, 10));
+		//this.log('set ('+area.aid+'): ' + pct, 1);
+		area.style.opacity = pct / 101;
+		area.style.filter  = 'alpha(opacity='+pct+')';
+	}
 };
 
 
@@ -1295,9 +1302,14 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
  *	Get the currently set opacity of a given area.
  */
 imgmap.prototype._getopacity = function(area) {
-	if (area.style.opacity) {
-		return parseInt(area.style.opacity * 100, 10);
+	if (area.style.opacity <= 1) {
+		return area.style.opacity * 100;
 	}
+	if (area.style.filter) {
+		//alpha(opacity=NaN)
+		return parseInt(area.style.filter.replace(/alpha\(opacity\=([^\)]*)\)/ig, "$1"), 10);	
+	}
+	return 100;//default opacity
 };
 
 
@@ -1597,12 +1609,12 @@ imgmap.prototype._polygongrow = function(area, newx, newy) {
 	//this.log('pgrow');
 	var xdiff = newx - parseInt(area.style.left, 10);
 	var ydiff = newy - parseInt(area.style.top , 10);
-	var pad   = 3;//padding on the edges
-	var pad2  = 6;//twice the padding
+	var pad   = 0;//padding on the edges
+	var pad2  = 0;//twice the padding
 	
 	if (newx < parseInt(area.style.left, 10)) {
 		area.style.left   = (newx - pad) + 'px';
-		this.setAreaSize(area.aid, parseInt(area.style.width, 10)  + Math.abs(xdiff) + pad2, null);
+		this.setAreaSize(area.aid, parseInt(area.style.width, 10) + Math.abs(xdiff) + pad2, null);
 	}
 	else if (newx > parseInt(area.style.left, 10) + parseInt(area.style.width, 10)) {
 		this.setAreaSize(area.aid, newx - parseInt(area.style.left, 10) + pad2, null);
@@ -1624,8 +1636,8 @@ imgmap.prototype._polygongrow = function(area, newx, newy) {
  */
 imgmap.prototype._polygonshrink = function(area) {
 	//this.log('pshrink');
-	area.style.left = (area.xpoints[0] + 1) + 'px';
-	area.style.top  = (area.ypoints[0] + 1) + 'px';
+	area.style.left = (area.xpoints[0]) + 'px';
+	area.style.top  = (area.ypoints[0]) + 'px';
 	this.setAreaSize(area.aid, 0, 0);
 	for (var i=0; i<area.xpoints.length; i++) {
 		this._polygongrow(area, area.xpoints[i], area.ypoints[i]);
@@ -1747,8 +1759,8 @@ imgmap.prototype.img_mousemove = function(e) {
 				this.areas[this.currentid].ypoints[i] = this.memory[this.currentid].ypoints[i] + ydiff;
 			}
 		}
-		this.areas[this.currentid].style.left = x + 1 + 'px';
-		this.areas[this.currentid].style.top  = y + 1 + 'px';
+		this.areas[this.currentid].style.left = x + 'px';
+		this.areas[this.currentid].style.top  = y + 'px';
 	}
 	else if (this.is_drawing == this.DM_SQUARE_RESIZE_LEFT) {
 		this.fireEvent('onResizeArea', this.currentid);
@@ -2457,9 +2469,10 @@ imgmap.prototype.area_mouseup = function(e) {
  *	Handles event of mouseover on imgmap areas.
  */
 imgmap.prototype.area_mouseover = function(e) {
-	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
 	if (!this.is_drawing) {
 		//this.log('area_mouseover');
+		//identify source object
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 		if (obj.tagName == 'DIV') {
 			//do this because of label
@@ -2470,6 +2483,8 @@ imgmap.prototype.area_mouseover = function(e) {
 			//do this because of excanvas
 			obj = obj.parentNode.parentNode;
 		}
+		/*
+		//switch to hovered area
 		if (this.areas[this.currentid] != obj) {
 			//trying to draw on a different canvas, switch to this one
 			if (typeof obj.aid == 'undefined') {
@@ -2479,7 +2494,8 @@ imgmap.prototype.area_mouseover = function(e) {
 			this.form_selectRow(obj.aid, true);
 			this.currentid = obj.aid;
 		}
-		this.highlightArea(this.currentid, 'grad');
+		*/
+		this.highlightArea(obj.aid, 'grad');
 	}
 };
 
@@ -2488,10 +2504,21 @@ imgmap.prototype.area_mouseover = function(e) {
  *	Handles event of mouseout on imgmap areas.
  */
 imgmap.prototype.area_mouseout = function(e) {
-	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
 	if (!this.is_drawing) {
 		//this.log('area_mouseout');
-		this.blurArea(this.currentid, 'grad');
+		//identify source object
+		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
+		if (obj.tagName == 'DIV') {
+			//do this because of label
+			obj = obj.parentNode;
+		}
+		if (obj.tagName == 'image' || obj.tagName == 'group' ||
+			obj.tagName == 'shape' || obj.tagName == 'stroke') {
+			//do this because of excanvas
+			obj = obj.parentNode.parentNode;
+		}
+		this.blurArea(obj.aid, 'grad');
 	}
 };
 
@@ -2522,10 +2549,10 @@ imgmap.prototype.area_mousedown = function(e) {
 			this.form_selectRow(obj.aid, true);
 			this.currentid = obj.aid;
 		}
-		this.fireEvent('onSelectArea', this.areas[this.currentid]);
 		//this.log('selected = '+this.currentid);
 		this.draggedId  = this.currentid;
 		this.selectedId = this.currentid;
+		this.fireEvent('onSelectArea', this.areas[this.currentid]);
 		//stop event propagation to document level
 		if (this.isMSIE) {
 			window.event.cancelBubble = true;
@@ -2796,12 +2823,12 @@ imgmap.prototype.fireEvent = function(evt, obj) {
  */
 imgmap.prototype.setAreaSize = function(id, w, h) {
 	if (!id) {id = this.currentid;}
-	if (w) {
+	if (w != null) {
 		this.areas[id].width  = w;
 		this.areas[id].style.width  = (w) + 'px';
 		this.areas[id].setAttribute('width',  w);
 	}
-	if (h) {
+	if (h != null) {
 		this.areas[id].height = h;
 		this.areas[id].style.height = (h) + 'px';
 		this.areas[id].setAttribute('height', h);
