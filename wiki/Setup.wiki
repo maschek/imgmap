@@ -1,0 +1,28 @@
+#summary How to set up the imgmap library.
+
+= Introduction =
+
+This page will give you a brief overview how to set up imgmap to get your job done.
+The library has 3 main operation modes, you will find an example for each of them in the download package. The operation modes are the following:
+
+  # editor - this is the mode when the library will create all the necessary form elements that are needed to reproduce the interface that can be seen on the online editor. You assign certain containers in your document, and the script will fill these in with form elements, buttons, text area. For more details read further on.
+  # highlighter - in this mode the library will simply work as an image map highlighter. It takes all image maps found on the page and applies visibility to the map areas without you being able to edit them.
+  # editor2 - this is to reproduce certain Dreamweaver-like functionality, very similar to _editor_ mode though.
+
+= Preliminary steps =
+
+  * Download the latest package from the Downloads section
+  * Unzip the package to the directory of your preference, eg. yourproject/imgmap
+
+= Script inclusion =
+
+To be able to use the script, you will have to include it in your HTML page. Something like this will do the job:
+{{{
+<script type="text/javascript" src="yourproject/imgmap/imgmap.js"></script>
+}}}
+Either you can place it in the head section of your page, or just inline, when you need it. In order to be able to use the canvas element in Internet Explorer, imgmap will try to load excanvas.js from the same directory (yourproject/imgmap) automatically, if its not loaded before. To shortcut this process you can always load this script in a conditional comment _in your page header_:
+{{{
+<!--[if gte IE 6]>
+<script language="javascript" type="text/javascript" src="yourproject/imgmap/excanvas.js"></script>
+<![endif]-->
+}}}
