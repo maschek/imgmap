@@ -121,4 +121,10 @@ Tada. We are done.
 
 = Interacting with the editor =
 
-to be written later
+There are a number of functions inside imgmap object, most likely you would want to use the followings:
+
+loadImage
+useImage
+getMapHTML
+setMapHTML
+_repaintAll
