@@ -15,3 +15,5 @@ extended_valid_elements : "img[usemap|class|src|border=0|alt|title|hspace|vspace
 Notes:
 * You may only add extra buttons to your tiny instance if you are using the advanced theme
 * The plugin only works with tiny version 2.x
+* In some cases TinyMCE includes editor_plugin_src.js instead of editor_plugin.js. Since this file was not part
+  of some earlier versions, you can simply copy editor_plugin.js as editor_plugin_src.js in your plugin directory.
