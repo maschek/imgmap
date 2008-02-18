@@ -1,0 +1,39 @@
+<html>
+<head>
+<script language="javascript" type="text/javascript" src="AIRAliases.js"></script>
+</head>
+<body>
+<style type="text/css">
+BODY {
+	padding: 5px;
+}
+</style>
+<strong>The imagemap editor is a browser-based, javascript powered image map editor.</strong><br>
+
+<p>
+With the help of the editor you can easily draw ALL the standard image map shapes (rectangle, circle, polygon), while you will have full control over the generated HTML code as well.
+</p>
+
+<pre>
+What? Help! : <a href="http://en.wikipedia.org/wiki/Image_map">http://en.wikipedia.org/wiki/Image_map</a>
+Home page   : <a href="http://www.maschek.hu/imagemap/index">http://www.maschek.hu/imagemap/index</a>
+License     : <a href="http://www.maschek.hu/imagemap/index">http://www.maschek.hu/imagemap/license</a>
+Donate      : <a href="http://www.maschek.hu/imagemap/index">http://www.maschek.hu/imagemap/donate</a>
+Project page: <a href="http://imgmap.googlecode.com">http://imgmap.googlecode.com</a>
+</pre>
+
+<div style="float: right">
+Created by Adam Maschek
+</div>
+
+<script type="text/javascript">
+var links = document.getElementsByTagName('a');
+for (var i = 0; i < links.length; i++) {
+	links[i].onclick = function () {
+		air.navigateToURL(new air.URLRequest(this.href));
+		return false;
+	};
+}
+</script>
+</body>
+</html>

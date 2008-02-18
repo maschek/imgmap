@@ -677,6 +677,9 @@ imgmap.prototype.log = function(obj, level) {
 	else if (this.isOpera) {
 		opera.postError(level + ': ' + obj);
 	}
+	else if (typeof air == 'object' && typeof air.Introspector == 'object') {
+		air.Introspector.Console.log(obj);
+	}
 	else {
 		if (level > 1) {
 			//alert(level + ': ' + obj);
@@ -2774,6 +2777,10 @@ imgmap.prototype.toClipBoard = function(text) {
 			if (!clip) {return false;}
 	
 			clip.setData(trans, null, clipid.kGlobalClipboard);
+		}
+		else if (typeof air == 'object') {
+			air.Clipboard.generalClipboard.clear();
+			air.Clipboard.generalClipboard.setData("air:text", text, false);
 		}
 	}
 	catch (err) {

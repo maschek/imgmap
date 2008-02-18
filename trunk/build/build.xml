@@ -58,15 +58,15 @@
 		<echo>Compressing javascript main sourcefile (rhino -c)</echo>
 		<java jar="custom_rhino.jar" fork="true" failonerror="true">
 			<arg value="-c" />
-			<arg file="../imgmap.js" />
-			<redirector output="../imgmap_packed.js" />
+			<arg file="${src}/imgmap.js" />
+			<redirector output="${src}/imgmap_packed.js" />
 		</java>
 		<echo>Minifying javascript main sourcefile (jsmin)</echo>
 		<!-- @url http://code.google.com/p/jsmin-ant-task/ -->
 		<taskdef name="jsmin"
 		        classname="net.matthaynes.jsmin.JSMin_Task"
 		        classpath="jsmin.0.2.2.jar"/>
-		<jsmin srcfile="../imgmap_packed.js" force="true"/>
+		<jsmin srcfile="${src}/imgmap_packed.js" force="true"/>
 	</target>
 	
 	<!-- =================================
@@ -146,6 +146,83 @@
     </target>
 
 
+
+	<!-- =================================
+          target: Make AIR package
+         ================================= -->
+    <target name="build_air" description="Make AIR package" depends="init,release,compress">
+    	<echo>Creating Adobe AIR package...</echo>
+    	<delete dir="${src}/temp" />
+    	<mkdir dir="${src}/temp"/>
+		<copy todir="${src}/temp">
+			<fileset dir="${src}/examples/example7_files"/>
+		</copy>
+		<delete file="${src}/temp/AIRIntrospector.js" />
+		<copy file="${src}/examples/example7.xml" todir="${src}/temp"></copy>
+		
+    	<mkdir dir="${src}/temp/licenses"/>
+    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
+
+    	<copy file="${src}/imgmap.js" todir="${src}/temp"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp"></copy>
+    	<!-- copy language files -->
+		<copy todir="${src}/temp">
+			<fileset dir="${src}">
+			<include name="lang_*.js"/>
+			</fileset>
+		</copy>
+
+    	<copy file="${src}/changelog" todir="${src}/temp"></copy>
+    	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
+
+		<replaceregexp file="${src}/temp/example7.xml"
+				match="example7_files\/"
+				replace=""
+				flags="i"
+				byline="true"/>
+
+		<replaceregexp file="${src}/temp/air.js"
+				match="air\.Introspector"
+				replace="\/\/air\.Introspector"
+				flags="i"
+				byline="true"/>
+
+		<replaceregexp file="${src}/temp/example7.html"
+				match='src="AIRIntrospector\.js"'
+				replace=""
+				flags="i"
+				byline="true"/>
+				
+		<replaceregexp file="${src}/temp/example7.html"
+				match='src="imgmap\.js"'
+				replace='src="imgmap_packed.js"'
+				flags="i"
+				byline="true"/>
+				
+		<replaceregexp file="${src}/temp/example7.html"
+				match="Example 7[\w\s]*?\."
+				replace=""
+				flags="i"
+				byline="true"/>
+		
+		<echo>Press Enter, input cert password an press enter again:</echo>		
+		<java jar="c:/air/lib/adt.jar" fork="true" failonerror="true">
+			<arg value="-package"/>
+			<arg value="-storetype"/>
+			<arg value="pkcs12"/>
+			<arg value="-keystore"/>
+			<arg value="cert.pfx"/>
+			<arg value="${src}/imgmap_desktop${buildNumber}.air"/>
+			<arg value="${src}/temp/example7.xml"/>
+			<arg value="-C"/>
+			<arg value="${src}/temp"/>
+			<arg value="."/>
+		</java>
+    	
+		<delete dir="${src}/temp" />
+    </target>
+
+
 	<!-- - - - - - - - - - - - - - - - - - 
           target: Create release ZIP file
          - - - - - - - - - - - - - - - - - -->
@@ -209,40 +286,7 @@
 		</propertyfile>
     </target>
 
-	<!-- - - - - - - - - - - - - - - - - - 
-          target: Upload to maschek.hu
-         - - - - - - - - - - - - - - - - - -->
-    <target name="upload_maschek" description="Upload to maschek.hu" depends="init,zipall">
-    	<echo>Uploading final ZIP file to maschek.hu</echo>
-    	<input
-    	    message="Please enter SCP username:"
-    	    addproperty="maschek.username"
-    	    defaultvalue="${user.name}"
-    	/>
-	  	<input
-	  	    message="Please enter SCP password:"
-	  	    addproperty="maschek.password"
-	  	/>
-	  	<input
-	  	    message="Please enter summary of new release:"
-	  	    addproperty="maschek.summary"
-	  	/>
-    	<!-- upload zipfile -->
-    	<scp
-    		file="${src}/${build.zipfile}"
-    		todir="${maschek.username}:${maschek.password}@maschek.hu:/home/maschek/public_html/imgmap/downloaddir"
-    		trust="true"
-    		verbose="true"
-   		/>
-    	<!-- append info to descript.ion file -->
-    	<sshexec
-    		host="maschek.hu"
-    		username="${maschek.username}"
-    		password="${maschek.password}"
-    		command="echo &#34;${build.zipfile} ${maschek.summary} (MD5: ${build.md5})&#34; >> /home/maschek/public_html/imgmap/downloaddir/descript.ion"/>
-    </target>
-	
-	<target name="all" depends="init,zipall,upload_save,upload_maschek">
+	<target name="all" depends="init,zipall,upload_save">
 		<!-- all build tasks -->
 	</target>
 
