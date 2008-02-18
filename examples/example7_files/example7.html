@@ -1,9 +1,9 @@
 <html>
 <head>
 <title>Online Image Map Editor - Example 7</title>
-<link rel="stylesheet" href="example7_files/imgmap.css" type="text/css">
-<script language="javascript" type="text/javascript" src="example7_files/AIRIntrospector.js"></script>
-<script language="javascript" type="text/javascript" src="example7_files/AIRAliases.js"></script>
+<link rel="stylesheet" href="imgmap.css" type="text/css">
+<script language="javascript" type="text/javascript" src="AIRIntrospector.js"></script>
+<script language="javascript" type="text/javascript" src="AIRAliases.js"></script>
 </head>
 <body>
 <p style="font: bold 12px Verdana; padding: 5px 5px 0 5px">
@@ -54,7 +54,7 @@ Example 7 shows how to use the imgmap component in an Adobe AIR application.
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Code</a>
 			</legend>
 			<div>
-			<img src="example1_files/clipboard.gif" onclick="myimgmap.toClipBoard()" style="float: right; margin: 5px; cursor: pointer;"/>
+			<img src="clipboard.gif" onclick="myimgmap.toClipBoard()" style="float: right; margin: 5px; cursor: pointer;"/>
 			This is the generated image map HTML code.
 			Click into the textarea below and press Ctrl+C to copy the code to your clipboard. Alternatively you can use the
 			clipboard icon on the right. Please note, that you have to attach this code to your image, via the usemap property
@@ -64,13 +64,12 @@ Example 7 shows how to use the imgmap component in an Adobe AIR application.
 		</fieldset>
 	</form>
 
-<script type="text/javascript" src="example7_files/imgmap.js"></script>
+<script type="text/javascript" src="imgmap.js"></script>
 <script type="text/javascript">
 //instantiate the imgmap component, setting up some basic config values
 var myimgmap = new imgmap({
 	mode : "editor",
 	button_container: document.getElementById('button_container'),
-	imgroot: 'example1_files/',
 	buttons : ['add','delete','preview','html'],
 	custom_callbacks : {
 		'onHtml' : function() {htmlShow();}
@@ -117,7 +116,7 @@ function toggleFieldset(fieldset, on) {
 }
 
 </script>
-<script type="text/javascript" src="example7_files/air.js"></script>
+<script type="text/javascript" src="air.js"></script>
 
 </body>
 </html>

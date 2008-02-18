@@ -1,42 +1,47 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <application xmlns="http://ns.adobe.com/air/application/1.0.M6">
 
-<!-- Adobe AIR Application Descriptor File Template.
+<!-- 
 
-	Specifies parameters for identifying, installing, and launching AIR applications.
-	See http://www.adobe.com/go/air_1.0_application_descriptor for complete documentation.
+imgmap.desktop Adobe AIR application by Adam Maschek, 2008
+==========================================================
 
-	xmlns - The Adobe AIR namespace: http://ns.adobe.com/air/application/1.0.M6 
-			The last segment of the namespace specifies the version 
-			of the AIR runtime required for this application to run.
-			
-	minimumPatchLevel - The minimum patch level of the AIR runtime required to run 
-			the application. Optional.
+To test this application, please download and install the Adobe AIR SDK from:
+http://labs.adobe.com/downloads/airsdk.html
+, then run "adl example7.xml" from the command line.
+
+To install this application as a desktop executable, please download and install
+the Adobe AIR runtimes from:
+http://labs.adobe.com/downloads/air.html
+, then compile the application using the SDK "adt" tool, or download latest version from:
+http://www.maschek.hu/imagemap/desktop
+
 -->
 
 	<!-- The application identifier string, unique to this application. Required. -->
-	<id>aaa</id>
+	<id>imgmap.desktop</id>
 
 	<!-- Used as the filename for the application. Required. -->
-	<filename>aaa</filename>
+	<filename>imgmap_desktop</filename>
 
 	<!-- The name that is displayed in the AIR application installer. Optional. -->
-	<!-- <name></name> -->
+	<name>Image Map Editor.desktop</name>
 
 	<!-- An application version designator (such as "v1", "2.5", or "Alpha 1"). Required. -->
 	<version>v1</version>
 
 	<!-- Description, displayed in the AIR application installer. Optional. -->
-	<!-- <description></description> -->
+	<description>Image Map Editor.desktop - With the help of the editor you can easily draw ALL the standard image map shapes (rectangle, circle, polygon), while you will have full control over the generated HTML code as well.
+	</description>
 
 	<!-- Copyright information. Optional -->
-	<!-- <copyright></copyright> -->
+	<copyright>Created by Adam Maschek, see license info at http://www.maschek.hu/imagemap/license</copyright>
 
 	<!-- Settings for the application's initial window. Required. -->
 	<initialWindow>
 		<!-- The main SWF or HTML file of the application. Required. -->
 		<!-- Note: In Flex Builder, the SWF reference is set automatically. -->
-		<content>example7.html</content>
+		<content>example7_files/example7.html</content>
 		
 		<!-- Whether the window is initially visible. Optional. Default false. -->
 	    <visible>true</visible>
@@ -45,7 +50,7 @@
 		<width>800</width>
 
 		<!-- The window's initial height. Optional. -->
-		<height>730</height>
+		<height>745</height>
 
 	</initialWindow>
 
