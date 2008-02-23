@@ -43,8 +43,8 @@
 
 function imgmap(config) {
 	this.version = "2.0beta6";
-	this.buildDate = "2008/01/12 22:14";
-	this.buildNumber = "39";
+	this.buildDate = "2008/02/23 20:40";
+	this.buildNumber = "72";
 	this.config = {};
 	this.is_drawing = 0;
 	this.strings   = [];
@@ -676,6 +676,15 @@ imgmap.prototype.log = function(obj, level) {
 	}
 	else if (this.isOpera) {
 		opera.postError(level + ': ' + obj);
+	}
+	else if (typeof air == 'object') {
+		//we are inside AIR
+		if (typeof air.Introspector == 'object') {
+			air.Introspector.Console.log(obj);
+		}
+	else {
+			air.trace(obj);
+		}
 	}
 	else {
 		if (level > 1) {
@@ -2774,6 +2783,10 @@ imgmap.prototype.toClipBoard = function(text) {
 			if (!clip) {return false;}
 	
 			clip.setData(trans, null, clipid.kGlobalClipboard);
+		}
+		else if (typeof air == 'object') {
+			air.Clipboard.generalClipboard.clear();
+			air.Clipboard.generalClipboard.setData("air:text", text, false);
 		}
 	}
 	catch (err) {

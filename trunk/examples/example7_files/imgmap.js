@@ -677,8 +677,14 @@ imgmap.prototype.log = function(obj, level) {
 	else if (this.isOpera) {
 		opera.postError(level + ': ' + obj);
 	}
-	else if (typeof air == 'object' && typeof air.Introspector == 'object') {
-		air.Introspector.Console.log(obj);
+	else if (typeof air == 'object') {
+		//we are inside AIR
+		if (typeof air.Introspector == 'object') {
+			air.Introspector.Console.log(obj);
+		}
+		else {
+			air.trace(obj);
+		}
 	}
 	else {
 		if (level > 1) {

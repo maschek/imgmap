@@ -108,6 +108,44 @@
     </target>
 
 	<!-- =================================
+          target: Make Tiny3 package
+         ================================= -->
+    <target name="build_tiny3" description="Make TinyMCE 3.x package" depends="init,release,compress">
+    	<echo>Creating TinyMCE 3.x package...</echo>
+    	<delete dir="${src}/temp" />
+    	<mkdir dir="${src}/temp"/>
+		<copy todir="${src}/temp">
+			<fileset dir="${src}/examples/example8_files/tinymce/jscripts/tiny_mce/plugins/imgmap"/>
+		</copy>
+		
+    	<mkdir dir="${src}/temp/licenses"/>
+    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
+
+    	<copy file="${src}/imgmap.js" todir="${src}/temp/jscripts"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/jscripts"></copy>
+    	<!-- copy language files -->
+		<copy todir="${src}/temp/jscripts">
+			<fileset dir="${src}">
+			<include name="lang_*.js"/>
+			</fileset>
+		</copy>
+    	
+    	<copy file="${src}/changelog" todir="${src}/temp"></copy>
+    	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
+
+		<replaceregexp file="${src}/temp/popup.html"
+				match="\.\./\.\./\.\./\.\./\.\./\.\./\.\./imgmap\.js"
+				replace="jscripts/imgmap_packed.js"
+				flags="i"
+				byline="true"/>
+    	<echo>Packaging ZIP: plugin_tinymce3.${buildNumber}.zip</echo>
+    	<zip destfile="${src}/plugin_tinymce3.${buildNumber}.zip"
+    		 basedir="${src}/temp"
+    	/>
+    	<delete dir="${src}/temp" />
+    </target>
+
+	<!-- =================================
           target: Make FCK package
          ================================= -->
     <target name="build_fck" description="Make FCK package" depends="init,release,compress">
@@ -157,6 +195,8 @@
 		<copy todir="${src}/temp">
 			<fileset dir="${src}/examples/example7_files"/>
 		</copy>
+		
+		<!-- remove introspector since that is for debug only -->
 		<delete file="${src}/temp/AIRIntrospector.js" />
 		<copy file="${src}/examples/example7.xml" todir="${src}/temp"></copy>
 		
@@ -175,36 +215,49 @@
     	<copy file="${src}/changelog" todir="${src}/temp"></copy>
     	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
 
+		<!-- replace reference to subdir -->
 		<replaceregexp file="${src}/temp/example7.xml"
 				match="example7_files\/"
 				replace=""
 				flags="i"
 				byline="true"/>
-
-		<replaceregexp file="${src}/temp/air.js"
-				match="air\.Introspector"
-				replace="\/\/air\.Introspector"
+		
+		<!-- replace version info -->
+		<replaceregexp file="${src}/temp/example7.xml"
+				match="&lt;version&gt;.*?&lt;/version&gt;"
+				replace="&lt;version&gt;${version} (build ${buildNumber})&lt;/version&gt;"
 				flags="i"
 				byline="true"/>
-
+		
+		<!-- replace reference to introspector functions (prepend comment) -->
+		<replaceregexp file="${src}/temp/air.js"
+				match="air\.Introspector"
+				replace="//air\.Introspector"
+				flags="i"
+				byline="true"/>
+		
+		<!-- replace reference to introspector include -->
 		<replaceregexp file="${src}/temp/example7.html"
-				match='src="AIRIntrospector\.js"'
+				match='&lt;script.*?src="AIRIntrospector\.js".*?/script&gt;'
 				replace=""
 				flags="i"
 				byline="true"/>
-				
+		
+		<!-- replace reference to imgmap, use packed instead -->
 		<replaceregexp file="${src}/temp/example7.html"
 				match='src="imgmap\.js"'
 				replace='src="imgmap_packed.js"'
 				flags="i"
 				byline="true"/>
-				
+		
+		<!-- replace reference to Example 7 (title and firs paragraph) -->
 		<replaceregexp file="${src}/temp/example7.html"
-				match="Example 7[\w\s]*?\."
-				replace=""
+				match="(\s\-\s|)Example 7.*?($|&lt;)"
+				replace="\2"
 				flags="i"
 				byline="true"/>
 		
+		<!-- build air package, you will need AIR SDK and a signing certificate! -->
 		<echo>Press Enter, input cert password an press enter again:</echo>		
 		<java jar="c:/air/lib/adt.jar" fork="true" failonerror="true">
 			<arg value="-package"/>
@@ -219,6 +272,7 @@
 			<arg value="."/>
 		</java>
     	
+    	<!-- clean up temp dir -->
 		<delete dir="${src}/temp" />
     </target>
 

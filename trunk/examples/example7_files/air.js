@@ -20,17 +20,45 @@ function loadFile() {
 
 function loadUrl(url) {
 	if (url) {
+		//remove em element first
+		var ems = document.getElementById('pic_container').getElementsByTagName('em');
+		if (ems[0]) {
+			document.getElementById('pic_container').removeChild(ems[0]);
+		}
 		myimgmap.loadImage(url);
 		saveRecentDocument(url);//save as mru
 	}
 }
 
-/*
-document.getElementById('aa').addEventListener('drop', fileSelected2);
-function fileSelected2(event) {
-air.Introspector.Console.log(event.target);
+/** DRAG N DROP HANDLING PART *************************************************/
+
+document.getElementById('pic_container').addEventListener("dragenter", preventDefault);
+document.getElementById('pic_container').addEventListener("dragover", preventDefault);
+document.getElementById('pic_container').addEventListener('drop', fileSelected);
+
+function fileSelected(event) {
+	//air.Introspector.Console.log('plain:'+event.dataTransfer.getData("text/plain"));
+	//air.Introspector.Console.log('uri:'+event.dataTransfer.getData("text/uri-list"));
+	//air.Introspector.Console.log(event.dataTransfer.getData("application/x-vnd.adobe.air.file-list"));
+	if (event.dataTransfer.getData("text/uri-list")) {
+		loadUrl(event.dataTransfer.getData("text/uri-list"));
+		return true;
+	}
+	else if (event.dataTransfer.getData("text/plain")) {
+		loadUrl(event.dataTransfer.getData("text/plain"));
+		return true;
+	}
+	else if (event.dataTransfer.getData("application/x-vnd.adobe.air.file-list")) {
+		//get first elment
+		loadUrl(event.dataTransfer.getData("application/x-vnd.adobe.air.file-list")[0].url);
+		return true;
+	}
+	return false;
 }
-*/
+
+function preventDefault(event) {
+	event.preventDefault();
+}
 
 
 /** MENU HANDLING PART ********************************************************/
@@ -124,6 +152,7 @@ function selectRecentDocument(event) {
 }
 
 function selectCommand(event) {
+	var temp;
 	air.trace("Selected command: " + event.target.label);
 	if (event.target.label == 'Get image from file...') {
 		loadFile();
@@ -132,10 +161,15 @@ function selectCommand(event) {
 		//air.Introspector.Console.log(air.Clipboard.generalClipboard.formats);
 		var pre = "http://";
 		if (air.Clipboard.generalClipboard.hasFormat("air:text")) {
-			pre = air.Clipboard.generalClipboard.getData("air:text");
+			temp = air.Clipboard.generalClipboard.getData("air:text");
 		}
 		else if (air.Clipboard.generalClipboard.hasFormat("text/plain")) {
-			pre = air.Clipboard.generalClipboard.getData("text/plain");
+			//i think this never works despite the documentation only contains this one
+			temp = air.Clipboard.generalClipboard.getData("text/plain");
+		}
+		if (temp.match(/^\s*(http:|https:|ftp:|file:|www)/i)) {
+			//clipboard most likely contains an url
+			pre = temp;
 		}
 		var url = window.prompt("URL to open", pre);
 		if (url) loadUrl(url);
@@ -143,8 +177,6 @@ function selectCommand(event) {
 	if (event.target.label == "Exit") {
 		air.NativeApplication.nativeApplication.exit()
 	}
-	
-	
 }
 
 function selectCommandMenu(event) {
