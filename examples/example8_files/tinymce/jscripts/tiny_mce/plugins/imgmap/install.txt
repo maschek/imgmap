@@ -1,0 +1,19 @@
+How to install the plugin
+=========================
+
+1. copy files to plugins/imgmap/
+
+2. set up your instance in the tinyMCE.init method to use the plugin, like:
+plugins : "table,save,advhr,advimage,imgmap,...",
+
+3. set up your instance to use the imgmap button, for example:
+theme_advanced_buttons3_add : "emotions,iespell,...,imgmap",
+
+4. you might need to add:
+extended_valid_elements : "img[usemap|class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name],map[id|name],area[shape|alt|coords|href|target]",
+
+Notes:
+* You may only add extra buttons to your tiny instance if you are using the advanced theme
+* The plugin only works with tiny version 2.x
+* In some cases TinyMCE includes editor_plugin_src.js instead of editor_plugin.js. Since this file was not part
+  of some earlier versions, you can simply copy editor_plugin.js as editor_plugin_src.js in your plugin directory.
