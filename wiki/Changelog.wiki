@@ -3,6 +3,12 @@
 
 = Changelog =
 
+Version 2.0beta6
+ * TinyMCE3 support (plugin zip and also as example8)
+ * Adobe AIR version (air file and also as example7)
+ * Changed example2
+ * Additional languages
+
 Version 2.0beta5
  * Added support for converting area types
 
