@@ -276,6 +276,8 @@
 		<delete dir="${src}/temp" />
     </target>
 
+	<target name="build_plugins" description="Build plugins" depends="build_tiny,build_tiny3,build_fck,build_air">
+	</target>
 
 	<!-- - - - - - - - - - - - - - - - - - 
           target: Create release ZIP file
