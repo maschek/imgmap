@@ -1,0 +1,7 @@
+#summary How to set up imgmap pugin for FCKEditor.
+#labels Phase-Deploy
+
+= Introduction =
+
+A detailed description can be found [http://martinezdelizarrondo.com/fckplugins/imgmap/docs/install.html here].
+
