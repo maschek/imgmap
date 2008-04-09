@@ -43,8 +43,8 @@
 
 function imgmap(config) {
 	this.version = "2.0beta6";
-	this.buildDate = "2008/02/23 20:40";
-	this.buildNumber = "72";
+	this.buildDate = "2008/03/13 00:08";
+	this.buildNumber = "78";
 	this.config = {};
 	this.is_drawing = 0;
 	this.strings   = [];
@@ -576,6 +576,15 @@ imgmap.prototype.loadStrings = function(obj) {
 };
 
 
+/**
+ *	This function is to load a given img url to the pic_container.
+ *	
+ *	Loading an image will clear all current maps.
+ *	   
+ *	@param img The imageurl or object to load (if object, function will get url, and do a recall)
+ *	@param imgw The width we want to force on the image	  
+ *	@param imgh The height we want to force on the image	 
+ */
 imgmap.prototype.loadImage = function(img, imgw, imgh) {
 	//wipe all
 	this.removeAllAreas();
@@ -600,7 +609,11 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		//img ='../../'+img;
 		this.log('Loading image: ' + img, 0);
 		//calculate timestamp to bypass browser cache mechanism
-		this.pic.src = img + '? '+ (new Date().getTime());
+		var q = '?';
+		if (img.indexOf('?') > -1) {
+			q = '&';
+		}
+		this.pic.src = img + q + (new Date().getTime());
 		if (imgw && imgw > 0) {this.pic.setAttribute('width',  imgw);}
 		if (imgh && imgh > 0) {this.pic.setAttribute('height', imgh);}
 		this.fireEvent('onLoadImage', this.pic);
