@@ -75,8 +75,14 @@
 
 <script type="text/javascript">
 
-function delayedLoad(){
-	tinyMCEPopup.onInit.add(init());
+function delayedLoad() {
+	//alert(tinymce.isWebKit);
+	if (tinymce.isIE || tinymce.isWebKit) {
+		tinyMCEPopup.onInit.add(init);
+	}
+	else {
+		tinyMCEPopup.onInit.add(init());
+	}
 }
 
 function htmlShow() {
