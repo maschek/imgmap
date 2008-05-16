@@ -1,6 +1,6 @@
-/* AIRAliases.js - Revision: 0.15 */
+/* AIRAliases.js - Revision: 1.0 */
 
-// Copyright (c) 2007. Adobe Systems Incorporated.
+// Copyright 2007-2008 Adobe Systems Incorporated.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,7 @@ if (window.runtime)
 
     // events
     air.AsyncErrorEvent = window.runtime.flash.events.AsyncErrorEvent;
+    air.BrowserInvokeEvent = window.runtime.flash.events.BrowserInvokeEvent;
     air.DataEvent = window.runtime.flash.events.DataEvent;
     air.DRMAuthenticateEvent = window.runtime.flash.events.DRMAuthenticateEvent;
     air.DRMStatusEvent = window.runtime.flash.events.DRMStatusEvent;
@@ -60,10 +61,7 @@ if (window.runtime)
     air.SecurityErrorEvent = window.runtime.flash.events.SecurityErrorEvent;
     air.StatusEvent = window.runtime.flash.events.StatusEvent;
     air.TimerEvent = window.runtime.flash.events.TimerEvent;
-    air.NativeDragEvent = window.runtime.flash.events.NativeDragEvent;
     air.ActivityEvent = window.runtime.flash.events.ActivityEvent;
-    air.KeyboardEvent = window.runtime.flash.events.KeyboardEvent;    
-    air.MouseEvent = window.runtime.flash.events.MouseEvent;    
     
     // native window
     air.NativeWindow = window.runtime.flash.display.NativeWindow;
@@ -111,10 +109,6 @@ if (window.runtime)
     air.Security = window.runtime.flash.system.Security;
     air.Updater = window.runtime.flash.desktop.Updater;
 
-    air.LoaderContext = window.runtime.flash.system.LoaderContext;
-    air.ApplicationDomain = window.runtime.flash.system.ApplicationDomain;	
-
-
     // desktop
     air.Clipboard = window.runtime.flash.desktop.Clipboard;
     air.ClipboardFormats = window.runtime.flash.desktop.ClipboardFormats;
@@ -143,7 +137,7 @@ if (window.runtime)
 
     // ui
     air.Keyboard = window.runtime.flash.ui.Keyboard;
-    air.KeyEquivalent = window.runtime.flash.ui.KeyEquivalent;
+    air.KeyLocation = window.runtime.flash.ui.KeyLocation;
     air.Mouse = window.runtime.flash.ui.Mouse;
 
 
@@ -154,7 +148,8 @@ if (window.runtime)
     air.Timer = window.runtime.flash.utils.Timer;
     air.XMLSignatureValidator = window.runtime.flash.security.XMLSignatureValidator;
 
-    air.HTMLLoader = window.runtime.flash.html.HTMLLoader;    
+    air.HTMLLoader = window.runtime.flash.html.HTMLLoader;
+    air.HTMLPDFCapability = window.runtime.flash.html.HTMLPDFCapability;    
 
     // media
     air.ID3Info = window.runtime.flash.media.ID3Info;
