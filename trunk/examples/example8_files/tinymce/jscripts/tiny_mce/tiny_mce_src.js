@@ -1441,7 +1441,7 @@ tinymce.create('static tinymce.util.XHR', {
 				dv = "";
 
 			// Try the mce variant for these
-			if (/^(src|href|style|coords)$/.test(n)) {
+			if (/^(src|href|style|coords|shape)$/.test(n)) {
 				v = e.getAttribute("mce_" + n);
 
 				if (v)
@@ -1899,7 +1899,7 @@ tinymce.create('static tinymce.util.XHR', {
 				}
 
 				// Process all tags with src, href or style
-				h = h.replace(/<([\w:]+) [^>]*(src|href|style|coords)[^>]*>/gi, function(a, n) {
+				h = h.replace(/<([\w:]+) [^>]*(src|href|style|coords|shape)[^>]*>/gi, function(a, n) {
 					function handle(m, b, c) {
 						var u = c;
 
@@ -1931,10 +1931,10 @@ tinymce.create('static tinymce.util.XHR', {
 						return ' ' + b + '="' + c + '" mce_' + b + '="' + u + '"';
 					};
 
-					a = a.replace(/ (src|href|style|coords)=[\"]([^\"]+)[\"]/gi, handle); // W3C
-					a = a.replace(/ (src|href|style|coords)=[\']([^\']+)[\']/gi, handle); // W3C
+					a = a.replace(/ (src|href|style|coords|shape)=[\"]([^\"]+)[\"]/gi, handle); // W3C
+					a = a.replace(/ (src|href|style|coords|shape)=[\']([^\']+)[\']/gi, handle); // W3C
 
-					return a.replace(/ (src|href|style|coords)=([^\s\"\'>]+)/gi, handle); // IE
+					return a.replace(/ (src|href|style|coords|shape)=([^\s\"\'>]+)/gi, handle); // IE
 				});
 			}
 
