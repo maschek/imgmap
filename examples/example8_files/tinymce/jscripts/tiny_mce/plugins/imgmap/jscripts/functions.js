@@ -61,7 +61,8 @@ function updateAction() {
 			img_obj.parentNode.appendChild(map_obj);
 		}
 
-		map_obj.innerHTML = myimgmap.getMapInnerHTML();
+		//map_obj.innerHTML = myimgmap.getMapInnerHTML();
+		editor.dom.setHTML(map_obj, myimgmap.getMapInnerHTML());
 		map_obj.name = myimgmap.getMapName();
 		map_obj.id   = myimgmap.getMapId();
 		
