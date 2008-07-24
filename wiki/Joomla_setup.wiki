@@ -1,0 +1,30 @@
+#summary How to set up image map editor for joomla
+#labels Featured,Phase-Deploy
+
+= Introduction =
+
+Everything below was tried out with Joomla 1.5.4. By default Joomla uses TinyMCE 2.x so the basics are the same as for the [TinyMCE_setup].
+
+
+= Details =
+
+  # copy files from plugin_tinymce{x}.zip to {yourjoomlainstance}/plugins/editors/tinymce/jscripts/tiny_mce/plugins/imgmap/
+  # edit {yourjoomlainstance}/plugins/editors/tinymce.xml, after 'directionality' add lines:
+{{{
+ 		<param name="imgmap" type="radio" default="1" label="Imagemap" description="Imagemap">
+ 			<option value="0">Hide</option>
+ 			<option value="1">Show</option>
+ 		</param>
+}}}
+  # edit {yourjoomlainstance}/plugins/editors/tinymce.php, after 'XHTMLxtras' add lines:
+{{{
+		$imgmap			= $this->params->def( 'imgmap', 0 );
+		if ( $imgmap ) {
+			$plugins[]	= 'imgmap';
+			$buttons3[]	= 'imgmap';
+			$elements[]	= 'img[usemap|class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name],map[id|name],area[shape|alt|coords|href|target]';
+		}
+}}}
+  # go to Joomla admin/Plugin manager/Editor - TinyMCE 2.0/Advanced Parameters, and make sure Imagemap is set to Show.
+  # go to article editor, click on any image, and notice the button highlighted on the toolbar, you are done:)
+
