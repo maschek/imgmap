@@ -1,0 +1,31 @@
+#summary How to set up image map editor for e107 CMS
+#labels Phase-Deploy
+
+= Introduction =
+
+Everything below was tried out with e107 version 0.7.11.
+By default e107 uses bbcode editor, so first you have to activate the built in TinyMCE. Go to Settings/Preferences/Text rendering and turn on "Enable WYSIWYG textareas".
+It uses TinyMCE 2.x so the basics are the same as for the [TinyMCE_setup].
+
+
+= Details =
+
+  # copy files from plugin_tinymce{x}.zip to {yourinstance}/e107_handlers/tiny_mce/plugins/imgmap/
+  # edit {yourinstance}/e107_handlers/tiny_mce/wysiwyg.php, add lines:
+{{{
+$text .= ",iespell,zoom,media";//this is original
+$text .= ",imgmap";//you need to add this
+
+and
+
+$text .= ",charmap,iespell,media";//this is original
+$text .= ",imgmap";//you need to add this
+
+search for 'extended_valid_elements', and add:
+
+img[usemap|class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name],map[id|name],area[shape|alt|coords|href|target]
+
+
+
+}}}
+  # go to news editor, click on any image, and notice the button highlighted on the toolbar, you are done:)
