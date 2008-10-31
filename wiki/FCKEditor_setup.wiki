@@ -1,5 +1,5 @@
 #summary How to set up imgmap pugin for FCKEditor.
-#labels Phase-Deploy
+#labels Phase-Deploy,Featured
 
 = Introduction =
 
