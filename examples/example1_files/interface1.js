@@ -1,103 +1,5 @@
-var myimgmap;
-var editor = null;
-var img_obj = null;
-var map_obj = null;
-//array of form elements
-var props = [];
 
-
-function init() {
-
-	tinyMCE.setWindowArg('mce_windowresize', true);
-
-	editor = tinyMCE.getInstanceById(tinyMCE.getWindowArg('editor_id'));
-	img_obj = editor.selection.getFocusElement();
-
-	//late init
-	myimgmap = new imgmap({
-		mode : "editor",
-		custom_callbacks : {
-			'onStatusMessage' : function(str) {gui_statusMessage(str);},//to display status messages on gui
-			'onHtmlChanged'   : function(str) {gui_htmlChanged(str);},//to display updated html on gui
-			//'onModeChanged'   : function(mode) {gui_modeChanged(mode);},//to switch normal and preview modes on gui
-			'onAddArea'       : function(id)  {gui_addArea(id);},//to add new form element on gui
-			'onRemoveArea'    : function(id)  {gui_removeArea(id);},//to remove form elements from gui
-			'onAreaChanged'   : function(obj) {gui_areaChanged(obj);},
-			'onSelectArea'    : function(obj) {gui_selectArea(obj);}//to select form element when an area is clicked
-		},
-		pic_container: document.getElementById('pic_container'),
-		bounding_box : false
-	});
-
-	
-	//we need this to load languages
-	myimgmap.onLoad();
-
-	myimgmap.loadImage(img_obj);
-	//console.log(myimgmap);
-
-	myimgmap.addEvent(document.getElementById('html_container'), 'blur',  gui_htmlBlur);
-	myimgmap.addEvent(document.getElementById('html_container'), 'focus', gui_htmlFocus);	
-	
-	//check if the image has a valid map already assigned
-	var mapname = img_obj.getAttribute('usemap', 2) || img_obj.usemap ;
-	//console.log(mapname);
-	if (mapname != null && mapname != '') {
-		mapname = mapname.substr(1);
-		var maps = editor.contentWindow.document.getElementsByTagName('MAP');
-		//console.log(maps);
-		for (var i=0; i < maps.length; i++) {
-			// IE doesn't return name?
-			if (maps[i].name == mapname || maps[i].id == mapname) {
-				map_obj = maps[i];
-				myimgmap.setMapHTML(map_obj);
-				break;
-			}
-		}
-	}
-}
-
-function updateAction() {
-	if (img_obj != null && img_obj.nodeName == "IMG") {
-		tinyMCEPopup.execCommand("mceBeginUndoLevel");
-
-		if (typeof map_obj == 'undefined' || map_obj == null) {
-			map_obj = editor.contentWindow.document.createElement('MAP');
-			img_obj.parentNode.appendChild(map_obj);
-		}
-
-		map_obj.innerHTML = myimgmap.getMapInnerHTML();
-		map_obj.name = myimgmap.getMapName();
-		map_obj.id   = myimgmap.getMapId();
-		
-		img_obj.setAttribute('usemap', "#" + myimgmap.getMapName(), 0);
-		//img_obj.setAttribute('border', '0');
-		
-		tinyMCEPopup.execCommand("mceEndUndoLevel");
-	}
-	tinyMCEPopup.close();
-}
-
-function cancelAction() {
-	tinyMCEPopup.close();
-}
-
-//remove the map object and unset the usemap attribute
-function removeAction() {
-	tinyMCEPopup.execCommand("mceBeginUndoLevel");
-	if (img_obj != null && img_obj.nodeName == "IMG") {
-		img_obj.removeAttribute('usemap', 0);
-	}
-	if (typeof map_obj != 'undefined' && map_obj != null) {
-		map_obj.parentNode.removeChild(map_obj);
-	}
-	tinyMCEPopup.execCommand("mceEndUndoLevel");
-	tinyMCEPopup.close();
-}
-
-
-
-/** FUNCTION SECTION (code taken from interface1) *****************************/
+/** FUNCTION SECTION **********************************************************/
 
 
 /**
@@ -160,7 +62,7 @@ function gui_row_select(id, setfocus, multiple) {
 	}
 	//put highlight on actual props row
 	props[id].style.background = '#e7e7e7';
-};
+}
 
 /**
  *	Handles delete keypress when focus is on the leading checkbox/radio.
@@ -174,7 +76,7 @@ function gui_cb_keydown(e) {
 		//delete pressed
 		myimgmap.removeArea(myimgmap.currentid);
 	}
-};
+}
 
 /**
  *	Unchecks all checboxes/radios.
@@ -225,7 +127,7 @@ function gui_coords_keydown(e) {
 		myimgmap.setSelectionRange(obj, s);
 		return true;
 	}
-};
+}
 
 /**
  *	Called when one of the properties change, and the recalculate function
@@ -271,7 +173,7 @@ function gui_input_change(e) {
 		myimgmap._recalculate(id, props[id].getElementsByTagName('input')[2].value);
 		myimgmap.fireEvent('onHtmlChanged', myimgmap.getMapHTML());//temp ## shouldnt be here
 	}
-};
+}
 
 /**
  *	Called from imgmap when a new area is added.
@@ -367,7 +269,7 @@ function gui_modeChanged(mode) {
 		for (i=0; i<nodes.length; i++) {
 			nodes[i].disabled = true;
 		}
-		document.getElementById('i_preview').src = 'example1_files/edit.gif';
+		document.getElementById('i_preview').src = imgroot + 'edit.gif';
 	}
 	else {
 		//normal mode
@@ -383,7 +285,7 @@ function gui_modeChanged(mode) {
 		for (i=0; i<nodes.length; i++) {
 			nodes[i].disabled = false;
 		}
-		document.getElementById('i_preview').src = 'example1_files/zoom.gif';
+		document.getElementById('i_preview').src = imgroot + 'zoom.gif';
 	}
 }
 
@@ -409,11 +311,11 @@ function gui_statusMessage(str) {
 function gui_areaChanged(obj) {
 	for (var id in obj) {
 		if (props[id]) {
-			if (obj[id]['shape'])  {props[id].getElementsByTagName('select')[0].value = obj[id]['shape'];}
-			if (obj[id]['coords']) {props[id].getElementsByTagName('input')[2].value  = obj[id]['coords'];}
-			if (obj[id]['href'])   {props[id].getElementsByTagName('input')[3].value  = obj[id]['href'];}
-			if (obj[id]['alt'])    {props[id].getElementsByTagName('input')[4].value  = obj[id]['alt'];}
-			if (obj[id]['target']) {props[id].getElementsByTagName('select')[1].value = obj[id]['target'];}
+			if (obj[id].shape)  {props[id].getElementsByTagName('select')[0].value = obj[id].shape;}
+			if (obj[id].coords) {props[id].getElementsByTagName('input')[2].value  = obj[id].coords;}
+			if (obj[id].href)   {props[id].getElementsByTagName('input')[3].value  = obj[id].href;}
+			if (obj[id].alt)    {props[id].getElementsByTagName('input')[4].value  = obj[id].alt;}
+			if (obj[id].target) {props[id].getElementsByTagName('select')[1].value = obj[id].target;}
 		}
 	}
 }
@@ -431,7 +333,7 @@ function gui_htmlBlur() {
 		//dirty
 		myimgmap.setMapHTML(elem.value);
 	}
-};
+}
 
 
 /**
@@ -445,7 +347,7 @@ function gui_htmlFocus() {
 	var elem = document.getElementById('html_container');
 	elem.setAttribute('oldvalue', elem.value);
 	elem.select();
-};
+}
 
 function gui_htmlShow() {
 	toggleFieldset(document.getElementById('fieldset_html'), 1);
@@ -492,3 +394,27 @@ function gui_selectArea(obj) {
 }
 
 
+/** INIT SECTION **************************************************************/
+
+//instantiate the imgmap component, setting up some basic config values
+var myimgmap = new imgmap({
+mode : "editor",
+custom_callbacks : {
+	'onStatusMessage' : function(str) {gui_statusMessage(str);},//to display status messages on gui
+	'onHtmlChanged'   : function(str) {gui_htmlChanged(str);},//to display updated html on gui
+	'onModeChanged'   : function(mode) {gui_modeChanged(mode);},//to switch normal and preview modes on gui
+	'onAddArea'       : function(id)  {gui_addArea(id);},//to add new form element on gui
+	'onRemoveArea'    : function(id)  {gui_removeArea(id);},//to remove form elements from gui
+	'onAreaChanged'   : function(obj) {gui_areaChanged(obj);},
+	'onSelectArea'    : function(obj) {gui_selectArea(obj);}//to select form element when an area is clicked
+},
+pic_container: document.getElementById('pic_container'),
+bounding_box : false
+});
+
+//array of form elements
+var props = [];
+var imgroot = 'example1_files/';
+
+myimgmap.addEvent(document.getElementById('html_container'), 'blur',  gui_htmlBlur);
+myimgmap.addEvent(document.getElementById('html_container'), 'focus', gui_htmlFocus);

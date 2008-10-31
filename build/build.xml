@@ -24,7 +24,14 @@
 		<java jar="custom_rhino.jar" fork="true" failonerror="true">
 			<arg value="jslint.js" />
 			<arg file="../imgmap.js" />
-			<redirector output="jslint.txt" />
+			<redirector output="jslint_imgmap.txt" />
+		</java>
+
+		<echo>Checking interface1 for errors (using jslint)</echo>
+		<java jar="custom_rhino.jar" fork="true" failonerror="true">
+			<arg value="jslint.js" />
+			<arg file="../examples/example1_files/interface1.js" />
+			<redirector output="jslint_interface1.txt" />
 		</java>
 	</target>
 
