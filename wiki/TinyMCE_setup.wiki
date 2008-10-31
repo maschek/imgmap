@@ -1,5 +1,5 @@
 #summary How to setup the TinyMCE plugin.
-#labels Phase-Deploy
+#labels Phase-Deploy,Featured
 
 = TinyMCE 2.x and 3.x =
 
