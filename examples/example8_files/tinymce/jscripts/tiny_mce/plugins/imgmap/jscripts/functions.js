@@ -203,7 +203,7 @@ function gui_coords_keydown(e) {
 		//down or up pressed
 		//get the coords
 		var coords = obj.value.split(',');
-		var s = myimgmap.getSelectionStart(obj);//helper function
+		var s = getSelectionStart(obj);//helper function
 		var j = 0;
 		for (var i=0; i<coords.length; i++) {
 			j+=coords[i].length;
@@ -221,10 +221,45 @@ function gui_coords_keydown(e) {
 			myimgmap._recalculate(obj.parentNode.aid, obj.value);//contains repaint
 		}
 		//set cursor back to its original position
-		myimgmap.setSelectionRange(obj, s);
+		setSelectionRange(obj, s);
 		return true;
 	}
 };
+
+/**
+ *	Gets the position of the cursor in the input box.
+ *	@author	Diego Perlini
+ *	@url	http://javascript.nwbox.com/cursor_position/
+ */
+function getSelectionStart(obj) {
+	if (obj.createTextRange) {
+		var r = document.selection.createRange().duplicate();
+		r.moveEnd('character', obj.value.length);
+		if (r.text === '') {return obj.value.length;}
+		return obj.value.lastIndexOf(r.text);
+	}
+	else {
+		return obj.selectionStart;
+	}
+}
+
+/**
+ *	Sets the position of the cursor in the input box.
+ */
+function setSelectionRange(obj, start, end) {
+	if (typeof end == "undefined") {end = start;}
+	if (obj.selectionStart) {
+		setSelectionRange(obj, start, end);
+		obj.focus(); // to make behaviour consistent with IE
+	}
+	else if (document.selection) {
+		var range = obj.createTextRange();
+		range.collapse(true);
+		range.moveStart("character", start);
+		range.moveEnd("character", end - start);
+		range.select();
+	}
+}
 
 /**
  *	Called when one of the properties change, and the recalculate function
