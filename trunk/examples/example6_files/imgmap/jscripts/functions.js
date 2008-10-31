@@ -27,11 +27,11 @@ window.onload = function()
 	var btn;
 	btn = $('imgpointer') ;
 	btn.alt = btn.title = FCKLang.imgmapPointer ;
-	btn = $('imgrectangle') ;
+	btn = $('imgrect') ;
 	btn.alt = btn.title = FCKLang.imgmapRectangle ;
 	btn = $('imgcircle') ;
 	btn.alt = btn.title = FCKLang.imgmapCircle ;
-	btn = $('imgpolygon') ;
+	btn = $('imgpoly') ;
 	btn.alt = btn.title = FCKLang.imgmapPolygon ;
 
 
@@ -59,17 +59,13 @@ window.onload = function()
 	//late init
 	myimgmap = new imgmap({
 		mode : "editor2",
-		button_container: $('button_container'),
-		imgroot: 'images/',
-		buttons : ['delete'],
 		custom_callbacks : {
 			'onSelectArea' : onSelectArea,
-			'onRemoveArea'	: onRemoveArea
+			'onRemoveArea'	: onRemoveArea,
+			'onStatusMessage' : function(str) {gui_statusMessage(str);}//to display status messages on gui
+
 		},
-		html_container: null, 
 		pic_container: $('pic_container'),
-		status_container: $('status_container'),
-		form_container: null, // $('form_container'),
 		bounding_box : false,
 		lang : sLang
 	});
@@ -111,7 +107,7 @@ window.onload = function()
 		setMode( 'pointer' ) ;
 	}
 	else
-		hightlightMode( 'rectangle' ) ;
+		hightlightMode( 'rect' ) ;
 
 	RefreshSize() ;
 } ;
@@ -374,3 +370,14 @@ function SetUrl( url, width, height, alt )
 	if ( alt )
 		GetE('txtAlt').value = alt;
 }
+
+/**
+ *	Called from imgmap with new status string.
+ */
+function gui_statusMessage(str) {
+	if (document.getElementById('status_container')) {
+		document.getElementById('status_container').innerHTML = str;
+	}
+	window.defaultStatus = str;//for IE
+}
+

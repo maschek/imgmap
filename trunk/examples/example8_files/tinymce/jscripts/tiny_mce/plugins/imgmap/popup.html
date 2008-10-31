@@ -19,6 +19,9 @@
 			<div style="border-bottom: solid 1px #efefef">
 			<div id="button_container" style="float: left;">
 			<!-- buttons come here -->
+				<img src="images/add.gif" onclick="myimgmap.addNewArea()" alt="Add new area" title="Add new area" style="margin: 0 2px; cursor: pointer;"/>
+				<img src="images/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area" style="margin: 0 2px; cursor: pointer;"/>
+				<img src="images/html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML" style="margin: 0 2px; cursor: pointer;"/>
 			</div>
 			<div style="float: right; margin: 0 5px">
 				<select onchange="changelabeling(this)">
@@ -84,35 +87,6 @@ function delayedLoad() {
 		tinyMCEPopup.onInit.add(init());
 	}
 }
-
-function htmlShow() {
-	toggleFieldset(document.getElementById('fieldset_html'), 1);
-	document.getElementById('html_container').focus();
-}
-
-function changelabeling(obj) {
-	myimgmap.config.label = obj.value;
-	myimgmap._repaintAll();
-}
-
-function toggleBoundingBox(obj) {
-	//console.log(obj.checked);
-	myimgmap.config.bounding_box = obj.checked;
-	myimgmap.relaxAllAreas();
-}
-
-function toggleFieldset(fieldset, on) {
-	if (fieldset) {
-		if (fieldset.className == 'fieldset_off' || on == 1) {
-			fieldset.className = '';
-			tinyMCEPopup.resizeToInnerSize();
-		}
-		else {
-			fieldset.className = 'fieldset_off';
-		}
-	}
-}
-
 
 </script>
 

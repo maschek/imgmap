@@ -17,21 +17,17 @@
  *	Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 /**
+ *	@fileoverview
  *	Online Image Map Editor - main script file.
- *	This is the main script file of the Online Image Map Editor. 
- *	@date	26-02-2007 2:24:50
- *	@author	Adam Maschek (adam.maschek(at)gmail.com)
- *	@copyright
- *	@version 2.0beta6
- *	 
+ *	This is the main script file of the Online Image Map Editor.
+ * 
  *	TODO:
  *	-pic_container dynamic create(pos rel)?
  *	-scriptload race condition fix
  *	-destroy/cleanup function ?
  *	-testing highlighter
- *	-cursor area_mousemove in opera not refreshing quite well
+ *	-cursor area_mousemove in opera not refreshing quite well - bug reported
  *	-get rid of memo array
- *	-merge props and areas arrays
  *	-highlight which control point is edited in html or form mode   
  *	-more comments, especially on config vars
  *	-make function names more logical
@@ -39,31 +35,44 @@
  *	-prepare for bad input /poly not properly closed?
  *	-prepare for % values in coords  
  *	-prepare for default shape http://www.w3.org/TR/html4/struct/objects.html#edef-AREA
+ *	 
+ *	@date	26-02-2007 2:24:50
+ *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@copyright
+ *	@version 2.0beta6
+ *	 
  */
-
+/**
+ *	@author	adam
+ *	@constructor
+ *	@param config	The config object. 
+ */
 function imgmap(config) {
 	this.version = "2.0beta6";
-	this.buildDate = "2008/03/13 00:08";
-	this.buildNumber = "78";
+	this.buildDate = "2008/10/30 12:24";
+	this.buildNumber = "87";
 	this.config = {};
 	this.is_drawing = 0;
 	this.strings   = [];
 	this.memory    = [];
 	this.areas     = [];
-	this.props     = [];
 	this.logStore  = [];
 	this.currentid = 0;
 	this.draggedId  = null;
 	this.selectedId = null;
-	this.nextShape = 'rectangle';
+	this.nextShape = 'rect';
 	this.viewmode  = 0;
 	//possible values: 0 - edit, 1 - preview
 	
+	/**
+	 *	array of dynamically loaded javascripts
+	 */	 	
 	this.loadedScripts = [];
 	this.isLoaded   = false;
 	this.cntReloads = 0;
-	this.mapname    = '';
-	this.mapid      = '';
+	this.mapname    = '';//holds the name of the actively edited map, use getMapName to read it
+	this.mapid      = '';//holds the id of the actively edited map, use getMapIdto read it
+	this.waterMark  = '<!-- Created by Online Image Map Editor (http://www.maschek.hu/imagemap/index) -->';
 
 	//is_drawing draw mode constants 
 	this.DM_RECTANGLE_DRAW          = 1;
@@ -88,14 +97,15 @@ function imgmap(config) {
 	this.config.mode     = "editor";
 	//possible values: editor - classical editor, editor2 - dreamweaver style editor, highlighter - map highlighter
 	
-	this.config.imgroot     = '';
 	this.config.baseroot    = '';
 	this.config.lang        = '';
 	this.config.defaultLang = 'en';
 	this.config.loglevel    = 0;
-	this.config.buttons          = ['add','delete','preview','html'];
-	this.config.custom_callbacks = {};
-	//possible values: onPreview, onClipboard, onHtml, onAddArea, onRemoveArea, onDrawArea, onResizeArea, onRelaxArea, onFocusArea, onBlurArea, onMoveArea, onSelectRow, onLoadImage, onSetMap, onGetMap, onSelectArea
+	this.config.custom_callbacks = {};//possible values: see below!
+	this.event_types        = [
+		'onModeChanged', 'onClipboard', 'onHtmlChanged', 'onAddArea', 'onRemoveArea', 'onDrawArea', 
+		'onResizeArea', 'onRelaxArea', 'onFocusArea', 'onBlurArea', 'onMoveArea', 'onSelectRow', 'onLoadImage', 
+		'onSetMap', 'onGetMap', 'onSelectArea', 'onStatusMessage', 'onAreaChanged'];
 
 	this.config.CL_DRAW_BOX        = '#dd2400';
 	this.config.CL_DRAW_SHAPE      = '#d00';
@@ -107,7 +117,6 @@ function imgmap(config) {
 	this.config.CL_HIGHLIGHT_SHAPE = '#d00';
 	this.config.CL_HIGHLIGHT_BG    = '#fff';
 	this.config.CL_KNOB            = '#ffeeee';
-	this.config.CL_HIGHLIGHT_PROPS = '#e7e7e7';
 
 	this.config.bounding_box       = true;
 	this.config.label              = '%n';
@@ -156,6 +165,8 @@ function imgmap(config) {
  *	Return an object given by id or object itself.
  *	@date	22-02-2007 0:14:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	objorid	A DOM object, or id of a DOM object.
+ *	@return	The identified DOM object or null on error.  
  */
 imgmap.prototype.assignOID = function(objorid) {
 	try {
@@ -182,6 +193,8 @@ imgmap.prototype.assignOID = function(objorid) {
  *	Can be called manually or constructor will call it.
  *	@date	22-02-2007 0:15:42
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	config	config object
+ *	@return	True if all went ok.  
  */
 imgmap.prototype.setup = function(config) {
 	//this.config = config;
@@ -192,29 +205,7 @@ imgmap.prototype.setup = function(config) {
 	//set container elements - supposedly they already exist in the DOM
 	if (config) {
 		this.pic_container = this.assignOID(config.pic_container);
-		if (this.pic_container) {
-			this.preview = document.createElement('DIV');
-			this.preview.style.display = 'none';
-			this.pic_container.appendChild(this.preview);
-		}
-		
-		this.form_container = this.assignOID(config.form_container);
-		
-		this.html_container = this.assignOID(config.html_container);
-		if (this.html_container) {
-			this.addEvent(this.html_container, 'blur',  this.html_container_blur.bind(this));
-			this.addEvent(this.html_container, 'focus', this.html_container_focus.bind(this));
-		}
-		
-		this.status_container = this.assignOID(config.status_container);
-		//alert('bc:'+config.button_container.id);
-		//alert(document.getElementById(config.button_container).tagName);
-		//alert(document.getElementById(config.button_container).parentNode.tagName);
-		this.button_container = this.assignOID(config.button_container);
-		//console.log(this.button_container);
-		//console.log(document.getElementById('button_container'));
-		//alert(this.button_container.parentNode.parentNode.parentNode.parentNode.parentNode.tagName);
-
+		this.disableSelection(this.pic_container);
 	}
 	
 	if (!this.config.baseroot) {
@@ -266,9 +257,19 @@ imgmap.prototype.setup = function(config) {
 	}
 	this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
 	
-	if (!this.config.imgroot) {
-		//set same as baseroot
-		this.config.imgroot = this.config.baseroot;
+	//check event hooks
+	var found, j;
+	for (i in this.config.custom_callbacks) {
+		found = false;
+		for (j=0; j<this.event_types.length; j++) {
+			if (i == this.event_types[j]) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
+			this.log("Unknown custom callback: " + i, 1);
+		}
 	}
 	
 	//hook onload event - as late as possible
@@ -277,7 +278,10 @@ imgmap.prototype.setup = function(config) {
 };
 
 
-//currently unused
+/**
+ *	currently unused
+ *	@ignore
+ */
 imgmap.prototype.retryDelayed = function(fn, delay, tries) {
 	if (typeof fn.tries == 'undefined') {fn.tries = 0;}
 	//alert(fn.tries+1);
@@ -360,90 +364,6 @@ imgmap.prototype.onLoad = function(e) {
 		//call global scope function
 		imgmap_spawnObjects(this.config);	
 	}
-	
-	else {
-		if (this.button_container) {
-			var img;//button image
-			for (var i=0; i<this.config.buttons.length; i++) {
-				if (this.config.buttons[i] == 'add') {
-					try {
-						img = document.createElement('IMG');
-						img.src     = this.config.imgroot + 'add.gif';
-						this.addEvent(img, 'click', this.addNewArea.bind(this));
-						img.alt     = this.strings.HINT_ADD;
-						img.title   = this.strings.HINT_ADD;
-						img.style.cursor = 'pointer';
-						img.style.margin = '0 2px';
-						this.button_container.appendChild(img);
-					}
-					catch (err) {
-						this.log("Unable to add button (" + this.config.buttons[i] + ")", 1);
-					}
-				}
-				else if (this.config.buttons[i] == 'delete') {
-					try {
-						img = document.createElement('IMG');
-						img.src     = this.config.imgroot + 'delete.gif';
-						this.addEvent(img, 'click', this.removeArea.bind(this));
-						img.alt     = this.strings.HINT_DELETE;
-						img.title   = this.strings.HINT_DELETE;
-						img.style.cursor = 'pointer';
-						img.style.margin = '0 2px';
-						this.button_container.appendChild(img);
-					}
-					catch (err) {
-						this.log("Unable to add button (" + this.config.buttons[i] + ")", 1);
-					}
-				}
-				else if (this.config.buttons[i] == 'preview') {
-					try {
-						img = document.createElement('IMG');
-						img.src     = this.config.imgroot + 'zoom.gif';
-						this.addEvent(img, 'click', this.togglePreview.bind(this));
-						img.alt     = this.strings.HINT_PREVIEW;
-						img.title   = this.strings.HINT_PREVIEW;
-						img.style.cursor = 'pointer';
-						img.style.margin = '0 2px';
-						this.i_preview = img;
-						this.button_container.appendChild(img);
-					}
-					catch (err) {
-						this.log("Unable to add button (" + this.config.buttons[i] + ")", 1);
-					}
-				}
-				else if (this.config.buttons[i] == 'html') {
-					try {
-						img = document.createElement('IMG');
-						img.src     = this.config.imgroot + 'html.gif';
-						this.addEvent(img, 'click', this.clickHtml.bind(this));
-						img.alt     = this.strings.HINT_HTML;
-						img.title   = this.strings.HINT_HTML;
-						img.style.cursor = 'pointer';
-						img.style.margin = '0 2px';
-						this.button_container.appendChild(img);
-					}
-					catch (err) {
-						this.log("Unable to add button (" + this.config.buttons[i] + ")", 1);
-					}
-				}
-				else if (this.config.buttons[i] == 'clipboard') {
-					try {
-						img = document.createElement('IMG');
-						img.src     = this.config.imgroot + 'clipboard.gif';
-						this.addEvent(img, 'click', this.toClipBoard.bind(this));
-						img.alt     = this.strings.HINT_CLIPBOARD;
-						img.title   = this.strings.HINT_CLIPBOARD;
-						img.style.cursor = 'pointer';
-						img.style.margin = '0 2px';
-						this.button_container.appendChild(img);
-					}
-					catch (err) {
-						this.log("Unable to add button (" + this.config.buttons[i] + ")", 1);
-					}
-				}
-			}//end foreach buttons
-		}//end if button container
-	}
 	this.isLoaded = true;
 	return true;
 };
@@ -517,6 +437,7 @@ imgmap.prototype.addLoadEvent = function(obj, callback) {
  *	Include another js script into the current document.
  *	@date	22-02-2007 0:17:04
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	url	The url of the script we want to load. 
  */
 imgmap.prototype.loadScript = function(url) {
 	if (url === '') {return false;}
@@ -533,7 +454,6 @@ imgmap.prototype.loadScript = function(url) {
 		temp.setAttribute('src', url);
 		//temp.setAttribute('defer', true);
 		head.appendChild(temp);
-		//this.loadedScripts[url] = 1;
 		this.addLoadEvent(temp, this.script_load.bind(this));
 	}
 	catch (err) {
@@ -569,6 +489,12 @@ imgmap.prototype.script_load = function(e) {
 };
 
 
+/**
+ *	Load strings from a key:value object to the prototype strings array.
+ *	@author adam
+ *	@date	2007
+ *	@param	obj	Javascript object that holds key:value pairs.
+ */
 imgmap.prototype.loadStrings = function(obj) {
 	for (var key in obj) {
 		this.strings[key] = obj[key];
@@ -588,9 +514,7 @@ imgmap.prototype.loadStrings = function(obj) {
 imgmap.prototype.loadImage = function(img, imgw, imgh) {
 	//wipe all
 	this.removeAllAreas();
-	if (this.html_container) {
-		this.html_container.value = '';
-	}
+	this.fireEvent('onHtmlChanged', '');//empty
 	if (!this._getLastArea()) {
 		//init with one new area if there was none editable
 		if (this.config.mode != "editor2") {this.addNewArea();}
@@ -641,7 +565,12 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 };
 
 
-//there is an existing image object we want to handle with imgmap
+/**
+ *	We use this when there is an existing image object we want to handle with imgmap.
+ *	@author	adam
+ *	@date	2007
+ *	@param	img	DOM object or id of image we want to use.
+ */
 imgmap.prototype.useImage = function(img) {
 	//wipe all
 	this.removeAllAreas();
@@ -664,20 +593,23 @@ imgmap.prototype.useImage = function(img) {
 
 
 /**
- *	Prints out this.statusMessage to the status container, and window footer also if possible.
+ *	Fires custom hook onStatusMessage, passing the status string.
+ *	Use this to update your GUI. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
- *	@date	2006.10.29. 14:59:17
+ *	@date	26-07-2008 13:22:54
  */   
 imgmap.prototype.statusMessage = function(str) {
-	if (this.status_container) {this.status_container.innerHTML = str;}
-	window.defaultStatus = str;
+	this.fireEvent('onStatusMessage', str);
 };
 
 
 /**
  *	Adds basic logging functionality using firebug console object if available.
+ *	Uses AIR introspector if available. 
  *	@date	20-02-2007 17:55:18
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	obj	The object or string you want to debug/echo.
+ *	@level	level	The log level, 0 being the smallest issue.  
  */   
 imgmap.prototype.log = function(obj, level) {
 	if (level === '' || typeof level == 'undefined') {level = 0;}
@@ -718,11 +650,13 @@ imgmap.prototype.log = function(obj, level) {
 
 /**
  *	Produces the image map HTML output with the defined areas.
+ *	Invokes getMapInnerHTML. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-06 15:10:27
+ *	@return The generated html code. 
  */
 imgmap.prototype.getMapHTML = function() {
-	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML() + '</map>';
+	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML() + this.waterMark + '</map>';
 	this.fireEvent('onGetMap', html);
 	//alert(html);
 	return html;
@@ -731,6 +665,9 @@ imgmap.prototype.getMapHTML = function() {
 
 /**
  *	Get the map areas part only of the current imagemap.
+ *	@see	#getMapHTML 
+ *	@author	adam
+ *	@return	The generated map code without the map wrapper.  
  */
 imgmap.prototype.getMapInnerHTML = function() {
 	var html = '';
@@ -754,6 +691,14 @@ imgmap.prototype.getMapInnerHTML = function() {
 
 /**
  *	Get the map name of the current imagemap.
+ *	If doesnt exist, nor map id, generate a new name based on timestamp.
+ *	The most portable solution is to use the same value for id and name.
+ *	This also conforms the HTML 5 specification, that says:
+ *	"If the id  attribute is also specified, both attributes must have the same value."   
+ *	@link	http://www.w3.org/html/wg/html5/#the-map-element
+ *	@author	adam
+ *	@see	#getMapId
+ *	@return The name of the map.
  */
 imgmap.prototype.getMapName = function() {
 	if (this.mapname === '') {
@@ -767,6 +712,10 @@ imgmap.prototype.getMapName = function() {
 
 /**
  *	Get the map id of the current imagemap.
+ *	If doesnt exist, use map name.
+ *	@author	adam
+ *	@see	#getMapName
+ *	@return	The id of the map.    
  */
 imgmap.prototype.getMapId = function() {
 	if (this.mapid === '') {
@@ -775,13 +724,19 @@ imgmap.prototype.getMapId = function() {
 	return this.mapid;
 };
 
-//bad inputs: 035,035 075,062
-//150,217, 190,257, 150,297,110,257
+
 /**
  *	Try to normalize coordinates that came from:
  *	1. html textarea
  *	2. user input in the active area's input field
  *	3. from the html source in case of plugins or highlighter
+ *	Example of inputs that need to be handled:
+ *		035,035 075,062
+ *		150,217, 190,257, 150,297,110,257
+ *	@author	adam
+ *	@param	coords	The coordinates in a string.
+ *	@param	shape	The shape of the object (rect, circle, poly).
+ *	@param	flag	Flags that modify the operation.
  */
 imgmap.prototype._normCoords = function(coords, shape, flag) {
 	//function level var declarations
@@ -803,7 +758,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	coords = coords.replace(/^(\D|0)+(\d)/g, "$2");
 	//now fix other issues
 	var parts = coords.split(',');
-	if (shape == 'rectangle') {
+	if (shape == 'rect') {
 		if (flag == 'fromcircle') {
 			var r = parts[2];
 			parts[0] = parts[0] - r;
@@ -811,7 +766,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[2] = parseInt(parts[0], 10) + 2 * r;
 			parts[3] = parseInt(parts[1], 10) + 2 * r;
 		}
-		else if (flag == 'frompolygon') {
+		else if (flag == 'frompoly') {
 			sx = parseInt(parts[0], 10); gx = parseInt(parts[0], 10);
 			sy = parseInt(parts[1], 10); gy = parseInt(parts[1], 10);
 			for (i=0; i<parts.length; i++) {
@@ -845,7 +800,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 		//console.log(coords);
 	}
 	else if (shape == 'circle') {
-		if (flag == 'fromrectangle') {
+		if (flag == 'fromrect') {
 			sx = parseInt(parts[0], 10); gx = parseInt(parts[2], 10);
 			sy = parseInt(parts[1], 10); gy = parseInt(parts[3], 10);
 			//use smaller side
@@ -854,7 +809,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[0] = sx + parts[2];
 			parts[1] = sy + parts[2];
 		}
-		else if (flag == 'frompolygon') {
+		else if (flag == 'frompoly') {
 			sx = parseInt(parts[0], 10); gx = parseInt(parts[0], 10);
 			sy = parseInt(parts[1], 10); gy = parseInt(parts[1], 10);
 			for (i=0; i<parts.length; i++) {
@@ -878,8 +833,8 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 		if (!(parseInt(parts[2], 10) > 0)) {parts[2] = 10;}
 		coords = parts[0]+","+parts[1]+","+parts[2];
 	}
-	else if (shape == 'polygon') {
-		if (flag == 'fromrectangle') {
+	else if (shape == 'poly') {
+		if (flag == 'fromrect') {
 			parts[4] = parts[2];
 			parts[5] = parts[3];
 			parts[2] = parts[0];
@@ -922,15 +877,20 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 
 
 /**
- *	Sets the coordinates according to the given HTML map code or object.
+ *	Sets the coordinates according to the given HTML map code or DOM object.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-07 11:47:16
+ *	@param	map	DOM object or string of a map you want to apply. 
  */   
 imgmap.prototype.setMapHTML = function(map) {
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	
 	this.fireEvent('onSetMap', map);
+	//this.log(map);
 	//remove all areas
 	this.removeAllAreas();
-	//this.log(map);
+	//console.log(this.areas);
+	
 	var oMap;
 	if (typeof map == 'string') {
 		var oHolder = document.createElement('DIV');
@@ -943,87 +903,69 @@ imgmap.prototype.setMapHTML = function(map) {
 	if (!oMap || oMap.nodeName.toLowerCase() !== 'map') {return false;}
 	this.mapname = oMap.name;
 	this.mapid   = oMap.id;
-	var newareas = oMap.getElementsByTagName('area');	
+	var newareas = oMap.getElementsByTagName('area');
+	var shape, coords, href, alt, title, target;
 	for (var i=0; i<newareas.length; i++) {
-		//alert(newareas[i].getAttribute('coords', 2));
+		shape = coords = href = alt = title = target = '';
+		
 		id = this.addNewArea();//btw id == this.currentid, just this form is a bit clearer
 
 		if (newareas[i].getAttribute('shape', 2)) {
-			shape = newareas[i].getAttribute('shape', 2).toLowerCase();
-			if (shape == 'rect')      {shape = 'rectangle';}
-			else if (shape == 'circ') {shape = 'circle';}
-			else if (shape == 'poly') {shape = 'polygon';}
+			shape = newareas[i].getAttribute('shape', 2);
 		}
 		else {
-			shape = 'rectangle';
+			shape = 'rect';
 		} 
-		if (this.props[id]) {
-			this.props[id].getElementsByTagName('select')[0].value = shape;
-		}
 
 		this.initArea(id, shape);
 		
 		if (newareas[i].getAttribute('coords', 2)) {
 			//normalize coords
-			var coords = this._normCoords(newareas[i].getAttribute('coords', 2), shape);
-			if (this.props[id]) {
-				this.props[id].getElementsByTagName('input')[2].value  = coords;
-			}
+			coords = this._normCoords(newareas[i].getAttribute('coords', 2), shape);
 			this.areas[id].lastInput = coords;
 			//for area this one will be set in recalculate
 		}
 
-		var href = newareas[i].getAttribute('href', 2);
+		href = newareas[i].getAttribute('href', 2);
 		// FCKeditor stored url to prevent mangling from the browser.
-		var sSavedUrl = newareas[i].getAttribute( '_fcksavedurl' ) ;
+		var sSavedUrl = newareas[i].getAttribute( '_fcksavedurl' );
 		if (sSavedUrl) {
-			href = sSavedUrl ;
+			href = sSavedUrl;
 		}
-
 		if (href) {
-			if (this.props[id]) {
-				this.props[id].getElementsByTagName('input')[3].value  = href;
-			}
 			this.areas[id].ahref = href;
 		}
 		
-		var alt = newareas[i].getAttribute('alt');
+		alt = newareas[i].getAttribute('alt');
 		if (alt) {
-			if (this.props[id]) {
-				this.props[id].getElementsByTagName('input')[4].value  = alt;
-			}
 			this.areas[id].aalt = alt;
 		}
 		
-		var title = newareas[i].getAttribute('title');
+		title = newareas[i].getAttribute('title');
 		if (!title) {title = alt;}
 		if (title) {
 			this.areas[id].atitle = title;
 		}
 
-		var target = newareas[i].getAttribute('target');
+		target = newareas[i].getAttribute('target');
 		if (target) {target = target.toLowerCase();}
 //		if (target == '') target = '_self';
-		if (this.props[id]) {
-			this.props[id].getElementsByTagName('select')[1].value = target;
-		}
 		this.areas[id].atarget = target;
 		
-		this._recalculate(id);//contains repaint
+		this._recalculate(id, coords);//contains repaint
 		this.relaxArea(id);
+		
+		var obj = {}; obj[id] = {};
+		obj[id].shape  = shape;
+		obj[id].coords = coords;
+		obj[id].href   = href;
+		obj[id].alt    = alt;
+		obj[id].title  = title;
+		obj[id].target = target;
+		this.fireEvent('onAreaChanged', obj);
+		
 	}//end for areas
-	if (this.html_container) {
-		this.html_container.value = this.getMapHTML();
-	}
-};
-
-
-/**
- *	Dummy
- */
-imgmap.prototype.clickHtml = function() {
-	this.fireEvent('onHtml');
-	return true;
+	this.fireEvent('onHtmlChanged', this.getMapHTML());
 };
 
 
@@ -1034,13 +976,18 @@ imgmap.prototype.clickHtml = function() {
  *	@url	http://www.quirksmode.org/bugreports/archives/2005/03/Usemap_attribute_wrongly_case_sensitive.html 
  */
 imgmap.prototype.togglePreview = function() {
-	//function level var declarations
 	var i;//generic cycle counter
-	var nodes;//html nodes array
 	
 	if (!this.pic) {return false;}//exit if pic is undefined
+	
+	//dynamically create preview container
+	if (!this.preview) {
+		this.preview = document.createElement('DIV');
+		this.preview.style.display = 'none';
+		this.pic.parentNode.appendChild(this.preview);
+	}
+	
 	if (this.viewmode === 0) {
-		this.fireEvent('onPreview');
 		//hide canvas elements and labels
 		for (i=0; i<this.areas.length; i++) {
 			if (this.areas[i]) {
@@ -1048,28 +995,12 @@ imgmap.prototype.togglePreview = function() {
 				if (this.areas[i].label) {this.areas[i].label.style.display = 'none';}
 			}
 		}
-		//disable form elements (inputs and selects)
-		nodes = this.form_container.getElementsByTagName("input");
-		//nodes = nodes.join(this.form_container.getElementsByTagName("select"));
-		for (i=0; i<nodes.length; i++) {
-			nodes[i].disabled = true;
-		}
-		nodes = this.form_container.getElementsByTagName("select");
-		for (i=0; i<nodes.length; i++) {
-			nodes[i].disabled = true;
-		}
 		//activate image map
 		this.preview.innerHTML = this.getMapHTML();
 		this.pic.setAttribute('border', '0', 0);
 		this.pic.setAttribute('usemap', '#' + this.mapname, 0);
-		//detach event handlers
-		//this.removeEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
-		//this.removeEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
-		//this.removeEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor  = 'auto';
-		//change preview button
 		this.viewmode = 1;
-		this.i_preview.src = this.config.imgroot + 'edit.gif';
 		this.statusMessage(this.strings.PREVIEW_MODE);
 	}
 	else {
@@ -1080,42 +1011,28 @@ imgmap.prototype.togglePreview = function() {
 				if (this.areas[i].label && this.config.label) {this.areas[i].label.style.display = '';}
 			}
 		}
-		//enable form elements
-		nodes = this.form_container.getElementsByTagName("input");
-		for (i=0; i<nodes.length; i++) {
-			nodes[i].disabled = false;
-		}
-		nodes = this.form_container.getElementsByTagName("select");
-		for (i=0; i<nodes.length; i++) {
-			nodes[i].disabled = false;
-		}
 		//clear image map
 		this.preview.innerHTML = '';
-		//hook back event handlers
-		//this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
-		//this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
-		//this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor  = this.config.cursor_default;
 		this.pic.removeAttribute('usemap', 0);
-		//change preview button
 		this.viewmode = 0;
-		this.i_preview.src = this.config.imgroot + 'zoom.gif';
 		this.statusMessage(this.strings.DESIGN_MODE);
 		this.is_drawing = 0;
 	}
+	this.fireEvent('onModeChanged', this.viewmode);
+	return this.viewmode;
 };
 
 
 /**
- *	Puts a new properties row, and adds a new CANVAS
+ *	Adds a new area. It will later become a canvas.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
- *	@date	2006-06-06 16:49:25  
- */ 
+ *	@date	2006-06-06 16:49:25
+ */
 imgmap.prototype.addNewArea = function() {
 		if (this.viewmode === 1) {return;}//exit if preview mode
 		var lastarea = this._getLastArea();
 		var id = (lastarea) ? lastarea.aid + 1 : 0;
-		this.fireEvent('onAddArea', id);
 		//alert(id);
 		
 		//insert new possibly? unknown area (will be initialized at mousedown)
@@ -1124,62 +1041,8 @@ imgmap.prototype.addNewArea = function() {
 		this.areas[id].aid       = id;
 		this.areas[id].shape     = "undefined";
 		
-		//insert props row
-		if (this.form_container)
-		{
-			this.props[id] = document.createElement('DIV');
-			this.form_container.appendChild(this.props[id]);
-
-			this.props[id].id        = 'img_area_' + id;
-			this.props[id].aid       = id;
-			this.props[id].className = 'img_area';
-			//hook event handlers
-			this.addEvent(this.props[id], 'mouseover', this.img_area_mouseover.bind(this));
-			this.addEvent(this.props[id], 'mouseout',  this.img_area_mouseout.bind(this));
-			this.addEvent(this.props[id], 'click',     this.img_area_click.bind(this));
-			var temp = '<input type="text"  name="img_id" class="img_id" value="' + id + '" readonly="1"/>';
-			temp+= '<input type="radio" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">';
-			temp+= 'Shape: <select name="img_shape" class="img_shape">';
-			temp+= '<option value="rectangle" >rectangle</option>';
-			temp+= '<option value="circle"    >circle</option>';
-			temp+= '<option value="polygon"   >polygon</option>';
-			temp+= '</select>';
-			temp+= 'Coords: <input type="text" name="img_coords" class="img_coords" value="">';
-			temp+= 'Href: <input type="text" name="img_href" class="img_href" value="">';
-			temp+= 'Alt: <input type="text" name="img_alt" class="img_alt" value="">';
-			temp+= 'Target: <select name="img_target" class="img_target">';
-			temp+= '<option value=""  >&lt;not set&gt;</option>';
-			temp+= '<option value="_self"  >this window</option>';
-			temp+= '<option value="_blank" >new window</option>';
-			temp+= '<option value="_top"   >top window</option>';
-			temp+= '</select>';
-			this.props[id].innerHTML = temp;
-			//hook more event handlers
-			this.addEvent(this.props[id].getElementsByTagName('input')[1],  'keydown', this.img_area_keydown.bind(this));
-			this.addEvent(this.props[id].getElementsByTagName('input')[2],  'keydown', this.img_coords_keydown.bind(this));
-			this.addEvent(this.props[id].getElementsByTagName('input')[2],  'blur', this.img_area_blur.bind(this));
-			this.addEvent(this.props[id].getElementsByTagName('input')[3],  'blur', this.img_area_blur.bind(this));
-			this.addEvent(this.props[id].getElementsByTagName('input')[4],  'blur', this.img_area_blur.bind(this));
-			this.addEvent(this.props[id].getElementsByTagName('select')[0], 'blur',   this.img_area_blur.bind(this));
-			this.addEvent(this.props[id].getElementsByTagName('select')[0], 'change', this.img_area_blur.bind(this));
-			this.addEvent(this.props[id].getElementsByTagName('select')[1], 'blur', this.img_area_blur.bind(this));
-			if (this.isSafari) {
-				//need these for safari
-				this.addEvent(this.props[id].getElementsByTagName('select')[0], 'change', this.img_area_click.bind(this));
-				this.addEvent(this.props[id].getElementsByTagName('select')[1], 'change', this.img_area_click.bind(this));
-			}
-			if (lastarea && this.config.mode == "editor") {
-				//set shape same as lastarea - just for convenience
-				this.props[id].getElementsByTagName('select')[0].value = lastarea.shape;
-			}
-			else {
-				//set shape as nextshape if set
-				if (this.nextShape) {this.props[id].getElementsByTagName('select')[0].value = this.nextShape;}
-			}
-			//alert(this.props[id].parentNode.innerHTML);
-			this.form_selectRow(id, true);
-		}
 		this.currentid = id;
+		this.fireEvent('onAddArea', id);
 		return id;
 };
 
@@ -1244,12 +1107,12 @@ imgmap.prototype.initArea = function(id, shape) {
 imgmap.prototype.relaxArea = function(id) {
 	if (!this.areas[id]) {return;}
 	this.fireEvent('onRelaxArea', id);
-	if (this.areas[id].shape == 'rectangle') {
+	if (this.areas[id].shape == 'rect') {
 		this.areas[id].style.borderWidth = '1px';
 		this.areas[id].style.borderStyle = 'solid';
 		this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
 	}
-	else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'polygon') {
+	else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
 		if (this.config.bounding_box) {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
@@ -1322,6 +1185,9 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
 
 /**
  *	Get the currently set opacity of a given area.
+ *	@author	adam
+ *	@param	area	The area (canvas) you want to get opacity info from.
+ *	@return	Opacity value in a range of 0-100.   
  */
 imgmap.prototype._getopacity = function(area) {
 	if (area.style.opacity <= 1) {
@@ -1336,40 +1202,39 @@ imgmap.prototype._getopacity = function(area) {
 
 
 /**
- *	Removes the actively selected area.
+ *	Removes the area marked by id.
+ *	Callback will call the gui code to remove gui elements. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	11-02-2007 20:40:58
  */
-imgmap.prototype.removeArea = function() {
+imgmap.prototype.removeArea = function(id, mass) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
-	var id = this.currentid;
-	this.fireEvent('onRemoveArea', id);
-	if (this.props[id]) {
-		//shall we leave the last one?
-		var pprops = this.props[id].parentNode;
-		pprops.removeChild(this.props[id]);
-		var lastid = pprops.lastChild.aid;
-		this.props[id] = null;
-		try {
-			this.form_selectRow(lastid, true);
-			this.currentid = lastid;
-		}
-		catch (err) {
-			//alert('noparent');
-		}
-	}
+	if (id === null || typeof id == "undefined") {return;}//exit if no id given
 
 	try {
 		//remove area and label
-		this.areas[id].parentNode.removeChild(this.areas[id]);
+		//explicitly set some values to null to avoid IE circular reference memleak 
 		this.areas[id].label.parentNode.removeChild(this.areas[id].label);
+		this.areas[id].parentNode.removeChild(this.areas[id]);
+		this.areas[id].label.className = null;
+		//this.areas[id].label.style = null;
+		//console.log(this.areas[id].label);
+		this.areas[id].label       = null;
+		this.areas[id].onmouseover = null;
+		this.areas[id].onmouseout  = null;
+		this.areas[id].onmouseup   = null;
+		this.areas[id].onmousedown = null;
+		this.areas[id].onmousemove = null;
+//		console.log(this.areas[id].label);
+		
 	}
 	catch (err) {
 		//alert('noparent');
 	}
 	this.areas[id] = null;
+	this.fireEvent('onRemoveArea', id);
 	//update grand html
-	if (this.html_container) {this.html_container.value = this.getMapHTML();}
+	if (!mass) {this.fireEvent('onHtmlChanged', this.getMapHTML());}
 };
 
 
@@ -1379,16 +1244,13 @@ imgmap.prototype.removeArea = function() {
  *	@date	2006-06-07 11:55:34
  */
 imgmap.prototype.removeAllAreas = function() {
-	for (var i = 0; i < this.props.length; i++) {
-		if (this.props[i]) {
-			if (this.props[i].parentNode) {this.props[i].parentNode.removeChild(this.props[i]);}
-			if (this.areas[i].parentNode) {this.areas[i].parentNode.removeChild(this.areas[i]);}
-			if (this.areas[i].label) {this.areas[i].label.parentNode.removeChild(this.areas[i].label);}
-			this.props[i] = null;
-			this.areas[i] = null;
-			if (this.props.length > 0 && this.props[i]) {this.form_selectRow((this.props.length - 1), true);}
+	for (var i = 0; i < this.areas.length; i++) {
+		if (this.areas[i]) {
+			this.removeArea(i, true);
 		}
 	}
+	//only call this at the end, use mass param above to avoid calling it in process
+	this.fireEvent('onHtmlChanged', this.getMapHTML());
 };
 
 
@@ -1477,12 +1339,12 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 		this._putlabel(area.aid);
 		this._puthint(area.aid);
 	}
-	else if (area.shape == 'rectangle') {
+	else if (area.shape == 'rect') {
 		//put label
 		this._putlabel(area.aid);
 		this._puthint(area.aid);
 	}
-	else if (area.shape == 'polygon') {
+	else if (area.shape == 'poly') {
 		width  =  parseInt(area.style.width, 10);
 		height =  parseInt(area.style.height, 10);
 		var left   =  parseInt(area.style.left, 10);
@@ -1521,40 +1383,36 @@ imgmap.prototype._repaint = function(area, color, x, y) {
  *	@date	2006.10.24. 22:39:27
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
-imgmap.prototype._updatecoords = function() {
-	var left   = parseInt(this.areas[this.currentid].style.left, 10);
-	var top    = parseInt(this.areas[this.currentid].style.top, 10);
-	var height = parseInt(this.areas[this.currentid].style.height, 10);
-	var width  = parseInt(this.areas[this.currentid].style.width, 10);
+imgmap.prototype._updatecoords = function(id) {
+	var left   = parseInt(this.areas[id].style.left, 10);
+	var top    = parseInt(this.areas[id].style.top, 10);
+	var height = parseInt(this.areas[id].style.height, 10);
+	var width  = parseInt(this.areas[id].style.width, 10);
 	
 	var value = '' ;
-	if (this.areas[this.currentid].shape == 'rectangle') {
+	if (this.areas[id].shape == 'rect') {
 		value = left + ',' + top + ',' + (left + width) + ',' + (top + height);
-		this.areas[this.currentid].lastInput = value;
+		this.areas[id].lastInput = value;
 	}
-	else if (this.areas[this.currentid].shape == 'circle') {
+	else if (this.areas[id].shape == 'circle') {
 		var radius = Math.floor(width/2) - 1;
 		value = (left + radius) + ',' +	(top + radius) + ',' + radius;
-		this.areas[this.currentid].lastInput = value;
+		this.areas[id].lastInput = value;
 	}
-	else if (this.areas[this.currentid].shape == 'polygon') {
+	else if (this.areas[id].shape == 'poly') {
 		value = '';
-		if (this.areas[this.currentid].xpoints) {
-			for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
-				value+= this.areas[this.currentid].xpoints[i] + ',' + this.areas[this.currentid].ypoints[i] + ',';
+		if (this.areas[id].xpoints) {
+			for (var i=0; i<this.areas[id].xpoints.length; i++) {
+				value+= this.areas[id].xpoints[i] + ',' + this.areas[id].ypoints[i] + ',';
 			}
 			value = value.substring(0, value.length - 1);
 		}
-		this.areas[this.currentid].lastInput = value;
+		this.areas[id].lastInput = value;
 	}
 
-	if (this.props[this.currentid]) {
-		this.props[this.currentid].getElementsByTagName('input')[2].value = value;
-	}
-	
-	if (this.html_container) {
-		this.html_container.value = this.getMapHTML();
-	}
+	var obj = {}; obj[id] = {}; obj[id].coords = value;
+	this.fireEvent('onAreaChanged', obj);
+	this.fireEvent('onHtmlChanged', this.getMapHTML());
 };
 
 
@@ -1564,21 +1422,17 @@ imgmap.prototype._updatecoords = function() {
  *	@date	2006.10.24. 22:46:55
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
-imgmap.prototype._recalculate = function(id) {
-	var coords = '';
-	var input = null;
+imgmap.prototype._recalculate = function(id, coords) {
 	try {
-		if (this.props[id]) {
-			input   = this.props[id].getElementsByTagName('input')[2];
-			input.value = this._normCoords(input.value, this.areas[id].shape, 'preserve');
-			coords  = input.value;
+		if (coords) {
+			coords = this._normCoords(coords, this.areas[id].shape, 'preserve');
 		}
 		else {
 			coords = this.areas[id].lastInput || '' ;
 		}
 	
 		var parts   = coords.split(',');
-		if (this.areas[id].shape == 'rectangle') {
+		if (this.areas[id].shape == 'rect') {
 			if (parts.length != 4 ||
 				parseInt(parts[0], 10) > parseInt(parts[2], 10) ||
 				parseInt(parts[1], 10) > parseInt(parts[3], 10)) {throw "invalid coords";}
@@ -1598,7 +1452,7 @@ imgmap.prototype._recalculate = function(id) {
 			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1], 10) - width/2 + 'px';
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
-		else if (this.areas[id].shape == 'polygon') {
+		else if (this.areas[id].shape == 'poly') {
 			if (parts.length < 2) {throw "invalid coords";}
 			this.areas[id].xpoints = [];
 			this.areas[id].ypoints = [];
@@ -1709,7 +1563,7 @@ imgmap.prototype.img_mousemove = function(e) {
 			}
 		}
 		else {
-			if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
+			if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rect') {
 				//not for circle!
 				this.is_drawing = this.DM_RECTANGLE_DRAW;
 				this.statusMessage(this.strings.RECTANGLE_DRAW);
@@ -1917,7 +1771,7 @@ imgmap.prototype.img_mousemove = function(e) {
 	//repaint canvas elements
 	if (this.is_drawing) {
 		this._repaint(this.areas[this.currentid], this.config.CL_DRAW_SHAPE, x, y);
-		this._updatecoords();
+		this._updatecoords(this.currentid);
 	}
 
 };
@@ -1990,7 +1844,7 @@ imgmap.prototype.img_mousedown = function(e) {
 			//add last controlpoint and update coords
 			this.areas[this.currentid].xpoints[this.areas[this.currentid].xpoints.length] = x - 5;
 			this.areas[this.currentid].ypoints[this.areas[this.currentid].ypoints.length] = y - 5;
-			this._updatecoords();
+			this._updatecoords(this.currentid);
 			this.is_drawing = 0;
 			this._polygonshrink(this.areas[this.currentid]);
 		}
@@ -2011,13 +1865,14 @@ imgmap.prototype.img_mousedown = function(e) {
 		//console.log("init: " + this.nextShape);
 		this.initArea(this.currentid, this.nextShape);
 	}
-	else if (this.areas[this.currentid].shape == 'undefined' || this.areas[this.currentid].shape == 'polygon') {
-		var shape = (this.props[this.currentid]) ? this.props[this.currentid].getElementsByTagName('select')[0].value : this.nextShape;
-		if (!shape) {shape = 'rectangle';}
+	else if (this.areas[this.currentid].shape == 'undefined' || this.areas[this.currentid].shape == 'poly') {
+		//var shape = (this.props[this.currentid]) ? this.props[this.currentid].getElementsByTagName('select')[0].value : this.nextShape;
+		var shape = this.nextShape;
+		if (!shape) {shape = 'rect';}
 		//console.log("init: " + shape);
 		this.initArea(this.currentid, shape);
 	}
-	if (this.areas[this.currentid].shape == 'polygon') {
+	if (this.areas[this.currentid].shape == 'poly') {
 		this.is_drawing = this.DM_POLYGON_DRAW;
 		this.statusMessage(this.strings.POLYGON_DRAW);
 		
@@ -2035,7 +1890,7 @@ imgmap.prototype.img_mousedown = function(e) {
 		this.areas[this.currentid].xpoints[0] = x;
 		this.areas[this.currentid].ypoints[0] = y;
 	}
-	else if (this.areas[this.currentid].shape == 'rectangle') {
+	else if (this.areas[this.currentid].shape == 'rect') {
 		this.is_drawing = this.DM_RECTANGLE_DRAW;
 		this.statusMessage(this.strings.RECTANGLE_DRAW);
 		
@@ -2076,12 +1931,12 @@ imgmap.prototype.highlightArea = function(id, flag) {
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - highlight it
 		this.fireEvent('onFocusArea', this.areas[id]);
-		if (this.areas[id].shape == 'rectangle') {
+		if (this.areas[id].shape == 'rect') {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
 			this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_SHAPE;
 		}
-		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'polygon') {
+		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
 			if (this.config.bounding_box) {
 				this.areas[id].style.borderWidth = '1px';
 				this.areas[id].style.borderStyle = 'solid';
@@ -2108,12 +1963,12 @@ imgmap.prototype.blurArea = function(id, flag) {
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - fade it back
 		this.fireEvent('onBlurArea', this.areas[id]);
-		if (this.areas[id].shape == 'rectangle') {
+		if (this.areas[id].shape == 'rect') {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
 			this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
 		}
-		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'polygon') {
+		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
 			if (this.config.bounding_box) {
 				this.areas[id].style.borderWidth = '1px';
 				this.areas[id].style.borderStyle = 'solid';
@@ -2132,150 +1987,13 @@ imgmap.prototype.blurArea = function(id, flag) {
 
 
 /**
- *	Handles mouseover on props row.
- */
-imgmap.prototype.img_area_mouseover = function(e) {
-	if (this.is_drawing) {return;}//exit if in drawing state
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
-	this.highlightArea(obj.aid);
-};
-
-
-/**
- *	Handles mouseout on props row.
- */
-imgmap.prototype.img_area_mouseout = function(e) {
-	if (this.is_drawing) {return;}//exit if in drawing state
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
-	this.blurArea(obj.aid);
-};
-
-
-imgmap.prototype.img_area_click = function(e) {
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
-	this.form_selectRow(obj.aid, false);
-	this.currentid = obj.aid;
-};
-
-
-/**
- *	Handles click on a property row.
- *	id can be the this.props[i] object or i itself.
- *	@author	Adam Maschek (adam.maschek(at)gmail.com)
- *	@date	2006-06-06 16:55:29
- */
-imgmap.prototype.form_selectRow = function(id, setfocus) {
-	if (this.is_drawing) {return;}//exit if in drawing state
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	if (!this.form_container) {return;}//exit if no form container
-	if (!document.getElementById('img_active_'+id)) {return;}
-	document.getElementById('img_active_'+id).checked = 1;
-	if (setfocus) {document.getElementById('img_active_'+id).focus();}
-	//remove all background styles
-	for (var i = 0; i < this.props.length; i++) {
-		if (this.props[i]) {
-			this.props[i].style.background = '';
-		}
-	}
-	//put highlight on actual props row
-	this.props[id].style.background = this.config.CL_HIGHLIGHT_PROPS;
-	//fire custom event
-	this.fireEvent('onSelectRow', this.props[id]);
-};
-
-
-/**
- *	Handles delete keypress on any form row.
- *	@author	adam 
- */
-imgmap.prototype.img_area_keydown = function(e) {
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
-	//alert(key);
-	if (key == 46) {
-		//delete pressed
-		this.removeArea();
-	}
-};
-
-
-/**
- *	Called when the properties line loses focus, and the recalculate function
- *	must be called.
- *	@date	2006.10.24. 22:42:02
- *	@author	Adam Maschek (adam.maschek(at)gmail.com)
- */
-imgmap.prototype.img_area_blur = function(e) {
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	if (this.is_drawing) {return;}//exit if drawing
-	//console.log('blur');
-	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
-	//console.log(obj);
-	var id = obj.parentNode.aid;
-	//console.log(this.areas[id]);
-	if (obj.name == 'img_href')        {this.areas[id].ahref   = obj.value;}
-	else if (obj.name == 'img_alt')    {this.areas[id].aalt    = obj.value;}
-	else if (obj.name == 'img_title')  {this.areas[id].atitle  = obj.value;}
-	else if (obj.name == 'img_target') {this.areas[id].atarget = obj.value;}
-	else if (obj.name == 'img_shape' && this.areas[id].shape != obj.value && this.areas[id].shape != 'undefined') {
-		//shape changed, adjust coords intelligently inside _normCoords
-		var coords = '';
-		if (this.props[id]) {
-			coords  =  this.props[id].getElementsByTagName('input')[2].value;
-		}
-		else {
-			coords = this.areas[id].lastInput || '' ;
-		}
-		coords = this._normCoords(coords, obj.value, 'from'+this.areas[id].shape);
-		if (this.props[id]) {
-			this.props[id].getElementsByTagName('input')[2].value  = coords;
-		}
-		this.areas[id].lastInput = coords;
-		this.areas[id].shape = obj.value;
-	}
-	if (this.areas[id]  && this.areas[id].shape != 'undefined') {
-		this._recalculate(id);
-		if (this.html_container) {this.html_container.value = this.getMapHTML();}
-	}
-};
-
-
-/**
- *	Called when the grand HTML code loses focus, and the changes must be reflected.
- *	@date	2006.10.24. 22:51:20
- *	@author	Adam Maschek (adam.maschek(at)gmail.com)
- */
-imgmap.prototype.html_container_blur = function(e) {
-	var oldvalue = this.html_container.getAttribute('oldvalue');
-	if (oldvalue != this.html_container.value) {
-		if (this.viewmode === 1) {return;}//exit if preview mode
-		this.setMapHTML(this.html_container.value);
-	}
-};
-
-
-/**
- *	Called when the optional html container gets focus.
- *	We need to memorize its old value in order to be able to
- *	detect changes in the code that needs to be reflected.
- *	@date	20-02-2007 17:51:16
- *	@author Adam Maschek (adam.maschek(at)gmail.com)
- */
-imgmap.prototype.html_container_focus = function(e) {
-	this.html_container.setAttribute('oldvalue', this.html_container.value);
-	this.html_container.select();
-};
-
-
-/**
  *	Handles event of mousemove on imgmap areas.
+ *	- changes cursor depending where we are inside the area (buggy in opera)
+ *	- handles area resize
+ *	- handles area move   
  *	@url	http://evolt.org/article/Mission_Impossible_mouse_position/17/23335/index.html
+ *	@url	http://my.opera.com/community/forums/topic.dml?id=239498&t=1217158015&page=1 
+ *	@author	adam 
  */
 imgmap.prototype.area_mousemove = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -2300,25 +2018,25 @@ imgmap.prototype.area_mousemove = function(e) {
 		//this.log(obj.aid + ' : ' + xdiff + ',' + ydiff);
 		if (xdiff < 6 && ydiff > 6) {
 			//move left
-			if (obj.shape != 'polygon') {
+			if (obj.shape != 'poly') {
 				obj.style.cursor = 'w-resize';
 			}
 		}
 		else if (xdiff > parseInt(obj.style.width, 10) - 6  && ydiff > 6) {
 			//move right
-			if (obj.shape != 'polygon') {
+			if (obj.shape != 'poly') {
 				obj.style.cursor = 'e-resize';
 			}
 		}
 		else if (xdiff > 6 && ydiff < 6) {
 			//move top
-			if (obj.shape != 'polygon') {
+			if (obj.shape != 'poly') {
 				obj.style.cursor = 'n-resize';
 			}
 		}
 		else if (ydiff > parseInt(obj.style.height, 10) - 6  && xdiff > 6) {
 			//move bottom
-			if (obj.shape != 'polygon') {
+			if (obj.shape != 'poly') {
 				obj.style.cursor = 's-resize';
 			}
 		}
@@ -2341,7 +2059,7 @@ imgmap.prototype.area_mousemove = function(e) {
 					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 				}
 			}
-			else if (this.areas[this.currentid].shape == 'rectangle') {
+			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_LEFT;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_LEFT);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
@@ -2356,7 +2074,7 @@ imgmap.prototype.area_mousemove = function(e) {
 					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 				}
 			}
-			else if (this.areas[this.currentid].shape == 'rectangle') {
+			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_RIGHT;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_RIGHT);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
@@ -2371,7 +2089,7 @@ imgmap.prototype.area_mousemove = function(e) {
 					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 				}
 			}
-			else if (this.areas[this.currentid].shape == 'rectangle') {
+			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_TOP;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_TOP);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
@@ -2386,7 +2104,7 @@ imgmap.prototype.area_mousemove = function(e) {
 					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 				}
 			}
-			else if (this.areas[this.currentid].shape == 'rectangle') {
+			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_BOTTOM;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_BOTTOM);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
@@ -2403,14 +2121,14 @@ imgmap.prototype.area_mousemove = function(e) {
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
-			else if (this.areas[this.currentid].shape == 'rectangle') {
+			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_MOVE;
 				this.statusMessage(this.strings.RECTANGLE_MOVE);
 				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
-			else if (this.areas[this.currentid].shape == 'polygon') {
+			else if (this.areas[this.currentid].shape == 'poly') {
 				if (this.areas[this.currentid].xpoints) {
 					for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
 						this.memory[this.currentid].xpoints[i] = this.areas[this.currentid].xpoints[i];
@@ -2432,11 +2150,11 @@ imgmap.prototype.area_mousemove = function(e) {
 		this.memory[this.currentid].height = parseInt(this.areas[this.currentid].style.height, 10);
 		this.memory[this.currentid].top    = parseInt(this.areas[this.currentid].style.top, 10);
 		this.memory[this.currentid].left   = parseInt(this.areas[this.currentid].style.left, 10);
-		if (this.areas[this.currentid].shape == 'rectangle') {
+		if (this.areas[this.currentid].shape == 'rect') {
 			this.areas[this.currentid].style.borderWidth = '1px';
 			this.areas[this.currentid].style.borderStyle = 'dotted';
 		}
-		else if (this.areas[this.currentid].shape == 'circle' || this.areas[this.currentid].shape == 'polygon') {
+		else if (this.areas[this.currentid].shape == 'circle' || this.areas[this.currentid].shape == 'poly') {
 			if (this.config.bounding_box) {
 				this.areas[this.currentid].style.borderWidth = '1px';
 				this.areas[this.currentid].style.borderStyle = 'dotted';
@@ -2453,6 +2171,8 @@ imgmap.prototype.area_mousemove = function(e) {
 
 /**
  *	Handles event of mouseup on imgmap areas.
+ *	Basically clears draggedId.
+ *	@author	adam  
  */
 imgmap.prototype.area_mouseup = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -2489,6 +2209,8 @@ imgmap.prototype.area_mouseup = function(e) {
 
 /**
  *	Handles event of mouseover on imgmap areas.
+ *	Calls highlight on the given area.
+ *	@author	adam  
  */
 imgmap.prototype.area_mouseover = function(e) {
 	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
@@ -2524,6 +2246,8 @@ imgmap.prototype.area_mouseover = function(e) {
 
 /**
  *	Handles event of mouseout on imgmap areas.
+ *	Calls blur on the given area.
+ *	@author	adam  
  */
 imgmap.prototype.area_mouseout = function(e) {
 	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
@@ -2547,6 +2271,8 @@ imgmap.prototype.area_mouseout = function(e) {
 
 /**
  *	Handles event of mousedown on imgmap areas.
+ *	Sets the variables draggedid, selectedid and currentid to the given area. 
+ *	@author	adam 
  */
 imgmap.prototype.area_mousedown = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -2568,7 +2294,6 @@ imgmap.prototype.area_mousedown = function(e) {
 				this.log('Cannot identify target area', 1);
 				return;
 			}
-			this.form_selectRow(obj.aid, true);
 			this.currentid = obj.aid;
 		}
 		//this.log('selected = '+this.currentid);
@@ -2626,49 +2351,9 @@ imgmap.prototype.setSelectionRange = function(obj, start, end) {
 
 
 /**
- *	Handles arrow keys on img_coords input field.
- *	Changes the coordinate values by +/- 1 and updates the corresponding canvas area.
- *	@author	adam
- *	@date	25-09-2007 17:12:43
- */
-imgmap.prototype.img_coords_keydown = function(e) {
-	if (this.viewmode === 1) {return;}//exit if preview mode
-	var key = (this.isMSIE || this.isOpera) ? event.keyCode : e.keyCode;
-	var obj = (this.isMSIE || this.isOpera) ? window.event.srcElement : e.originalTarget;
-	//this.log(key);
-	//this.log(obj);
-	if (key == 40 || key == 38) {
-		//down or up pressed
-		this.fireEvent('onResizeArea', this.areas[this.currentid]);
-		//get the coords
-		var coords = obj.value.split(',');
-		var s = this.getSelectionStart(obj);
-		var j = 0;
-		for (var i=0; i<coords.length; i++) {
-			j+=coords[i].length;
-			if (j > s) {
-				//this is the coord we want
-				if (key == 40 && coords[i] > 0) {coords[i]--;}
-				if (key == 38) {coords[i]++;}
-				break;
-			}
-			//jump one more because of comma
-			j++;
-		}
-		obj.value = coords.join(',');
-		if (obj.value != this.areas[this.currentid].lastInput) {
-			this._recalculate(this.currentid);//contains repaint
-		}
-		//set cursor back to its original position
-		this.setSelectionRange(obj, s);
-		return true;
-	}
-};
-
-
-/**
  *	Handles SHIFT hold while drawing.
- *	Note: Safari doesn't generate keyboard events for modifiers: http://bugs.webkit.org/show_bug.cgi?id=11696 
+ *	Note: Safari doesn't generate keyboard events for modifiers:
+ *	@url	http://bugs.webkit.org/show_bug.cgi?id=11696 
  *	@author	adam
  */
 imgmap.prototype.doc_keydown = function(e) {
@@ -2677,7 +2362,7 @@ imgmap.prototype.doc_keydown = function(e) {
 	//console.log(key);
 	if (key == 46) {
 		//delete key pressed
-		if (this.selectedId !== null && !this.is_drawing) {this.removeArea();}
+		if (this.selectedId !== null && !this.is_drawing) {this.removeArea(this.selectedId);}
 	}
 	else if (key == 16) {
 		//shift key pressed
@@ -2698,7 +2383,7 @@ imgmap.prototype.doc_keyup = function(e) {
 	//alert(key);
 	if (key == 16) {
 		//shift key released
-		if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rectangle') {
+		if (this.is_drawing == this.DM_SQUARE_DRAW && this.areas[this.currentid].shape == 'rect') {
 			//not for circle!
 			this.is_drawing = this.DM_RECTANGLE_DRAW;
 			this.statusMessage(this.strings.RECTANGLE_DRAW);
@@ -2830,7 +2515,7 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
 
 
 /**
- *	To fire callback hooks on custom events
+ *	To fire callback hooks on custom events, passing them the object of the event.
  *	@author	adam
  *	@date	13-10-2007 15:24:49
  */   
@@ -2844,17 +2529,21 @@ imgmap.prototype.fireEvent = function(evt, obj) {
 
 /**
  *	To set area dimensions.
+ *	This is needed to achieve the same in all browsers. 
  *	@author	adam
  *	@date	10-12-2007 22:29:41
+ *	@param	id	The id of the area (canvas) to resize.
+ *	@param	w	The desired width in pixels.
+ *	@param	h	The desired height in pixels.
  */
 imgmap.prototype.setAreaSize = function(id, w, h) {
 	if (!id) {id = this.currentid;}
-	if (w != null) {
+	if (w !== null) {
 		this.areas[id].width  = w;
 		this.areas[id].style.width  = (w) + 'px';
 		this.areas[id].setAttribute('width',  w);
 	}
-	if (h != null) {
+	if (h !== null) {
 		this.areas[id].height = h;
 		this.areas[id].style.height = (h) + 'px';
 		this.areas[id].setAttribute('height', h);
@@ -2865,6 +2554,7 @@ imgmap.prototype.setAreaSize = function(id, w, h) {
 /**
  *	Tries to detect preferred language of user.
  *	@date	2007.12.28. 15:43:46
+ *	@return The two byte language code. 
  */
 imgmap.prototype.detectLanguage = function() {
 	var lang;
@@ -2887,9 +2577,35 @@ imgmap.prototype.detectLanguage = function() {
 
 
 /**
+ *	Disable selection on a given object.
+ *	This is especially useful in Safari, where dragging around areas
+ *	keeps selecting all sorts of things.
+ *	@author	Bret Taylor
+ *	@url	http://ajaxcookbook.org/disable-text-selection/
+ *	@date	27-07-2008 1:57:45
+ *	@param	element	The dom element on which you want to disable selection.
+ */       
+imgmap.prototype.disableSelection = function(element) {
+	if (typeof element == 'undefined' || !element) {return false;}
+	if (typeof element.onselectstart != "undefined") {
+	    element.onselectstart = function() {
+	        return false;
+	    };
+    }
+    if (typeof element.unselectable != "undefined") {
+    	element.unselectable = "on";
+    }
+    if (typeof element.style.MozUserSelect != "undefined") {
+    	element.style.MozUserSelect = "none";
+    }
+};
+
+
+/**
  *	@date	11-02-2007 19:57:05
  *	@url	http://www.deepwood.net/writing/method-references.html.utf8
  *	@author	Daniel Brockman
+ *	@addon
  */
 Function.prototype.bind = function(object) {
 	var method = this;
@@ -2900,15 +2616,26 @@ Function.prototype.bind = function(object) {
 
 
 /**
- *	Trim functions.
- *	@url	http://www.somacon.com/p355.php 
+ *	Trim function.
+ *	@url	http://www.somacon.com/p355.php
+ *	@addon
  */
 String.prototype.trim = function() {
 	return this.replace(/^\s+|\s+$/g,"");
 };
+/**
+ *	LTrim function.
+ *	@url	http://www.somacon.com/p355.php
+ *	@addon
+ */
 String.prototype.ltrim = function() {
 	return this.replace(/^\s+/,"");
 };
+/**
+ *	RTrim function.
+ *	@url	http://www.somacon.com/p355.php
+ *	@addon
+ */
 String.prototype.rtrim = function() {
 	return this.replace(/\s+$/,"");
 };

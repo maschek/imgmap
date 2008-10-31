@@ -55,7 +55,11 @@ To use the uploader component ("An image on your computer") you will need to ope
 			</legend>
 			<div style="border-bottom: solid 1px #efefef">
 			<div id="button_container" style="float: left;">
-			<!-- buttons come here -->
+				<!-- buttons come here -->
+				<img src="example1_files/add.gif" onclick="myimgmap.addNewArea()" alt="Add new area" title="Add new area" style="margin: 0 2px; cursor: pointer;"/>
+				<img src="example1_files/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area" style="margin: 0 2px; cursor: pointer;"/>
+				<img src="example1_files/zoom.gif" id="i_preview" onclick="myimgmap.togglePreview();" alt="Preview image map" title="Preview image map" style="margin: 0 2px; cursor: pointer;"/>
+				<img src="example1_files/html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML" style="margin: 0 2px; cursor: pointer;"/>
 			</div>
 			<div style="float: right; margin: 0 5px">
 				<select onchange="changelabeling(this)">
@@ -67,7 +71,7 @@ To use the uploader component ("An image on your computer") you will need to ope
 				</select>
 			</div>
 			<div style="float: right; margin: 0 5px">
-				<input type="checkbox" onClick="toggleBoundingBox(this)"/>
+				<input type="checkbox" onclick="toggleBoundingBox(this)"/>
 				bounding box
 			</div>
 			</div>
@@ -104,56 +108,6 @@ To use the uploader component ("An image on your computer") you will need to ope
 	</form>
 
 <script type="text/javascript" src="../imgmap.js"></script>
-<script type="text/javascript">
-//instantiate the imgmap component, setting up some basic config values
-var myimgmap = new imgmap({
-mode : "editor",
-button_container: document.getElementById('button_container'),
-imgroot: 'example1_files/',
-buttons : ['add','delete','preview','html'],
-custom_callbacks : {
-	'onHtml' : function() {htmlShow();}
-},
-pic_container: document.getElementById('pic_container'),
-html_container: document.getElementById('html_container'),
-status_container: document.getElementById('status_container'),
-form_container: document.getElementById('form_container'),
-bounding_box : true
-});
-
-
-function htmlShow() {
-	toggleFieldset(document.getElementById('fieldset_html'), 1);
-	document.getElementById('html_container').focus();
-}
-
-function changelabeling(obj) {
-	myimgmap.config.label = obj.value;
-	myimgmap._repaintAll();
-}
-
-function toggleBoundingBox(obj) {
-	//console.log(obj.checked);
-	myimgmap.config.bounding_box = obj.checked;
-	myimgmap.relaxAllAreas();
-}
-
-/**
- *	Toggles fieldset visibility by changing the className.
- *	@date	2006.10.24. 22:13:34
- *	@author	Adam Maschek (maschek@freemail.hu)
- */
-function toggleFieldset(fieldset, on) {
-	if (fieldset) {
-		if (fieldset.className == 'fieldset_off' || on == 1) {
-			fieldset.className = '';
-		}
-		else {
-			fieldset.className = 'fieldset_off';
-		}
-	}
-}
-
-</script>
+<script type="text/javascript" src="example1_files/interface1.js"></script>
 </body>
 </html>

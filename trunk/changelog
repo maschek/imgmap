@@ -2,6 +2,20 @@
 
 = Changelog =
 
+Version 2.1
+ * Finally separated most drawing-specific and gui-specific codes. This means easier integration with ANY kind of user interface.
+ * JSDoc based documentation
+ * Elliminated some memleaks using drip.
+ * Updated all examples to use separate interface code and maphandling code.
+ * Removed example 5   
+ * Fixed issue when dragging areas in Safari will cause selecting all kinds of things.
+ * Fixed Issue 13: Suggestion: image url with timestamp
+ * Fixed Issue 14: Javascript error in MSIE
+ * Fixed Issue 17: Doesn't work with Adobe AIR 1.1 - new package built with latest SDK 
+ * Internal and generated html shape names are HTML5 conform (circle, rect, poly)
+ * TODO: update tiny
+ * TODO: set air queries synchronous  
+
 Version 2.0beta6
  * TinyMCE3 support (plugin zip and also as example8)
  * Adobe AIR version (air file and also as example7)
@@ -20,9 +34,9 @@ Version 2.0beta3
  * Added function getMapName().
  * Added function getMapInnerHTML().
  * Added TinyMCE support plus example. (Thanks to John Ericksen)
- * Added FCKEditor support plus example. (Thanks to Alfonso MartÃ­nez de Lizarrondo)
+ * Added FCKEditor support plus example. (Thanks to Alfonso Martínez de Lizarrondo)
  * Added custom callbacks on certain imgmap events.
- * Added Safari support. (Thanks to Alfonso MartÃ­nez de Lizarrondo)
+ * Added Safari support. (Thanks to Alfonso Martínez de Lizarrondo)
  * Improved handling of bad coordinates.
  * Fixed several bugs and issues.
 
