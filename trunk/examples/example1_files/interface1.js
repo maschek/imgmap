@@ -470,3 +470,63 @@ var imgroot = 'example1_files/';
 
 myimgmap.addEvent(document.getElementById('html_container'), 'blur',  gui_htmlBlur);
 myimgmap.addEvent(document.getElementById('html_container'), 'focus', gui_htmlFocus);
+
+
+/** BROWSERPLUS SECTION *******************************************************/
+
+myimgmap.loadScript("http://bp.yahooapis.com/2.1.6/browserplus-min.js");
+window.setTimeout(bp_init, 2000);
+
+function bp_init() {
+	if (!myimgmap.loadedScripts["http://bp.yahooapis.com/2.1.6/browserplus-min.js"]) return;
+	BrowserPlus.init(function(res) {
+	  if (res.success) {  
+	   BrowserPlus.require({  
+	      services: [
+		  	{service: 'DragAndDrop'},
+		  	{service: "ImageAlter"}
+			]},  
+	      function(res) {
+	        if (res.success) {
+	          var dnd = BrowserPlus.DragAndDrop;
+	          dnd.AddDropTarget(
+	            {id: "pic_container"},
+	            function(res) {
+	            	document.getElementById("pic_container").innerHTML = '<em>Drag and drop an image here to start editing, or select source above.</em>';
+	              dnd.AttachCallbacks({
+	                id: "pic_container",
+	                drop: bp_dropped
+	              },
+	              function(){});
+	              
+	          });
+	        } else {
+	          alert("Error Loading Browserplus Services: " + res.error);
+	        }
+	      });
+	  } else {
+	    alert("Failed to initialize BrowserPlus: " + res.error);
+	  }
+	});
+}
+
+function bp_dropped(arg) {  
+	bp_renderImage(arg[0]);
+}  
+
+
+function bp_renderImage(img) {
+	var params = {};
+	params.file = img;
+	BrowserPlus.ImageAlter.Alter(params,
+		function (result) {
+			if (result.success) {
+				//remove em element first
+				var ems = document.getElementById('pic_container').getElementsByTagName('em');
+				if (ems[0]) {
+					document.getElementById('pic_container').removeChild(ems[0]);
+				}
+				myimgmap.loadImage(result.value.url);
+			}
+	});
+}
