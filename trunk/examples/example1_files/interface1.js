@@ -231,9 +231,9 @@ function gui_addArea(id) {
 	//could be checkbox in the future
 	temp+= '<input type="radio" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">';
 	temp+= '<select name="img_shape" class="img_shape">';
-	temp+= '<option value="rect" >rectangle</option>';
-	temp+= '<option value="circle"    >circle</option>';
-	temp+= '<option value="poly"   >polygon</option>';
+	temp+= '<option value="rect">rectangle</option>';
+	temp+= '<option value="circle">circle</option>';
+	temp+= '<option value="poly">polygon</option>';
 	temp+= '</select>';
 	temp+= 'Coords: <input type="text" name="img_coords" class="img_coords" value="">';
 	temp+= 'Href: <input type="text" name="img_href" class="img_href" value="">';
@@ -305,6 +305,7 @@ function gui_modeChanged(mode) {
 			nodes[i].disabled = true;
 		}
 		document.getElementById('i_preview').src = imgroot + 'edit.gif';
+		document.getElementById('dd_zoom').disabled = true;
 	}
 	else {
 		//normal mode
@@ -321,6 +322,7 @@ function gui_modeChanged(mode) {
 			nodes[i].disabled = false;
 		}
 		document.getElementById('i_preview').src = imgroot + 'zoom.gif';
+		document.getElementById('dd_zoom').disabled = false;
 	}
 }
 
@@ -428,6 +430,21 @@ function gui_selectArea(obj) {
 	gui_row_select(obj.aid, true, false);
 }
 
+function gui_zoom(obj) {
+	var scale = obj.value;
+	var pic = document.getElementById('pic_container').getElementsByTagName('img')[0];
+	if (typeof pic == 'undefined') return false;
+	if (typeof pic.oldwidth == 'undefined' || !pic.oldwidth) {
+		pic.oldwidth = pic.width;
+	}
+	if (typeof pic.oldheight == 'undefined' || !pic.oldheight) {
+		pic.oldheight = pic.height;
+	}
+	pic.width  = pic.oldwidth * scale;
+	pic.height = pic.oldheight * scale;
+	myimgmap.scaleAllAreas(scale);
+	
+}
 
 /** INIT SECTION **************************************************************/
 

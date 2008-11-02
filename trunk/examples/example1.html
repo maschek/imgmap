@@ -60,6 +60,13 @@ To use the uploader component ("An image on your computer") you will need to ope
 				<img src="example1_files/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area" style="margin: 0 2px; cursor: pointer;"/>
 				<img src="example1_files/zoom.gif" id="i_preview" onclick="myimgmap.togglePreview();" alt="Preview image map" title="Preview image map" style="margin: 0 2px; cursor: pointer;"/>
 				<img src="example1_files/html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML" style="margin: 0 2px; cursor: pointer;"/>
+				<select onchange="gui_zoom(this)" id="dd_zoom">
+				<option value='0.25'>25%</option>
+				<option value='0.5'>50%</option>
+				<option value='1' selected="1">100%</option>
+				<option value='2'>200%</option>
+				<option value='3'>300%</option>
+				</select>
 			</div>
 			<div style="float: right; margin: 0 5px">
 				<select onchange="changelabeling(this)">

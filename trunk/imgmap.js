@@ -91,6 +91,9 @@ function imgmap(config) {
 	
 	/** watermark to attach to output */
 	this.waterMark  = '<!-- Created by Online Image Map Editor (http://www.maschek.hu/imagemap/index) -->';
+	
+	/** global scale of areas (1-normal, 2-doubled, 0.5-half, etc.) */
+	this.globalscale = 1;
 
 	/** is_drawing draw mode constants */ 
 	this.DM_RECTANGLE_DRAW          = 1;
@@ -691,10 +694,11 @@ imgmap.prototype.log = function(obj, level) {
  *	Invokes getMapInnerHTML. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-06 15:10:27
+ *	@param	flags	Currently ony 'noscale' used to prevent scaling of coordinates in preview mode. 
  *	@return The generated html code. 
  */
-imgmap.prototype.getMapHTML = function() {
-	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML() + this.waterMark + '</map>';
+imgmap.prototype.getMapHTML = function(flags) {
+	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML(flags) + this.waterMark + '</map>';
 	this.fireEvent('onGetMap', html);
 	//alert(html);
 	return html;
@@ -705,20 +709,30 @@ imgmap.prototype.getMapHTML = function() {
  *	Get the map areas part only of the current imagemap.
  *	@see	#getMapHTML 
  *	@author	adam
+ *	@param	flags	Currently ony 'noscale' used to prevent scaling of coordinates in preview mode. 
  *	@return	The generated map code without the map wrapper.  
  */
-imgmap.prototype.getMapInnerHTML = function() {
-	var html = '';
+imgmap.prototype.getMapInnerHTML = function(flags) {
+	var html = coords = '';
 	//foreach area properties
 	for (var i=0; i<this.areas.length; i++) {
 		if (this.areas[i]) {
 			if (this.areas[i].shape && this.areas[i].shape != 'undefined') {
-					html+= '<area shape="' + this.areas[i].shape + '"' +
-						' alt="' + this.areas[i].aalt + '"' +
-						' title="' + this.areas[i].atitle + '"' +
-						' coords="' + this.areas[i].lastInput + '"' +
-						' href="' +	this.areas[i].ahref + '"' +
-						' target="' + this.areas[i].atarget + '" />';
+				coords = this.areas[i].lastInput;
+				if (flags && flags.match(/noscale/)) {
+					//for preview use real coordinates, not scaled
+					var cs = coords.split(',');
+					for (var j=0; j<cs.length; j++) {
+						cs[j] = Math.round(cs[j] * this.globalscale);
+					}
+					coords = cs.join(',');
+				}
+				html+= '<area shape="' + this.areas[i].shape + '"' +
+					' alt="' + this.areas[i].aalt + '"' +
+					' title="' + this.areas[i].atitle + '"' +
+					' coords="' + coords + '"' +
+					' href="' +	this.areas[i].ahref + '"' +
+					' target="' + this.areas[i].atarget + '" />';
 			}
 		}
 	}
@@ -950,12 +964,11 @@ imgmap.prototype.setMapHTML = function(map) {
 		id = this.addNewArea();//btw id == this.currentid, just this form is a bit clearer
 
 		if (newareas[i].getAttribute('shape', 2)) {
-			shape = newareas[i].getAttribute('shape', 2);
+			shape = newareas[i].getAttribute('shape', 2).toLowerCase();
 		}
 		else {
 			shape = 'rect';
 		} 
-
 		this.initArea(id, shape);
 		
 		if (newareas[i].getAttribute('coords', 2)) {
@@ -1035,7 +1048,7 @@ imgmap.prototype.togglePreview = function() {
 			}
 		}
 		//activate image map
-		this.preview.innerHTML = this.getMapHTML();
+		this.preview.innerHTML = this.getMapHTML('noscale');
 		this.pic.setAttribute('border', '0', 0);
 		this.pic.setAttribute('usemap', '#' + this.mapname, 0);
 		this.pic.style.cursor  = 'auto';
@@ -1318,6 +1331,61 @@ imgmap.prototype.removeAllAreas = function() {
 
 
 /**
+ *	Scales all areas.
+ *	Will store scale parameter in globalscale property.
+ *	This is needed to know how to draw new areas on an already scaled canvas.  
+ *	@author	adam
+ *	@date	02-11-2008 14:13:14
+ *	@param scale	Scale factor (1-original, 0.5-half, 2-double, etc.)
+ */
+imgmap.prototype.scaleAllAreas = function(scale) {
+	var rscale = 1;//relative scale
+	try {
+		rscale = scale / this.globalscale;
+	}
+	catch (err) {
+		this.log("Invalid (global)scale", 1);
+	}
+	//console.log('gscale: '+this.globalscale);
+	//console.log('scale: '+scale);
+	//console.log('rscale: '+rscale);
+
+	this.globalscale = scale;
+	for (var i = 0; i < this.areas.length; i++) {
+		if (this.areas[i] && this.areas[i].shape != 'undefined') {
+			this.scaleArea(i, rscale);
+		}
+	}
+};
+
+
+/**
+ *	Scales one area.
+ *	@author	adam
+ *	@date	02-11-2008 14:13:14
+ *	@param rscale	Relative scale factor (1-keep, 0.5-half, 2-double, etc.)
+ */
+imgmap.prototype.scaleArea = function(id, rscale) {
+	
+	//set position and new dimensions
+	this.areas[id].style.top  = parseInt(this.areas[id].style.top, 10) * rscale + 'px';
+	this.areas[id].style.left = parseInt(this.areas[id].style.left, 10) * rscale + 'px';
+	this.setAreaSize(id, this.areas[id].width * rscale, this.areas[id].height * rscale);
+	
+	//handle polygon coordinates scaling
+	if (this.areas[id].shape == 'poly') {
+		for (var i=0; i<this.areas[id].xpoints.length; i++) {
+			this.areas[id].xpoints[i]*= rscale;
+			this.areas[id].ypoints[i]*= rscale;
+		}
+	}
+
+	this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
+	this._updatecoords(id);
+};
+
+
+/**
  *	Put label in the top left corner according to label config.
  *	By default it will contain the number of the area (area.aid) 
  *	@param	id	The id of the area to add label to.
@@ -1448,9 +1516,10 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
 			for (var i=1; i<area.xpoints.length; i++) {
 				ctx.lineTo(area.xpoints[i] - left , area.ypoints[i] - top);
+				//ctx.quadraticCurveTo(area.xpoints[i] - left, area.ypoints[i] - top, area.xpoints[i+1] - left, area.ypoints[i+1] - top)
 			}
 			if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_POLYGON_LASTDRAW) {
-				//only draw to current position if not moving
+				//only draw to the current position if not moving
 				ctx.lineTo(x - left - 5 , y - top - 5);
 			}
 			ctx.lineTo(area.xpoints[0] - left , area.ypoints[0] - top);
@@ -1467,20 +1536,22 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 /**
  *	Updates Area coordinates.
  *	Called when needed, eg. on mousemove, mousedown.
- *	Also updates html container value.
+ *	Also updates html container value (thru hook).
  *	Calls callback onAreaChanged and onHtmlChanged so that gui can follow.
  *	This is an important hook to your gui.  
+ *	Uses globalscale to scale real coordinates to area coordinates. 
  *	@date	2006.10.24. 22:39:27
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@param	id	The id of the area. 
  */
 imgmap.prototype._updatecoords = function(id) {
-	var left   = parseInt(this.areas[id].style.left, 10);
-	var top    = parseInt(this.areas[id].style.top, 10);
-	var height = parseInt(this.areas[id].style.height, 10);
-	var width  = parseInt(this.areas[id].style.width, 10);
-	
-	var value = '' ;
+
+	var left   = Math.round(parseInt(this.areas[id].style.left, 10) / this.globalscale);
+	var top    = Math.round(parseInt(this.areas[id].style.top, 10) / this.globalscale);
+	var height = Math.round(parseInt(this.areas[id].style.height, 10) / this.globalscale);
+	var width  = Math.round(parseInt(this.areas[id].style.width, 10) / this.globalscale);
+
+	var value = '';
 	if (this.areas[id].shape == 'rect') {
 		value = left + ',' + top + ',' + (left + width) + ',' + (top + height);
 		this.areas[id].lastInput = value;
@@ -1491,10 +1562,10 @@ imgmap.prototype._updatecoords = function(id) {
 		this.areas[id].lastInput = value;
 	}
 	else if (this.areas[id].shape == 'poly') {
-		value = '';
 		if (this.areas[id].xpoints) {
 			for (var i=0; i<this.areas[id].xpoints.length; i++) {
-				value+= this.areas[id].xpoints[i] + ',' + this.areas[id].ypoints[i] + ',';
+				value+= Math.round(this.areas[id].xpoints[i] / this.globalscale) + ','
+					+ Math.round(this.areas[id].ypoints[i] / this.globalscale) + ',';
 			}
 			value = value.substring(0, value.length - 1);
 		}
@@ -1510,6 +1581,7 @@ imgmap.prototype._updatecoords = function(id) {
 /**
  *	Updates the visual representation of the area with the given id according
  *	to the new coordinates that typically come from an input on the gui.
+ *	Uses globalscale to scale area coordinates to real coordinates. 
  *	@date	2006.10.24. 22:46:55
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@param	id	The id of the area.
@@ -1529,9 +1601,9 @@ imgmap.prototype._recalculate = function(id, coords) {
 			if (parts.length != 4 ||
 				parseInt(parts[0], 10) > parseInt(parts[2], 10) ||
 				parseInt(parts[1], 10) > parseInt(parts[3], 10)) {throw "invalid coords";}
-			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0], 10) + 'px';
-			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1], 10) + 'px';
-			this.setAreaSize(id, (parts[2] - parts[0]), (parts[3] - parts[1]));
+			this.areas[id].style.left   = this.globalscale * (this.pic.offsetLeft + parseInt(parts[0], 10)) + 'px';
+			this.areas[id].style.top    = this.globalscale * (this.pic.offsetTop  + parseInt(parts[1], 10)) + 'px';
+			this.setAreaSize(id, this.globalscale * (parts[2] - parts[0]), this.globalscale  * (parts[3] - parts[1]));
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
 		else if (this.areas[id].shape == 'circle') {
@@ -1540,9 +1612,9 @@ imgmap.prototype._recalculate = function(id, coords) {
 			var width = 2 * (1 * parts[2] + 1);
 			//alert(parts[2]);
 			//alert(width);
-			this.setAreaSize(id, width, width);
-			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0], 10) - width/2 + 'px';
-			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1], 10) - width/2 + 'px';
+			this.setAreaSize(id, this.globalscale * width, this.globalscale * width);
+			this.areas[id].style.left   = this.globalscale * (this.pic.offsetLeft + parseInt(parts[0], 10) - width/2) + 'px';
+			this.areas[id].style.top    = this.globalscale * (this.pic.offsetTop  + parseInt(parts[1], 10) - width/2) + 'px';
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
 		else if (this.areas[id].shape == 'poly') {
@@ -1550,9 +1622,9 @@ imgmap.prototype._recalculate = function(id, coords) {
 			this.areas[id].xpoints = [];
 			this.areas[id].ypoints = [];
 			for (var i=0; i<parts.length; i+=2) {
-				this.areas[id].xpoints[this.areas[id].xpoints.length]  = this.pic.offsetLeft + parseInt(parts[i], 10);
-				this.areas[id].ypoints[this.areas[id].ypoints.length]  = this.pic.offsetTop  + parseInt(parts[i+1], 10); 
-				this._polygongrow(this.areas[id], parts[i], parts[i+1]);
+				this.areas[id].xpoints[this.areas[id].xpoints.length]  = this.globalscale * (this.pic.offsetLeft + parseInt(parts[i], 10));
+				this.areas[id].ypoints[this.areas[id].ypoints.length]  = this.globalscale * (this.pic.offsetTop  + parseInt(parts[i+1], 10)); 
+				this._polygongrow(this.areas[id], this.globalscale * parts[i], this.globalscale * parts[i+1]);
 			}
 			this._polygonshrink(this.areas[id]);//includes repaint
 		}
@@ -2648,7 +2720,7 @@ imgmap.prototype.fireEvent = function(evt, obj) {
  *	@param	h	The desired height in pixels.
  */
 imgmap.prototype.setAreaSize = function(id, w, h) {
-	if (!id) {id = this.currentid;}
+	if (id == null) {id = this.currentid;}
 	if (w !== null) {
 		this.areas[id].width  = w;
 		this.areas[id].style.width  = (w) + 'px';
