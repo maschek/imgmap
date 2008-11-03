@@ -713,7 +713,7 @@ imgmap.prototype.getMapHTML = function(flags) {
  *	@return	The generated map code without the map wrapper.  
  */
 imgmap.prototype.getMapInnerHTML = function(flags) {
-	var html = coords = '';
+	var html, coords;
 	//foreach area properties
 	for (var i=0; i<this.areas.length; i++) {
 		if (this.areas[i]) {
@@ -1564,8 +1564,8 @@ imgmap.prototype._updatecoords = function(id) {
 	else if (this.areas[id].shape == 'poly') {
 		if (this.areas[id].xpoints) {
 			for (var i=0; i<this.areas[id].xpoints.length; i++) {
-				value+= Math.round(this.areas[id].xpoints[i] / this.globalscale) + ','
-					+ Math.round(this.areas[id].ypoints[i] / this.globalscale) + ',';
+				value+= Math.round(this.areas[id].xpoints[i] / this.globalscale) + ',' +
+						Math.round(this.areas[id].ypoints[i] / this.globalscale) + ',';
 			}
 			value = value.substring(0, value.length - 1);
 		}
@@ -2720,7 +2720,7 @@ imgmap.prototype.fireEvent = function(evt, obj) {
  *	@param	h	The desired height in pixels.
  */
 imgmap.prototype.setAreaSize = function(id, w, h) {
-	if (id == null) {id = this.currentid;}
+	if (id === null) {id = this.currentid;}
 	if (w !== null) {
 		this.areas[id].width  = w;
 		this.areas[id].style.width  = (w) + 'px';

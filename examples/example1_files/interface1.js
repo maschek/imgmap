@@ -306,6 +306,7 @@ function gui_modeChanged(mode) {
 		}
 		document.getElementById('i_preview').src = imgroot + 'edit.gif';
 		document.getElementById('dd_zoom').disabled = true;
+		document.getElementById('dd_output').disabled = true;
 	}
 	else {
 		//normal mode
@@ -323,6 +324,7 @@ function gui_modeChanged(mode) {
 		}
 		document.getElementById('i_preview').src = imgroot + 'zoom.gif';
 		document.getElementById('dd_zoom').disabled = false;
+		document.getElementById('dd_output').disabled = false;
 	}
 }
 
@@ -330,8 +332,16 @@ function gui_modeChanged(mode) {
  *	Called from imgmap with the new html code when changed.
  */
 function gui_htmlChanged(str) {
-	if (document.getElementById('html_container')) {
-		document.getElementById('html_container').value = str;
+	var out = document.getElementById('dd_output').value;
+	if (out == 'css') {
+		if (document.getElementById('html_container')) {
+			document.getElementById('html_container').value = output_css();
+		}
+	}
+	else {
+		if (document.getElementById('html_container')) {
+			document.getElementById('html_container').value = str;
+		}
 	}
 }
 
@@ -366,7 +376,7 @@ function gui_areaChanged(obj) {
 function gui_htmlBlur() {
 	var elem = document.getElementById('html_container');
 	var oldvalue = elem.getAttribute('oldvalue');
-	if (oldvalue != elem.value) {
+	if (oldvalue != elem.value && document.getElementById('dd_output').value == 'imagemap') {
 		//dirty
 		myimgmap.setMapHTML(elem.value);
 	}
@@ -433,7 +443,7 @@ function gui_selectArea(obj) {
 function gui_zoom(obj) {
 	var scale = obj.value;
 	var pic = document.getElementById('pic_container').getElementsByTagName('img')[0];
-	if (typeof pic == 'undefined') return false;
+	if (typeof pic == 'undefined') {return false;}
 	if (typeof pic.oldwidth == 'undefined' || !pic.oldwidth) {
 		pic.oldwidth = pic.width;
 	}
@@ -471,9 +481,41 @@ var imgroot = 'example1_files/';
 myimgmap.addEvent(document.getElementById('html_container'), 'blur',  gui_htmlBlur);
 myimgmap.addEvent(document.getElementById('html_container'), 'focus', gui_htmlFocus);
 
+/** OUTPUT FUNCTIONS **********************************************************/
+
+/**
+ *	Just grab the areas array and do whatever you wish.
+ */
+function output_css() {
+	var html, coords, top, left, width, height;
+	html = '<div class="imgmap_css_container" id="'+myimgmap.getMapId()+'">';
+	
+	//foreach areas
+	for (var i=0; i<myimgmap.areas.length; i++) {
+		if (myimgmap.areas[i]) {
+			if (myimgmap.areas[i].shape && myimgmap.areas[i].shape != 'undefined') {
+				coords = myimgmap.areas[i].lastInput;
+				top = myimgmap.areas[i].style.top;
+				left = myimgmap.areas[i].style.left;
+				width = myimgmap.areas[i].style.width;
+				height = myimgmap.areas[i].style.height;
+				html+= '<a style="position: absolute; top: '+top+'; left: '+left+'; width: '+width+'; height: '+height+';" '+
+					' alt="' + myimgmap.areas[i].aalt + '"' +
+					' title="' + myimgmap.areas[i].aalt + '"' +
+					' href="' +	myimgmap.areas[i].ahref + '"' +
+					' target="' + myimgmap.areas[i].atarget + '" ><em>' + myimgmap.areas[i].atitle + '</em></a>';
+			}
+		}
+	}
+	html+= myimgmap.waterMark + '</div>';
+	//alert(html);
+	return html;
+
+}
 
 /** BROWSERPLUS SECTION *******************************************************/
 
+/*
 myimgmap.loadScript("http://bp.yahooapis.com/2.1.6/browserplus-min.js");
 window.setTimeout(bp_init, 2000);
 
@@ -501,11 +543,11 @@ function bp_init() {
 	              
 	          });
 	        } else {
-	          alert("Error Loading Browserplus Services: " + res.error);
+	          //alert("Error Loading Browserplus Services: " + res.error);
 	        }
 	      });
 	  } else {
-	    alert("Failed to initialize BrowserPlus: " + res.error);
+	    //alert("Failed to initialize BrowserPlus: " + res.error);
 	  }
 	});
 }
@@ -530,3 +572,4 @@ function bp_renderImage(img) {
 			}
 	});
 }
+*/
