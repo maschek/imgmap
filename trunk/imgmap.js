@@ -114,6 +114,10 @@ function imgmap(config) {
 	this.DM_POLYGON_LASTDRAW        = 30;
 	this.DM_POLYGON_MOVE            = 31;
 
+	this.DM_BEZIER_DRAW             = 4;
+	this.DM_BEZIER_LASTDRAW         = 40;
+	this.DM_BEZIER_MOVE             = 41;
+
 	//set some config defaults
 	this.config.mode     = "editor";
 	//possible values: editor - classical editor, editor2 - dreamweaver style editor, highlighter - map highlighter
@@ -787,7 +791,7 @@ imgmap.prototype.getMapId = function() {
  *		150,217, 190,257, 150,297,110,257
  *	@author	adam
  *	@param	coords	The coordinates in a string.
- *	@param	shape	The shape of the object (rect, circle, poly).
+ *	@param	shape	The shape of the object (rect, circle, poly, bezier1).
  *	@param	flag	Flags that modify the operation. (fromcircle, frompoly, fromrect, preserve)
  *	@returns The normalized coordinates. 
  */
@@ -914,11 +918,10 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			}
 			//console.log(parts);
 		}
-		coords = '';
-		for (i=0; i<parts.length; i++) {
-			coords+= parts[i]+",";
-		}
-		coords = coords.substring(0, coords.length - 1);
+		coords = parts.join(',');
+	}
+	else if (shape == 'bezier1') {
+		coords = parts.join(',');
 	}
 	if (flag == 'preserve' && oldcoords != coords) {
 		//return original and throw error
@@ -1106,7 +1109,7 @@ imgmap.prototype.addNewArea = function() {
  *	Create the canvas, initialize it.
  *	Reset area parameters.
  *	@param	id	The id of the area (already existing with undefined shape)
- *	@param	shape	The shape the area will have (rect, circle, poly)
+ *	@param	shape	The shape the area will have (rect, circle, poly, bezier1)
  */
 imgmap.prototype.initArea = function(id, shape) {
 	if (!this.areas[id]) {return false;}//if all was erased, return
@@ -1175,7 +1178,7 @@ imgmap.prototype.relaxArea = function(id) {
 		this.areas[id].style.borderStyle = 'solid';
 		this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
 	}
-	else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
+	else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 		if (this.config.bounding_box) {
 			this.areas[id].style.borderWidth = '1px';
 			this.areas[id].style.borderStyle = 'solid';
@@ -1372,8 +1375,8 @@ imgmap.prototype.scaleArea = function(id, rscale) {
 	this.areas[id].style.left = parseInt(this.areas[id].style.left, 10) * rscale + 'px';
 	this.setAreaSize(id, this.areas[id].width * rscale, this.areas[id].height * rscale);
 	
-	//handle polygon coordinates scaling
-	if (this.areas[id].shape == 'poly') {
+	//handle polygon/bezier coordinates scaling
+	if (this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 		for (var i=0; i<this.areas[id].xpoints.length; i++) {
 			this.areas[id].xpoints[i]*= rscale;
 			this.areas[id].ypoints[i]*= rscale;
@@ -1467,8 +1470,8 @@ imgmap.prototype._repaintAll = function() {
  *	After repainting the canvas, it will call putlabel and puthint methods.
  *	@param	area	The area object.
  *	@param	color	Color of the line to draw on the canvas.
- *	@param	x	Only used for polygons as the newest control point x.
- *	@param	y	Only used for polygons as the newest control point y.
+ *	@param	x	Only used for polygons/beziers as the newest control point x.
+ *	@param	y	Only used for polygons/beziers as the newest control point y.
  */  
 imgmap.prototype._repaint = function(area, color, x, y) {
 	var ctx;//canvas context
@@ -1516,12 +1519,50 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
 			for (var i=1; i<area.xpoints.length; i++) {
 				ctx.lineTo(area.xpoints[i] - left , area.ypoints[i] - top);
-				//ctx.quadraticCurveTo(area.xpoints[i] - left, area.ypoints[i] - top, area.xpoints[i+1] - left, area.ypoints[i+1] - top)
 			}
 			if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_POLYGON_LASTDRAW) {
 				//only draw to the current position if not moving
 				ctx.lineTo(x - left - 5 , y - top - 5);
 			}
+			ctx.lineTo(area.xpoints[0] - left , area.ypoints[0] - top);
+			ctx.stroke();
+			ctx.closePath();
+		}
+		//put label
+		this._putlabel(area.aid);
+		this._puthint(area.aid);
+	}
+	else if (area.shape == 'bezier1') {
+		width  =  parseInt(area.style.width, 10);
+		height =  parseInt(area.style.height, 10);
+		var left   =  parseInt(area.style.left, 10);
+		var top    =  parseInt(area.style.top, 10);
+		if (area.xpoints) {
+			//get canvas context
+			ctx = area.getContext("2d");
+			//clear canvas
+			ctx.clearRect(0, 0, width, height);
+			//draw bezier1 (every second point is control point)
+			ctx.beginPath();
+			ctx.strokeStyle = color;
+			//move to the beginning position
+			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
+			//draw previous points - use every second point only
+			for (var i=2; i<area.xpoints.length; i+=2) {
+				ctx.quadraticCurveTo(area.xpoints[i-1] - left, area.ypoints[i-1] - top, area.xpoints[i] - left, area.ypoints[i] - top);
+			}
+			if (this.is_drawing == this.DM_BEZIER_DRAW || this.is_drawing == this.DM_BEZIER_LASTDRAW) {
+				//only draw to the current position if not moving
+				if (area.xpoints.length % 2 == 0 && area.xpoints.length > 1) {
+					//drawing point - draw a curve to it using the previous control point
+					ctx.quadraticCurveTo(area.xpoints[area.xpoints.length - 1] - left - 5 , area.ypoints[area.ypoints.length - 1] - top - 5, x - left - 5 , y - top - 5);
+				}
+				else {
+					//control point - simply draw a line to it
+					ctx.lineTo(x - left - 5 , y - top - 5);
+				}
+			}
+			//close area by drawing a line to the first point
 			ctx.lineTo(area.xpoints[0] - left , area.ypoints[0] - top);
 			ctx.stroke();
 			ctx.closePath();
@@ -1561,7 +1602,7 @@ imgmap.prototype._updatecoords = function(id) {
 		value = (left + radius) + ',' +	(top + radius) + ',' + radius;
 		this.areas[id].lastInput = value;
 	}
-	else if (this.areas[id].shape == 'poly') {
+	else if (this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 		if (this.areas[id].xpoints) {
 			for (var i=0; i<this.areas[id].xpoints.length; i++) {
 				value+= Math.round(this.areas[id].xpoints[i] / this.globalscale) + ',' +
@@ -1617,7 +1658,7 @@ imgmap.prototype._recalculate = function(id, coords) {
 			this.areas[id].style.top    = this.globalscale * (this.pic.offsetTop  + parseInt(parts[1], 10) - width/2) + 'px';
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
-		else if (this.areas[id].shape == 'poly') {
+		else if (this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 			if (parts.length < 2) {throw "invalid coords";}
 			this.areas[id].xpoints = [];
 			this.areas[id].ypoints = [];
@@ -1786,8 +1827,8 @@ imgmap.prototype.img_mousemove = function(e) {
 			this.areas[this.currentid].style.top = (this.memory[this.currentid].downy + diff*-1 + 1) + 'px';
 		}
 	}
-	else if (this.is_drawing == this.DM_POLYGON_DRAW) {
-		//polygon mode
+	else if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_BEZIER_DRAW) {
+		//polygon or bezier mode
 		this.fireEvent('onDrawArea', this.currentid);
 		this._polygongrow(this.areas[this.currentid], x, y);
 	}
@@ -1801,7 +1842,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		this.areas[this.currentid].style.left = x + 1 + 'px';
 		this.areas[this.currentid].style.top  = y + 1 + 'px';
 	}
-	else if (this.is_drawing == this.DM_POLYGON_MOVE) {
+	else if (this.is_drawing == this.DM_POLYGON_MOVE || this.is_drawing == this.DM_BEZIER_MOVE) {
 		this.fireEvent('onMoveArea', this.currentid);
 		x = x - this.memory[this.currentid].rdownx;
 		y = y - this.memory[this.currentid].rdowny;
@@ -1975,7 +2016,10 @@ imgmap.prototype.img_mouseup = function(e) {
 	if (this.is_drawing != this.DM_RECTANGLE_DRAW &&
 		this.is_drawing != this.DM_SQUARE_DRAW &&
 		this.is_drawing != this.DM_POLYGON_DRAW &&
-		this.is_drawing != this.DM_POLYGON_LASTDRAW) {
+		this.is_drawing != this.DM_POLYGON_LASTDRAW &&
+		this.is_drawing != this.DM_BEZIER_DRAW &&
+		this.is_drawing != this.DM_BEZIER_LASTDRAW
+		) {
 		//end dragging
 		this.draggedId = null;
 		//finish state
@@ -1994,7 +2038,7 @@ imgmap.prototype.img_mouseup = function(e) {
 
 /**
  *	EVENT HANDLER: Handles mousedown on the image.
- *	Handles beggining or end of draw, or polygon point set.
+ *	Handles beggining or end of draw, or polygon/bezier point set.
  *	@param	e	The event object.
  */
 imgmap.prototype.img_mousedown = function(e) {
@@ -2017,10 +2061,13 @@ imgmap.prototype.img_mousedown = function(e) {
 		if (this.is_drawing == this.DM_POLYGON_DRAW) {
 			this.is_drawing = this.DM_POLYGON_LASTDRAW;
 		}
+		else if (this.is_drawing == this.DM_BEZIER_DRAW) {
+			this.is_drawing = this.DM_BEZIER_LASTDRAW;
+		}
 	}
 	//console.log(this.is_drawing);
 	//this.statusMessage(x + ' - ' + y + ': ' + this.props[this.currentid].getElementsByTagName('select')[0].value);
-	if (this.is_drawing == this.DM_POLYGON_DRAW) {
+	if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_BEZIER_DRAW) {
 		//its not finish state yet
 		this.areas[this.currentid].xpoints[this.areas[this.currentid].xpoints.length] = x - 5;
 		this.areas[this.currentid].ypoints[this.areas[this.currentid].ypoints.length] = y - 5;
@@ -2028,9 +2075,9 @@ imgmap.prototype.img_mousedown = function(e) {
 		this.memory[this.currentid].downy  = y;
 		return;
 	}
-	else if (this.is_drawing && this.is_drawing != this.DM_POLYGON_DRAW) {
+	else if (this.is_drawing && this.is_drawing != this.DM_POLYGON_DRAW && this.is_drawing != this.DM_BEZIER_DRAW) {
 		//finish any other state
-		if (this.is_drawing == this.DM_POLYGON_LASTDRAW) {
+		if (this.is_drawing == this.DM_POLYGON_LASTDRAW || this.is_drawing == this.DM_BEZIER_LASTDRAW) {
 			//add last controlpoint and update coords
 			this.areas[this.currentid].xpoints[this.areas[this.currentid].xpoints.length] = x - 5;
 			this.areas[this.currentid].ypoints[this.areas[this.currentid].ypoints.length] = y - 5;
@@ -2065,6 +2112,24 @@ imgmap.prototype.img_mousedown = function(e) {
 	if (this.areas[this.currentid].shape == 'poly') {
 		this.is_drawing = this.DM_POLYGON_DRAW;
 		this.statusMessage(this.strings.POLYGON_DRAW);
+		
+		this.areas[this.currentid].style.left = x + 'px';
+		this.areas[this.currentid].style.top  = y + 'px';
+		if (this.config.bounding_box) {
+			this.areas[this.currentid].style.borderWidth = '1px';
+			this.areas[this.currentid].style.borderStyle = 'dotted';
+			this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+		}
+		this.areas[this.currentid].style.width  = 0;
+		this.areas[this.currentid].style.height = 0;
+		this.areas[this.currentid].xpoints = [];
+		this.areas[this.currentid].ypoints = [];
+		this.areas[this.currentid].xpoints[0] = x;
+		this.areas[this.currentid].ypoints[0] = y;
+	}
+	else if (this.areas[this.currentid].shape == 'bezier1') {
+		this.is_drawing = this.DM_BEZIER_DRAW;
+		this.statusMessage(this.strings.BEZIER_DRAW);
 		
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
@@ -2129,7 +2194,7 @@ imgmap.prototype.highlightArea = function(id, flag) {
 			this.areas[id].style.borderStyle = 'solid';
 			this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_SHAPE;
 		}
-		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
+		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 			if (this.config.bounding_box) {
 				this.areas[id].style.borderWidth = '1px';
 				this.areas[id].style.borderStyle = 'solid';
@@ -2164,7 +2229,7 @@ imgmap.prototype.blurArea = function(id, flag) {
 			this.areas[id].style.borderStyle = 'solid';
 			this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
 		}
-		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
+		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 			if (this.config.bounding_box) {
 				this.areas[id].style.borderWidth = '1px';
 				this.areas[id].style.borderStyle = 'solid';
@@ -2214,25 +2279,25 @@ imgmap.prototype.area_mousemove = function(e) {
 		//this.log(obj.aid + ' : ' + xdiff + ',' + ydiff);
 		if (xdiff < 6 && ydiff > 6) {
 			//move left
-			if (obj.shape != 'poly') {
+			if (obj.shape != 'poly' && obj.shape != 'bezier1') {
 				obj.style.cursor = 'w-resize';
 			}
 		}
 		else if (xdiff > parseInt(obj.style.width, 10) - 6  && ydiff > 6) {
 			//move right
-			if (obj.shape != 'poly') {
+			if (obj.shape != 'poly' && obj.shape != 'bezier1') {
 				obj.style.cursor = 'e-resize';
 			}
 		}
 		else if (xdiff > 6 && ydiff < 6) {
 			//move top
-			if (obj.shape != 'poly') {
+			if (obj.shape != 'poly' && obj.shape != 'bezier1') {
 				obj.style.cursor = 'n-resize';
 			}
 		}
 		else if (ydiff > parseInt(obj.style.height, 10) - 6  && xdiff > 6) {
 			//move bottom
-			if (obj.shape != 'poly') {
+			if (obj.shape != 'poly' && obj.shape != 'bezier1') {
 				obj.style.cursor = 's-resize';
 			}
 		}
@@ -2324,15 +2389,23 @@ imgmap.prototype.area_mousemove = function(e) {
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
-			else if (this.areas[this.currentid].shape == 'poly') {
+			else if (this.areas[this.currentid].shape == 'poly' || this.areas[this.currentid].shape == 'bezier1') {
 				if (this.areas[this.currentid].xpoints) {
 					for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
 						this.memory[this.currentid].xpoints[i] = this.areas[this.currentid].xpoints[i];
 						this.memory[this.currentid].ypoints[i] = this.areas[this.currentid].ypoints[i];
 					}
 				}
-				this.is_drawing = this.DM_POLYGON_MOVE;
-				this.statusMessage(this.strings.POLYGON_MOVE);
+				
+				if (this.areas[this.currentid].shape == 'poly') {
+					this.is_drawing = this.DM_POLYGON_MOVE;
+					this.statusMessage(this.strings.POLYGON_MOVE);
+				}
+				else if (this.areas[this.currentid].shape == 'bezier1') {
+					this.is_drawing = this.DM_BEZIER_MOVE;
+					this.statusMessage(this.strings.BEZIER_MOVE);
+				}
+				
 				if (this.config.bounding_box) {
 					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
 				}
@@ -2350,7 +2423,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			this.areas[this.currentid].style.borderWidth = '1px';
 			this.areas[this.currentid].style.borderStyle = 'dotted';
 		}
-		else if (this.areas[this.currentid].shape == 'circle' || this.areas[this.currentid].shape == 'poly') {
+		else if (this.areas[this.currentid].shape == 'circle' ||
+				this.areas[this.currentid].shape == 'poly' ||
+				this.areas[this.currentid].shape == 'bezier1'
+				) {
 			if (this.config.bounding_box) {
 				this.areas[this.currentid].style.borderWidth = '1px';
 				this.areas[this.currentid].style.borderStyle = 'dotted';

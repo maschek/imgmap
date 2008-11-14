@@ -13,7 +13,8 @@ Version 2.1
  * Fixed Issue 14: Javascript error in MSIE
  * Fixed Issue 17: Doesn't work with Adobe AIR 1.1 - new package built with latest SDK 
  * Internal and generated html shape names are HTML5 conform (circle, rect, poly)
- * Zoom (scale) functionality (new function scaleAllAreas, new property globalscale) 
+ * Zoom (scale) functionality (new function scaleAllAreas, new property globalscale)
+ * Added bezier (quadratic curve) support (just for fun, not standard image map shape)  
  * TODO: update tiny
  * TODO: set air queries synchronous  
 

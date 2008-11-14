@@ -234,6 +234,7 @@ function gui_addArea(id) {
 	temp+= '<option value="rect">rectangle</option>';
 	temp+= '<option value="circle">circle</option>';
 	temp+= '<option value="poly">polygon</option>';
+	temp+= '<option value="bezier1">bezier</option>';
 	temp+= '</select>';
 	temp+= 'Coords: <input type="text" name="img_coords" class="img_coords" value="">';
 	temp+= 'Href: <input type="text" name="img_href" class="img_href" value="">';
