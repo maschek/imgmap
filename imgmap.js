@@ -22,7 +22,6 @@
  *	This is the main script file of the Online Image Map Editor.
  * 
  *	TODO:
- *	-pic_container dynamic create(pos rel)?
  *	-scriptload race condition fix
  *	-destroy/cleanup function ?
  *	-testing highlighter
@@ -151,7 +150,7 @@ function imgmap(config) {
 	this.config.loglevel    = 0;
 	this.config.custom_callbacks = {};//possible values: see below!
 	
-	/**	Callback events that you can handle in your gui. */
+	/**	Callback events that you can handle in your GUI. */
 	this.event_types        = [
 		'onModeChanged',
 		'onClipboard',
@@ -574,12 +573,18 @@ imgmap.prototype.loadStrings = function(obj) {
  *	This function is to load a given img url to the pic_container.
  *	
  *	Loading an image will clear all current maps.
- *	   
+ *	@see	#useImage 
  *	@param img The imageurl or object to load (if object, function will get url, and do a recall)
- *	@param imgw The width we want to force on the image	  
- *	@param imgh The height we want to force on the image	 
+ *	@param imgw The width we want to force on the image	(optional)
+ *	@param imgh The height we want to force on the image (optional)
+ *	@returns True on success 
  */
 imgmap.prototype.loadImage = function(img, imgw, imgh) {
+	//test for container
+	if (typeof this.pic_container == 'undefined') {
+		this.log('You must have pic_container defined to use loadImage!', 2);
+		return false;
+	}
 	//wipe all
 	this.removeAllAreas();
 	this.fireEvent('onHtmlChanged', '');//empty
@@ -609,6 +614,7 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		if (imgw && imgw > 0) {this.pic.setAttribute('width',  imgw);}
 		if (imgh && imgh > 0) {this.pic.setAttribute('height', imgh);}
 		this.fireEvent('onLoadImage', this.pic);
+		return true;
 	}
 	else if (typeof img == 'object') {
 		//we have to use the src of the image object
@@ -628,14 +634,18 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		if (!imgh) {
 			imgh = img.clientHeight;
 		}
-		this.loadImage(src, imgw, imgh);
+		//recurse, this time with the url string
+		return this.loadImage(src, imgw, imgh);
 	}
 };
 
 
 /**
  *	We use this when there is an existing image object we want to handle with imgmap.
+ *	Mainly used in highlighter mode.
  *	@author	adam
+ *	@see	#loadImage
+ *	@see	#imgmap_spawnObjects
  *	@date	2007
  *	@param	img	DOM object or id of image we want to use.
  */
@@ -654,8 +664,22 @@ imgmap.prototype.useImage = function(img) {
 		this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
 		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
 		this.pic.style.cursor = this.config.cursor_default;
-		this.pic_container = this.pic.parentNode;
+		
+		if (this.pic.parentNode.className == 'pic_container') {
+			//use existing container
+			this.pic_container = this.pic.parentNode;
+		}
+		else {
+			//dynamically create container
+			this.pic_container = document.createElement("div");
+			this.pic_container.className = 'pic_container';
+			this.pic.parentNode.insertBefore(this.pic_container, this.pic);
+			//ref: If the node already exists it is removed from current parent node, then added to new parent node.
+			this.pic_container.appendChild(this.pic);
+		}
+
 		this.fireEvent('onLoadImage', this.pic);
+		return true;
 	}
 };
 
@@ -806,6 +830,22 @@ imgmap.prototype.getMapId = function() {
 
 
 /**
+ *	Convert wild shape names to normal ones.
+ *	@date	25-12-2008 19:27:06
+ *	@param	shape	The name of the shape to convert.
+ *	@return	The normalized shape name, rect as default.
+ */
+imgmap.prototype._normShape = function(shape) {
+	if (!shape) {return 'rect';}
+	shape = shape.trim().toLowerCase();
+	if (shape.substring(0, 4) == 'rect') {return 'rect';}
+	if (shape.substring(0, 4) == 'circ') {return 'circle';}
+	if (shape.substring(0, 4) == 'poly') {return 'poly';}
+	return 'rect';
+}
+
+
+/**
  *	Try to normalize coordinates that came from:
  *	1. html textarea
  *	2. user input in the active area's input field
@@ -834,9 +874,13 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	var oldcoords = coords;
 	//replace some general junk
 	coords = coords.replace(/(\d)(\D)+(\d)/g, "$1,$3");
-	coords = coords.replace(/,(\D|0)+(\d)/g, ",$2");
+	coords = coords.replace(/,\D+(\d)/g, ",$1");//cut leading junk
+	coords = coords.replace(/,0+(\d)/g, ",$1");//cut leading zeros
 	coords = coords.replace(/(\d)(\D)+,/g, "$1,");
-	coords = coords.replace(/^(\D|0)+(\d)/g, "$2");
+	coords = coords.replace(/^\D+(\d)/g, "$1");//cut leading junk
+	coords = coords.replace(/^0+(\d)/g, "$1");//cut leading zeros
+	coords = coords.replace(/(\d)(\D)+$/g, "$1");//cut trailing junk
+	//console.log('>'+coords + ' - ' + shape + ' - ' + flag);
 	//now fix other issues
 	var parts = coords.split(',');
 	if (shape == 'rect') {
@@ -864,9 +908,9 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[0] = sx; parts[1] = sy;
 			parts[2] = gx; parts[3] = gy;
 		}
-		if (!(parseInt(parts[1], 10) > 0)) {parts[1] = parts[0];}
-		if (!(parseInt(parts[2], 10) > 0)) {parts[2] = parseInt(parts[0], 10) + 10;}
-		if (!(parseInt(parts[3], 10) > 0)) {parts[3] = parseInt(parts[1], 10) + 10;}
+		if (!(parseInt(parts[1], 10) >= 0)) {parts[1] = parts[0];}
+		if (!(parseInt(parts[2], 10) >= 0)) {parts[2] = parseInt(parts[0], 10) + 10;}
+		if (!(parseInt(parts[3], 10) >= 0)) {parts[3] = parseInt(parts[1], 10) + 10;}
 		if (parseInt(parts[0], 10) > parseInt(parts[2], 10)) {
 			temp = parts[0];
 			parts[0] = parts[2];
@@ -960,7 +1004,8 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
  *	Sets the coordinates according to the given HTML map code or DOM object.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-07 11:47:16
- *	@param	map	DOM object or string of a map you want to apply. 
+ *	@param	map	DOM object or string of a map you want to apply.
+ *	@return	True on success 
  */   
 imgmap.prototype.setMapHTML = function(map) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -990,12 +1035,8 @@ imgmap.prototype.setMapHTML = function(map) {
 		
 		id = this.addNewArea();//btw id == this.currentid, just this form is a bit clearer
 
-		if (newareas[i].getAttribute('shape', 2)) {
-			shape = newareas[i].getAttribute('shape', 2).toLowerCase();
-		}
-		else {
-			shape = 'rect';
-		} 
+		shape = this._normShape(newareas[i].getAttribute('shape', 2));
+		
 		this.initArea(id, shape);
 		
 		if (newareas[i].getAttribute('coords', 2)) {
@@ -1045,6 +1086,7 @@ imgmap.prototype.setMapHTML = function(map) {
 		
 	}//end for areas
 	this.fireEvent('onHtmlChanged', this.getMapHTML());
+	return true;
 };
 
 
@@ -1052,7 +1094,8 @@ imgmap.prototype.setMapHTML = function(map) {
  *	Preview image with imagemap applied.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-06 14:51:01
- *	@url	http://www.quirksmode.org/bugreports/archives/2005/03/Usemap_attribute_wrongly_case_sensitive.html 
+ *	@url	http://www.quirksmode.org/bugreports/archives/2005/03/Usemap_attribute_wrongly_case_sensitive.html
+ *	@return	False on error, 0 when switched to edit mode, 1 when switched to preview mode
  */
 imgmap.prototype.togglePreview = function() {
 	var i;//generic cycle counter
@@ -1063,7 +1106,7 @@ imgmap.prototype.togglePreview = function() {
 	if (!this.preview) {
 		this.preview = document.createElement('DIV');
 		this.preview.style.display = 'none';
-		this.pic.parentNode.appendChild(this.preview);
+		this.pic_container.appendChild(this.preview);
 	}
 	
 	if (this.viewmode === 0) {
@@ -1105,7 +1148,7 @@ imgmap.prototype.togglePreview = function() {
 
 /**
  *	Adds a new area. It will later become a canvas.
- *	Gui should use the onAddArea callback to act accordingly.
+ *	GUI should use the onAddArea callback to act accordingly.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-06 16:49:25
  *	@see	#initArea
@@ -1143,8 +1186,8 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id] = null;
 	//create CANVAS node
 	this.areas[id] = document.createElement('CANVAS');
-	this.pic.parentNode.appendChild(this.areas[id]);
-	this.pic.parentNode.style.position = 'relative';
+	this.pic_container.appendChild(this.areas[id]);
+	this.pic_container.style.position = 'relative';
 	//alert('init' + typeof G_vmlCanvasManager);
 	if (typeof G_vmlCanvasManager != "undefined") {
 		//override CANVAS with VML object
@@ -1180,7 +1223,7 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.memory[id].ypoints = [];
 	//create label node
 	this.areas[id].label = document.createElement('DIV');
-	this.pic.parentNode.appendChild(this.areas[id].label);
+	this.pic_container.appendChild(this.areas[id].label);
 	this.areas[id].label.className      = this.config.label_class;
 	this.assignCSS(this.areas[id].label,  this.config.label_style);
 	this.areas[id].label.style.position = 'absolute';
@@ -1301,7 +1344,7 @@ imgmap.prototype._getopacity = function(area) {
  *	Removes the area marked by id.
  *	removeAllAreas will indicate a mass flag so that the output HTML will only be updated at 
  *	the end of the operation.
- *	Callback will call the gui code to remove gui elements. 
+ *	Callback will call the GUI code to remove GUI elements. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	11-02-2007 20:40:58
  *	@param	id	The id of the area to remove.
@@ -1475,7 +1518,7 @@ imgmap.prototype._puthint = function(id) {
 
 /**
  *	Will call repaint on all areas.
- *	Useful when you change labeling or hint config on the gui.
+ *	Useful when you change labeling or hint config on the GUI.
  *	@see #_repaint
  */
 imgmap.prototype._repaintAll = function() {
@@ -1602,8 +1645,8 @@ imgmap.prototype._repaint = function(area, color, x, y) {
  *	Updates Area coordinates.
  *	Called when needed, eg. on mousemove, mousedown.
  *	Also updates html container value (thru hook).
- *	Calls callback onAreaChanged and onHtmlChanged so that gui can follow.
- *	This is an important hook to your gui.  
+ *	Calls callback onAreaChanged and onHtmlChanged so that GUI can follow.
+ *	This is an important hook to your GUI.  
  *	Uses globalscale to scale real coordinates to area coordinates. 
  *	@date	2006.10.24. 22:39:27
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
@@ -1645,7 +1688,7 @@ imgmap.prototype._updatecoords = function(id) {
 
 /**
  *	Updates the visual representation of the area with the given id according
- *	to the new coordinates that typically come from an input on the gui.
+ *	to the new coordinates that typically come from an input on the GUI.
  *	Uses globalscale to scale area coordinates to real coordinates. 
  *	@date	2006.10.24. 22:46:55
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
@@ -1698,7 +1741,7 @@ imgmap.prototype._recalculate = function(id, coords) {
 		var msg = (err.message) ? err.message : 'error calculating coordinates';
 		this.log(msg, 1);
 		this.statusMessage(this.strings.ERR_INVALID_COORDS);
-		if (this.areas[id].lastInput && input) {input.value = this.areas[id].lastInput;}
+		//#todo handle this if (this.areas[id].lastInput && input) {input.value = this.areas[id].lastInput;}
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		return;
 	}
@@ -2867,7 +2910,7 @@ imgmap.prototype.detectLanguage = function() {
  *	@author	Bret Taylor
  *	@url	http://ajaxcookbook.org/disable-text-selection/
  *	@date	27-07-2008 1:57:45
- *	@param	element	The dom element on which you want to disable selection.
+ *	@param	element	The DOM element on which you want to disable selection.
  */       
 imgmap.prototype.disableSelection = function(element) {
 	if (typeof element == 'undefined' || !element) {return false;}
