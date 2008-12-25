@@ -4,7 +4,7 @@
 
 Version 2.1
  * Finally separated most drawing-specific and gui-specific codes. This means easier integration with ANY kind of user interface.
- * JSDoc based documentation
+ * JSDoc toolkit based documentation using modified outline template of JProton
  * Elliminated some memleaks using drip.
  * Updated all examples to use separate interface code and maphandling code.
  * Removed example 5   
