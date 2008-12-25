@@ -48,8 +48,14 @@
  *	@param config	The config object. 
  */
 function imgmap(config) {
+
+	/** Version string of imgmap */
 	this.version = "2.0beta6";
+	
+	/** Build date of imgmap */
 	this.buildDate = "2008/10/30 12:24";
+	
+	/** Sequential build number of imgmap */
 	this.buildNumber = "87";
 	
 	/** Config object of the imgmap instance */
@@ -95,27 +101,44 @@ function imgmap(config) {
 	/** global scale of areas (1-normal, 2-doubled, 0.5-half, etc.) */
 	this.globalscale = 1;
 
-	/** is_drawing draw mode constants */ 
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_DRAW          = 1;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_MOVE          = 11;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_RESIZE_TOP    = 12;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_RESIZE_RIGHT  = 13;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_RESIZE_BOTTOM = 14;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_RESIZE_LEFT   = 15;
 	
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_DRAW             = 2;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_MOVE             = 21;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_RESIZE_TOP       = 22;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_RESIZE_RIGHT     = 23;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_RESIZE_BOTTOM    = 24;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_RESIZE_LEFT      = 25;
 	
+	/** is_drawing draw mode constant */
 	this.DM_POLYGON_DRAW            = 3;
+	/** is_drawing draw mode constant */
 	this.DM_POLYGON_LASTDRAW        = 30;
+	/** is_drawing draw mode constant */
 	this.DM_POLYGON_MOVE            = 31;
 
+	/** is_drawing draw mode constant */
 	this.DM_BEZIER_DRAW             = 4;
+	/** is_drawing draw mode constant */
 	this.DM_BEZIER_LASTDRAW         = 40;
+	/** is_drawing draw mode constant */
 	this.DM_BEZIER_MOVE             = 41;
 
 	//set some config defaults
@@ -209,7 +232,7 @@ function imgmap(config) {
  *	@date	22-02-2007 0:14:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@param	objorid	A DOM object, or id of a DOM object.
- *	@return	The identified DOM object or null on error.  
+ *	@return	The identified DOM object or null on error.
  */
 imgmap.prototype.assignOID = function(objorid) {
 	try {
@@ -237,7 +260,7 @@ imgmap.prototype.assignOID = function(objorid) {
  *	@date	22-02-2007 0:15:42
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@param	config	config object
- *	@return	True if all went ok.  
+ *	@return	True if all went ok.
  */
 imgmap.prototype.setup = function(config) {
 	//this.config = config;
@@ -341,6 +364,7 @@ imgmap.prototype.retryDelayed = function(fn, delay, tries) {
  *	EVENT HANDLER: Handle event when the page with scripts is loaded.
  *	@date	22-02-2007 0:16:22
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	e	The event object.
  */
 imgmap.prototype.onLoad = function(e) {
 	if (this.isLoaded) {return true;}
@@ -2255,6 +2279,7 @@ imgmap.prototype.blurArea = function(id, flag) {
  *	@url	http://evolt.org/article/Mission_Impossible_mouse_position/17/23335/index.html
  *	@url	http://my.opera.com/community/forums/topic.dml?id=239498&t=1217158015&page=1 
  *	@author	adam 
+ *	@param	e	The event object.
  */
 imgmap.prototype.area_mousemove = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode

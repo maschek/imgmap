@@ -291,9 +291,17 @@
          - - - - - - - - - - - - - - - - - -->
 	<target name="jsdoc" description="Build jsdoc documentation" depends="">
     	<echo>Creating documentation</echo>
-		<exec dir="." executable="perl.exe" output="jsdoc.log">
-		  <arg line="jsdoc/jsdoc.pl --directory ../docs --project-name imgmap ../imgmap.js"/>
-		</exec>
+		<java jar="c:\jsdoc\jsrun.jar" fork="true" failonerror="true">
+			<arg value="c:\jsdoc\app\run.js" />
+			<arg value="../imgmap.js" />
+			<arg value="-a" />
+			<arg value="-p" />
+			<arg value="-t=jsdoc-tpl/outline2/" />
+			<arg value="-D=projectName:imgmap" />
+			<arg value="-d=../docs/" />
+			<arg value="-v" />
+			<redirector output="jsdoc.log" />
+		</java>
 	</target>
 
 	<!-- - - - - - - - - - - - - - - - - - 
