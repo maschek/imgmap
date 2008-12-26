@@ -68,9 +68,10 @@ To use the uploader component ("An image on your computer") you will need to ope
 				<option value='3'>300%</option>
 				</select>
 				Output: 
-				<select id="dd_output">
+				<select id="dd_output" onchange="gui_outputChanged(this)">
 				<option value='imagemap'>Standard imagemap</option>
 				<option value='css'>CSS imagemap</option>
+				<option value='wiki'>Wiki imagemap</option>
 				</select>
 			</div>
 			<div style="float: right; margin: 0 5px">

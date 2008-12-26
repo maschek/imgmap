@@ -264,11 +264,13 @@ imgmap.prototype.assignOID = function(objorid) {
 imgmap.prototype.setup = function(config) {
 	//this.config = config;
 	for (var i in config) {
-		this.config[i] = config[i];
+		if (config.hasOwnProperty(i)) {
+			this.config[i] = config[i];
+		}
 	}
 	//this.log('setup');
-	//set container elements - supposedly they already exist in the DOM
-	if (config) {
+	//set pic_container element - supposedly it already exists in the DOM
+	if (config && config.pic_container) {
 		this.pic_container = this.assignOID(config.pic_container);
 		this.disableSelection(this.pic_container);
 	}
@@ -323,17 +325,19 @@ imgmap.prototype.setup = function(config) {
 	this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
 	
 	//check event hooks
-	var found, j;
+	var found, j, le;
 	for (i in this.config.custom_callbacks) {
-		found = false;
-		for (j=0; j<this.event_types.length; j++) {
-			if (i == this.event_types[j]) {
-				found = true;
-				break;
+		if (this.config.custom_callbacks.hasOwnProperty(i)) {
+			found = false;
+			for (j=0, le = this.event_types.length; j<le; j++) {
+				if (i == this.event_types[j]) {
+					found = true;
+					break;
+				}
 			}
-		}
-		if (!found) {
-			this.log("Unknown custom callback: " + i, 1);
+			if (!found) {
+				this.log("Unknown custom callback: " + i, 1);
+			}
 		}
 	}
 	
@@ -564,7 +568,9 @@ imgmap.prototype.script_load = function(e) {
  */
 imgmap.prototype.loadStrings = function(obj) {
 	for (var key in obj) {
-		this.strings[key] = obj[key];
+		if (obj.hasOwnProperty(key)) {
+			this.strings[key] = obj[key];
+		}
 	}
 };
 
@@ -729,7 +735,7 @@ imgmap.prototype.log = function(obj, level) {
 			//alert(level + ': ' + obj);
 			//dump with all pevious errors:
 			var msg = '';
-			for (var i=0; i<this.logStore.length; i++) {
+			for (var i=0, le = this.logStore.length; i<le; i++) {
 				msg+= this.logStore[i].level + ': ' + this.logStore[i].obj + "\n";
 			}
 			alert(msg);
@@ -766,15 +772,16 @@ imgmap.prototype.getMapHTML = function(flags) {
  */
 imgmap.prototype.getMapInnerHTML = function(flags) {
 	var html, coords;
+	html = '';
 	//foreach area properties
-	for (var i=0; i<this.areas.length; i++) {
+	for (var i=0, le = this.areas.length; i<le; i++) {
 		if (this.areas[i]) {
 			if (this.areas[i].shape && this.areas[i].shape != 'undefined') {
 				coords = this.areas[i].lastInput;
 				if (flags && flags.match(/noscale/)) {
 					//for preview use real coordinates, not scaled
 					var cs = coords.split(',');
-					for (var j=0; j<cs.length; j++) {
+					for (var j=0, le2 = cs.length; j<le2; j++) {
 						cs[j] = Math.round(cs[j] * this.globalscale);
 					}
 					coords = cs.join(',');
@@ -842,7 +849,7 @@ imgmap.prototype._normShape = function(shape) {
 	if (shape.substring(0, 4) == 'circ') {return 'circle';}
 	if (shape.substring(0, 4) == 'poly') {return 'poly';}
 	return 'rect';
-}
+};
 
 
 /**
@@ -894,7 +901,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 		else if (flag == 'frompoly') {
 			sx = parseInt(parts[0], 10); gx = parseInt(parts[0], 10);
 			sy = parseInt(parts[1], 10); gy = parseInt(parts[1], 10);
-			for (i=0; i<parts.length; i++) {
+			for (i=0, le = parts.length; i<le; i++) {
 				if (i % 2 === 0 && parseInt(parts[i], 10) < sx) {
 					sx = parseInt(parts[i], 10);}
 				if (i % 2 === 1 && parseInt(parts[i], 10) < sy) {
@@ -937,7 +944,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 		else if (flag == 'frompoly') {
 			sx = parseInt(parts[0], 10); gx = parseInt(parts[0], 10);
 			sy = parseInt(parts[1], 10); gy = parseInt(parts[1], 10);
-			for (i=0; i<parts.length; i++) {
+			for (i=0, le = parts.length; i<le; i++) {
 				if (i % 2 === 0 && parseInt(parts[i], 10) < sx) {
 					sx = parseInt(parts[i], 10);}
 				if (i % 2 === 1 && parseInt(parts[i], 10) < sy) {
@@ -974,7 +981,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			var j = 0;
 			parts[j++] = centerX + radius;
 			parts[j++] = centerY;
-			var sides = 60;
+			var sides = 60;//constant = sides the fake circle will have
 			for (i=0; i<=sides; i++) {
 				var pointRatio = i/sides;
 				var xSteps = Math.cos(pointRatio*2*Math.PI);
@@ -1030,7 +1037,7 @@ imgmap.prototype.setMapHTML = function(map) {
 	this.mapid   = oMap.id;
 	var newareas = oMap.getElementsByTagName('area');
 	var shape, coords, href, alt, title, target;
-	for (var i=0; i<newareas.length; i++) {
+	for (var i=0, le = newareas.length; i<le; i++) {
 		shape = coords = href = alt = title = target = '';
 		
 		id = this.addNewArea();//btw id == this.currentid, just this form is a bit clearer
@@ -1111,7 +1118,7 @@ imgmap.prototype.togglePreview = function() {
 	
 	if (this.viewmode === 0) {
 		//hide canvas elements and labels
-		for (i=0; i<this.areas.length; i++) {
+		for (i=0, le = this.areas.length; i<le; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = 'none';
 				if (this.areas[i].label) {this.areas[i].label.style.display = 'none';}
@@ -1127,7 +1134,7 @@ imgmap.prototype.togglePreview = function() {
 	}
 	else {
 		//show canvas elements
-		for (i=0; i<this.areas.length; i++) {
+		for (i=0, le = this.areas.length; i<le; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = '';
 				if (this.areas[i].label && this.config.label) {this.areas[i].label.style.display = '';}
@@ -1268,7 +1275,7 @@ imgmap.prototype.relaxArea = function(id) {
  *	@see	#relaxArea
  */
 imgmap.prototype.relaxAllAreas = function() {
-	for (var i=0; i<this.areas.length; i++) {
+	for (var i=0, le = this.areas.length; i<le; i++) {
 		if (this.areas[i]) {
 			this.relaxArea(i);
 		}
@@ -1316,7 +1323,7 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
 	if (!isNaN(pct)) {
 		pct = Math.round(parseInt(pct, 10));
 		//this.log('set ('+area.aid+'): ' + pct, 1);
-		area.style.opacity = pct / 101;
+		area.style.opacity = pct / 100;
 		area.style.filter  = 'alpha(opacity='+pct+')';
 	}
 };
@@ -1390,7 +1397,7 @@ imgmap.prototype.removeArea = function(id, mass) {
  *	@see	#removeArea
  */
 imgmap.prototype.removeAllAreas = function() {
-	for (var i = 0; i < this.areas.length; i++) {
+	for (var i = 0, le = this.areas.length; i < le; i++) {
 		if (this.areas[i]) {
 			this.removeArea(i, true);
 		}
@@ -1421,7 +1428,7 @@ imgmap.prototype.scaleAllAreas = function(scale) {
 	//console.log('rscale: '+rscale);
 
 	this.globalscale = scale;
-	for (var i = 0; i < this.areas.length; i++) {
+	for (var i = 0, le = this.areas.length; i < le; i++) {
 		if (this.areas[i] && this.areas[i].shape != 'undefined') {
 			this.scaleArea(i, rscale);
 		}
@@ -1444,7 +1451,7 @@ imgmap.prototype.scaleArea = function(id, rscale) {
 	
 	//handle polygon/bezier coordinates scaling
 	if (this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
-		for (var i=0; i<this.areas[id].xpoints.length; i++) {
+		for (var i=0, le = this.areas[id].xpoints.length; i<le; i++) {
 			this.areas[id].xpoints[i]*= rscale;
 			this.areas[id].ypoints[i]*= rscale;
 		}
@@ -1522,7 +1529,7 @@ imgmap.prototype._puthint = function(id) {
  *	@see #_repaint
  */
 imgmap.prototype._repaintAll = function() {
-	for (var i=0; i<this.areas.length; i++) {
+	for (var i=0, le = this.areas.length; i<le; i++) {
 		if (this.areas[i]) {
 			this._repaint(this.areas[i], this.config.CL_NORM_SHAPE);
 		}
@@ -1542,8 +1549,8 @@ imgmap.prototype._repaintAll = function() {
  */  
 imgmap.prototype._repaint = function(area, color, x, y) {
 	var ctx;//canvas context
-	var width;//canvas width
-	var height;//canvas height
+	var width, height, left, top;//canvas properties
+	var i;//loop counter
 	if (area.shape == 'circle') {
 		width  = parseInt(area.style.width, 10);
 		var radius = Math.floor(width/2) - 1;
@@ -1573,8 +1580,8 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 	else if (area.shape == 'poly') {
 		width  =  parseInt(area.style.width, 10);
 		height =  parseInt(area.style.height, 10);
-		var left   =  parseInt(area.style.left, 10);
-		var top    =  parseInt(area.style.top, 10);
+		left   =  parseInt(area.style.left, 10);
+		top    =  parseInt(area.style.top, 10);
 		if (area.xpoints) {
 			//get canvas context
 			ctx = area.getContext("2d");
@@ -1584,7 +1591,7 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			ctx.beginPath();
 			ctx.strokeStyle = color;
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
-			for (var i=1; i<area.xpoints.length; i++) {
+			for (i=1, le = area.xpoints.length; i<le; i++) {
 				ctx.lineTo(area.xpoints[i] - left , area.ypoints[i] - top);
 			}
 			if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_POLYGON_LASTDRAW) {
@@ -1602,8 +1609,8 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 	else if (area.shape == 'bezier1') {
 		width  =  parseInt(area.style.width, 10);
 		height =  parseInt(area.style.height, 10);
-		var left   =  parseInt(area.style.left, 10);
-		var top    =  parseInt(area.style.top, 10);
+		left   =  parseInt(area.style.left, 10);
+		top    =  parseInt(area.style.top, 10);
 		if (area.xpoints) {
 			//get canvas context
 			ctx = area.getContext("2d");
@@ -1615,12 +1622,12 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			//move to the beginning position
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
 			//draw previous points - use every second point only
-			for (var i=2; i<area.xpoints.length; i+=2) {
+			for (i=2, le = area.xpoints.length; i<le; i+=2) {
 				ctx.quadraticCurveTo(area.xpoints[i-1] - left, area.ypoints[i-1] - top, area.xpoints[i] - left, area.ypoints[i] - top);
 			}
 			if (this.is_drawing == this.DM_BEZIER_DRAW || this.is_drawing == this.DM_BEZIER_LASTDRAW) {
 				//only draw to the current position if not moving
-				if (area.xpoints.length % 2 == 0 && area.xpoints.length > 1) {
+				if (area.xpoints.length % 2 === 0 && area.xpoints.length > 1) {
 					//drawing point - draw a curve to it using the previous control point
 					ctx.quadraticCurveTo(area.xpoints[area.xpoints.length - 1] - left - 5 , area.ypoints[area.ypoints.length - 1] - top - 5, x - left - 5 , y - top - 5);
 				}
@@ -1671,7 +1678,7 @@ imgmap.prototype._updatecoords = function(id) {
 	}
 	else if (this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 		if (this.areas[id].xpoints) {
-			for (var i=0; i<this.areas[id].xpoints.length; i++) {
+			for (var i=0, le = this.areas[id].xpoints.length; i<le; i++) {
 				value+= Math.round(this.areas[id].xpoints[i] / this.globalscale) + ',' +
 						Math.round(this.areas[id].ypoints[i] / this.globalscale) + ',';
 			}
@@ -1729,7 +1736,7 @@ imgmap.prototype._recalculate = function(id, coords) {
 			if (parts.length < 2) {throw "invalid coords";}
 			this.areas[id].xpoints = [];
 			this.areas[id].ypoints = [];
-			for (var i=0; i<parts.length; i+=2) {
+			for (var i=0, le = parts.length; i<le; i+=2) {
 				this.areas[id].xpoints[this.areas[id].xpoints.length]  = this.globalscale * (this.pic.offsetLeft + parseInt(parts[i], 10));
 				this.areas[id].ypoints[this.areas[id].ypoints.length]  = this.globalscale * (this.pic.offsetTop  + parseInt(parts[i+1], 10)); 
 				this._polygongrow(this.areas[id], this.globalscale * parts[i], this.globalscale * parts[i+1]);
@@ -1797,7 +1804,7 @@ imgmap.prototype._polygonshrink = function(area) {
 	area.style.left = (area.xpoints[0]) + 'px';
 	area.style.top  = (area.ypoints[0]) + 'px';
 	this.setAreaSize(area.aid, 0, 0);
-	for (var i=0; i<area.xpoints.length; i++) {
+	for (var i=0, le = area.xpoints.length; i<le; i++) {
 		this._polygongrow(area, area.xpoints[i], area.ypoints[i]);
 	}
 	this._repaint(area, this.config.CL_NORM_SHAPE);
@@ -1918,7 +1925,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		xdiff = x - left;
 		ydiff = y - top;
 		if (this.areas[this.currentid].xpoints) {
-			for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
+			for (var i=0, le = this.areas[this.currentid].xpoints.length; i<le; i++) {
 				this.areas[this.currentid].xpoints[i] = this.memory[this.currentid].xpoints[i] + xdiff;
 				this.areas[this.currentid].ypoints[i] = this.memory[this.currentid].ypoints[i] + ydiff;
 			}
@@ -2085,8 +2092,7 @@ imgmap.prototype.img_mouseup = function(e) {
 		this.is_drawing != this.DM_POLYGON_DRAW &&
 		this.is_drawing != this.DM_POLYGON_LASTDRAW &&
 		this.is_drawing != this.DM_BEZIER_DRAW &&
-		this.is_drawing != this.DM_BEZIER_LASTDRAW
-		) {
+		this.is_drawing != this.DM_BEZIER_LASTDRAW) {
 		//end dragging
 		this.draggedId = null;
 		//finish state
@@ -2459,7 +2465,7 @@ imgmap.prototype.area_mousemove = function(e) {
 			}
 			else if (this.areas[this.currentid].shape == 'poly' || this.areas[this.currentid].shape == 'bezier1') {
 				if (this.areas[this.currentid].xpoints) {
-					for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
+					for (var i=0, le = this.areas[this.currentid].xpoints.length; i<le; i++) {
 						this.memory[this.currentid].xpoints[i] = this.areas[this.currentid].xpoints[i];
 						this.memory[this.currentid].ypoints[i] = this.areas[this.currentid].ypoints[i];
 					}
@@ -2493,8 +2499,7 @@ imgmap.prototype.area_mousemove = function(e) {
 		}
 		else if (this.areas[this.currentid].shape == 'circle' ||
 				this.areas[this.currentid].shape == 'poly' ||
-				this.areas[this.currentid].shape == 'bezier1'
-				) {
+				this.areas[this.currentid].shape == 'bezier1') {
 			if (this.config.bounding_box) {
 				this.areas[this.currentid].style.borderWidth = '1px';
 				this.areas[this.currentid].style.borderStyle = 'dotted';
@@ -2979,8 +2984,8 @@ function imgmap_spawnObjects(config) {
 	var imgs = document.getElementsByTagName('img');
 	var imaps = [];
 	//console.log(maps.length);
-	for (var i=0; i<maps.length; i++) {
-		for (var j=0; j<imgs.length; j++) {
+	for (var i=0, le=maps.length; i<le; i++) {
+		for (var j=0, le2=imgs.length; j<le2; j++) {
 		//console.log(i);
 		//	console.log(maps[i].name);
 		//	console.log(imgs[j].getAttribute('usemap'));
