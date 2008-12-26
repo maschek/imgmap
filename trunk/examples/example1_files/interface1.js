@@ -108,7 +108,7 @@ function gui_coords_keydown(e) {
 		var coords = obj.value.split(',');
 		var s = getSelectionStart(obj);//helper function
 		var j = 0;
-		for (var i=0; i<coords.length; i++) {
+		for (var i=0, le = coords.length; i<le; i++) {
 			j+=coords[i].length;
 			if (j > s) {
 				//this is the coord we want
@@ -455,6 +455,25 @@ function gui_zoom(obj) {
 	pic.height = pic.oldheight * scale;
 	myimgmap.scaleAllAreas(scale);
 	
+}
+
+function gui_outputChanged(obj) {
+	if (obj.value == 'css') {
+		if (!confirm('CSS maps only support rectangles. Are you sure you want to transform all your areas to rectangles?')) {
+			obj.value = 'imagemap';
+			return;
+		}
+		else {
+			//transform old areas
+			for (var i = 0; i < props.length; i++) {
+				if (props[i]) {
+					props[i].getElementsByTagName('select')[0].value = 'rect';
+					gui_input_change(null);
+				}
+			}
+			
+		}
+	}
 }
 
 /** INIT SECTION **************************************************************/

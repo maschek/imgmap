@@ -22,14 +22,14 @@
 	<target name="jslint">
 		<echo>Checking main javascript for errors (using jslint)</echo>
 		<java jar="custom_rhino.jar" fork="true" failonerror="true">
-			<arg value="jslint.js" />
+			<arg value="http://www.jslint.com/rhino/jslint.js" />
 			<arg file="../imgmap.js" />
 			<redirector output="jslint_imgmap.txt" />
 		</java>
 
 		<echo>Checking interface1 for errors (using jslint)</echo>
 		<java jar="custom_rhino.jar" fork="true" failonerror="true">
-			<arg value="jslint.js" />
+			<arg value="http://www.jslint.com/rhino/jslint.js" />
 			<arg file="../examples/example1_files/interface1.js" />
 			<redirector output="jslint_interface1.txt" />
 		</java>
@@ -72,7 +72,7 @@
 		<!-- @url http://code.google.com/p/jsmin-ant-task/ -->
 		<taskdef name="jsmin"
 		        classname="net.matthaynes.jsmin.JSMin_Task"
-		        classpath="jsmin.0.2.2.jar"/>
+		        classpath="jsmin.0.2.3.jar"/>
 		<jsmin srcfile="${src}/imgmap_packed.js" force="true"/>
 	</target>
 	
