@@ -74,6 +74,9 @@ function imgmap(config) {
 	
 	/**	Array to hold last log entries */
 	this.logStore  = [];
+
+	/**	Associative array to hold bound event handlers */
+	this.eventHandlers  = {};
 	
 	this.currentid = 0;
 	this.draggedId  = null;
@@ -172,16 +175,16 @@ function imgmap(config) {
 		'onAreaChanged'];
 
 	//default color values
-	this.config.CL_DRAW_BOX        = '#dd2400';
+	this.config.CL_DRAW_BOX        = '#E32636';
 	this.config.CL_DRAW_SHAPE      = '#d00';
 	this.config.CL_DRAW_BG         = '#fff';
-	this.config.CL_NORM_BOX        = '#dd2400';
+	this.config.CL_NORM_BOX        = '#E32636';
 	this.config.CL_NORM_SHAPE      = '#d00';
 	this.config.CL_NORM_BG         = '#fff';
-	this.config.CL_HIGHLIGHT_BOX   = '#dd2400';
+	this.config.CL_HIGHLIGHT_BOX   = '#E32636';
 	this.config.CL_HIGHLIGHT_SHAPE = '#d00';
 	this.config.CL_HIGHLIGHT_BG    = '#fff';
-	this.config.CL_KNOB            = '#ffeeee';
+	this.config.CL_KNOB            = '#555';
 
 	this.config.bounding_box       = true;
 	this.config.label              = '%n';
@@ -215,9 +218,9 @@ function imgmap(config) {
 	this.isSafari  = ua.indexOf('Safari') != -1;
 	this.isOpera   = (typeof window.opera != 'undefined');
 
-	this.addEvent(document, 'keydown',   this.doc_keydown.bind(this));
-	this.addEvent(document, 'keyup',     this.doc_keyup.bind(this));
-	this.addEvent(document, 'mousedown', this.doc_mousedown.bind(this));
+	this.addEvent(document, 'keydown',   this.eventHandlers.doc_keydown = this.doc_keydown.bind(this));
+	this.addEvent(document, 'keyup',     this.eventHandlers.doc_keyup = this.doc_keyup.bind(this));
+	this.addEvent(document, 'mousedown', this.eventHandlers.doc_mousedown = this.doc_mousedown.bind(this));
 	
 	if (config) {
 		this.setup(config);
@@ -442,6 +445,9 @@ imgmap.prototype.onLoad = function(e) {
 /**
  *	Attach new 'evt' event handler 'callback' to 'obj'
  *	@date	24-02-2007 21:16:20
+ *	@param	obj	The object on which the handler is defined.
+ *	@param	evt	The name of the event, like mousedown.
+ *	@param	callback	The callback function (named if you want it to be removed).
  */
 imgmap.prototype.addEvent = function(obj, evt, callback) {
 	if (obj.attachEvent) {
@@ -460,8 +466,14 @@ imgmap.prototype.addEvent = function(obj, evt, callback) {
 
 
 /**
- *	Detach an event from an object
+ *	Detach 'evt' event handled by 'callback' from 'obj' object.
+ *	Callback must be a non anonymous function, see eventHandlers.
+ *	@see	#eventHandlers 
+ *	Example: myimgmap.removeEvent(myimgmap.pic, 'mousedown', myimgmap.eventHandlers.img_mousedown); 
  *	@date	24-11-2007 15:22:17
+ *	@param	obj	The object on which the handler is defined.
+ *	@param	evt	The name of the event, like mousedown.
+ *	@param	callback	The named callback function.
  */
 imgmap.prototype.removeEvent = function(obj, evt, callback) {
 	if (obj.detachEvent) {
@@ -603,10 +615,10 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		if (typeof this.pic == 'undefined') {
 			this.pic = document.createElement('IMG');
 			this.pic_container.appendChild(this.pic);
-			//event handler hooking
-			this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
-			this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
-			this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
+			//event handler hooking - only at the first load
+			this.addEvent(this.pic, 'mousedown', this.eventHandlers.img_mousedown = this.img_mousedown.bind(this));
+			this.addEvent(this.pic, 'mouseup',   this.eventHandlers.img_mouseup = this.img_mouseup.bind(this));
+			this.addEvent(this.pic, 'mousemove', this.eventHandlers.img_mousemove = this.img_mousemove.bind(this));
 			this.pic.style.cursor = this.config.cursor_default;
 		}
 		//img ='../../'+img;
@@ -664,11 +676,18 @@ imgmap.prototype.useImage = function(img) {
 	}
 	img = this.assignOID(img);
 	if (typeof img == 'object') {
+		if (typeof this.pic != 'undefined') {
+			//remove previous handlers
+			this.removeEvent(this.pic, 'mousedown', this.eventHandlers.img_mousedown);
+			this.removeEvent(this.pic, 'mouseup',   this.eventHandlers.img_mouseup);
+			this.removeEvent(this.pic, 'mousemove', this.eventHandlers.img_mousemove);
+			this.pic.style.cursor = '';
+		}
 		this.pic = img;
-		//event handler hooking
-		this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
-		this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
-		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
+		//hook event handlers
+		this.addEvent(this.pic, 'mousedown', this.eventHandlers.img_mousedown = this.img_mousedown.bind(this));
+		this.addEvent(this.pic, 'mouseup',   this.eventHandlers.img_mouseup = this.img_mouseup.bind(this));
+		this.addEvent(this.pic, 'mousemove', this.eventHandlers.img_mousemove = this.img_mousemove.bind(this));
 		this.pic.style.cursor = this.config.cursor_default;
 		
 		if (this.pic.parentNode.className == 'pic_container') {
@@ -1238,7 +1257,7 @@ imgmap.prototype.initArea = function(id, shape) {
 
 
 /**
- *	Resets area border to a normal state after drawing.
+ *	Resets area border and opacity to a normal state after drawing.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	15-02-2007 22:07:28
  *	@param	id	The id of the area. 
@@ -1247,22 +1266,7 @@ imgmap.prototype.initArea = function(id, shape) {
 imgmap.prototype.relaxArea = function(id) {
 	if (!this.areas[id]) {return;}
 	this.fireEvent('onRelaxArea', id);
-	if (this.areas[id].shape == 'rect') {
-		this.areas[id].style.borderWidth = '1px';
-		this.areas[id].style.borderStyle = 'solid';
-		this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
-	}
-	else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
-		if (this.config.bounding_box) {
-			this.areas[id].style.borderWidth = '1px';
-			this.areas[id].style.borderStyle = 'solid';
-			this.areas[id].style.borderColor = this.config.CL_NORM_BOX;
-		}
-		else {
-			//clear border
-			this.areas[id].style.border = '';
-		}
-	}
+	this._setBorder(id, 'NORM');
 	this._setopacity(this.areas[id], this.config.CL_NORM_BG, this.config.norm_opacity);
 };
 
@@ -1281,6 +1285,28 @@ imgmap.prototype.relaxAllAreas = function() {
 		}
 	}
 };
+
+
+/**
+ *	Set border of a given area according to style flag.
+ *	Possible values of style: NORM, HIGHLIGHT, DRAW.
+ *	Non-rectangle shapes wont get a border if config.bounding_box is false.
+ *	@date	26-12-2008 22:34:41
+ *	@param	id	The id of the area to set the border on.
+ *	@param	style	Coloring style (NORM, HIGHLIGHT, DRAW), see relevant colors in config.
+ *	@since	2.1
+ */
+imgmap.prototype._setBorder = function(id, style) {
+	if (this.areas[id].shape == 'rect' || this.config.bounding_box) {
+		this.areas[id].style.borderWidth = '1px';
+		this.areas[id].style.borderStyle = (style == 'DRAW' ? 'dotted' : 'solid');
+		this.areas[id].style.borderColor = this.config['CL_' + style + '_' + (this.areas[id].shape == 'rect' ? 'SHAPE' : 'BOX')];
+	}
+	else {
+		//clear border
+		this.areas[id].style.border = '';
+	}
+}
 
 
 /**
@@ -1724,7 +1750,7 @@ imgmap.prototype._recalculate = function(id, coords) {
 		else if (this.areas[id].shape == 'circle') {
 			if (parts.length != 3 ||
 				parseInt(parts[2], 10) < 0) {throw "invalid coords";}
-			var width = 2 * (1 * parts[2] + 1);
+			var width = 2 * (parts[2]);
 			//alert(parts[2]);
 			//alert(width);
 			this.setAreaSize(id, this.globalscale * width, this.globalscale * width);
@@ -2188,11 +2214,6 @@ imgmap.prototype.img_mousedown = function(e) {
 		
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		if (this.config.bounding_box) {
-			this.areas[this.currentid].style.borderWidth = '1px';
-			this.areas[this.currentid].style.borderStyle = 'dotted';
-			this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-		}
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 		this.areas[this.currentid].xpoints = [];
@@ -2206,11 +2227,6 @@ imgmap.prototype.img_mousedown = function(e) {
 		
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		if (this.config.bounding_box) {
-			this.areas[this.currentid].style.borderWidth = '1px';
-			this.areas[this.currentid].style.borderStyle = 'dotted';
-			this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-		}
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 		this.areas[this.currentid].xpoints = [];
@@ -2224,9 +2240,6 @@ imgmap.prototype.img_mousedown = function(e) {
 		
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		this.areas[this.currentid].style.borderWidth = '1px';
-		this.areas[this.currentid].style.borderStyle = 'dotted';
-		this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 	}
@@ -2236,15 +2249,11 @@ imgmap.prototype.img_mousedown = function(e) {
 				
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		if (this.config.bounding_box) {
-			this.areas[this.currentid].style.borderWidth = '1px';
-			this.areas[this.currentid].style.borderStyle = 'dotted';
-			this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-		}
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 	}
 
+	this._setBorder(this.currentid, 'DRAW');
 	this.memory[this.currentid].downx  = x;
 	this.memory[this.currentid].downy  = y;
 };
@@ -2262,18 +2271,7 @@ imgmap.prototype.highlightArea = function(id, flag) {
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - highlight it
 		this.fireEvent('onFocusArea', this.areas[id]);
-		if (this.areas[id].shape == 'rect') {
-			this.areas[id].style.borderWidth = '1px';
-			this.areas[id].style.borderStyle = 'solid';
-			this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_SHAPE;
-		}
-		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
-			if (this.config.bounding_box) {
-				this.areas[id].style.borderWidth = '1px';
-				this.areas[id].style.borderStyle = 'solid';
-				this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_BOX;
-			}
-		}
+		this._setBorder(id, 'HIGHLIGHT');
 		var opacity = this.config.highlight_opacity;
 		if (flag == 'grad') {
 			//apply gradient opacity
@@ -2297,18 +2295,7 @@ imgmap.prototype.blurArea = function(id, flag) {
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - fade it back
 		this.fireEvent('onBlurArea', this.areas[id]);
-		if (this.areas[id].shape == 'rect') {
-			this.areas[id].style.borderWidth = '1px';
-			this.areas[id].style.borderStyle = 'solid';
-			this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
-		}
-		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
-			if (this.config.bounding_box) {
-				this.areas[id].style.borderWidth = '1px';
-				this.areas[id].style.borderStyle = 'solid';
-				this.areas[id].style.borderColor = this.config.CL_NORM_BOX;
-			}
-		}
+		this._setBorder(id, 'NORM');
 		var opacity = this.config.norm_opacity;
 		if (flag == 'grad') {
 			//apply gradient opacity
@@ -2351,29 +2338,22 @@ imgmap.prototype.area_mousemove = function(e) {
 		var xdiff = (this.isMSIE) ? (window.event.offsetX) : (e.layerX);
 		var ydiff = (this.isMSIE) ? (window.event.offsetY) : (e.layerY);
 		//this.log(obj.aid + ' : ' + xdiff + ',' + ydiff);
-		if (xdiff < 6 && ydiff > 6) {
+		var resizable = (obj.shape == 'rect' || obj.shape == 'circle');
+		if (resizable && xdiff < 6 && ydiff > 6) {
 			//move left
-			if (obj.shape != 'poly' && obj.shape != 'bezier1') {
-				obj.style.cursor = 'w-resize';
-			}
+			obj.style.cursor = 'w-resize';
 		}
-		else if (xdiff > parseInt(obj.style.width, 10) - 6  && ydiff > 6) {
+		else if (resizable && xdiff > parseInt(obj.style.width, 10) - 6  && ydiff > 6) {
 			//move right
-			if (obj.shape != 'poly' && obj.shape != 'bezier1') {
-				obj.style.cursor = 'e-resize';
-			}
+			obj.style.cursor = 'e-resize';
 		}
-		else if (xdiff > 6 && ydiff < 6) {
+		else if (resizable && xdiff > 6 && ydiff < 6) {
 			//move top
-			if (obj.shape != 'poly' && obj.shape != 'bezier1') {
-				obj.style.cursor = 'n-resize';
-			}
+			obj.style.cursor = 'n-resize';
 		}
-		else if (ydiff > parseInt(obj.style.height, 10) - 6  && xdiff > 6) {
+		else if (resizable && ydiff > parseInt(obj.style.height, 10) - 6  && xdiff > 6) {
 			//move bottom
-			if (obj.shape != 'poly' && obj.shape != 'bezier1') {
-				obj.style.cursor = 's-resize';
-			}
+			obj.style.cursor = 's-resize';
 		}
 		else {
 			//move all
@@ -2390,14 +2370,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_LEFT;
 				this.statusMessage(this.strings.SQUARE_RESIZE_LEFT);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_LEFT;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_LEFT);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
 		else if (xdiff > parseInt(this.areas[this.currentid].style.width, 10) - 6  && ydiff > 6) {
@@ -2405,14 +2381,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_RIGHT;
 				this.statusMessage(this.strings.SQUARE_RESIZE_RIGHT);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_RIGHT;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_RIGHT);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
 		else if (xdiff > 6 && ydiff < 6) {
@@ -2420,14 +2392,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_TOP;
 				this.statusMessage(this.strings.SQUARE_RESIZE_TOP);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_TOP;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_TOP);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
 		else if (ydiff > parseInt(this.areas[this.currentid].style.height, 10) - 6  && xdiff > 6) {
@@ -2435,14 +2403,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_BOTTOM;
 				this.statusMessage(this.strings.SQUARE_RESIZE_BOTTOM);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_BOTTOM;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_BOTTOM);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
 		else/*if (xdiff < 10 && ydiff < 10 ) */{
@@ -2450,16 +2414,12 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_MOVE;
 				this.statusMessage(this.strings.SQUARE_MOVE);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_MOVE;
 				this.statusMessage(this.strings.RECTANGLE_MOVE);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
@@ -2480,9 +2440,6 @@ imgmap.prototype.area_mousemove = function(e) {
 					this.statusMessage(this.strings.BEZIER_MOVE);
 				}
 				
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
@@ -2493,18 +2450,7 @@ imgmap.prototype.area_mousemove = function(e) {
 		this.memory[this.currentid].height = parseInt(this.areas[this.currentid].style.height, 10);
 		this.memory[this.currentid].top    = parseInt(this.areas[this.currentid].style.top, 10);
 		this.memory[this.currentid].left   = parseInt(this.areas[this.currentid].style.left, 10);
-		if (this.areas[this.currentid].shape == 'rect') {
-			this.areas[this.currentid].style.borderWidth = '1px';
-			this.areas[this.currentid].style.borderStyle = 'dotted';
-		}
-		else if (this.areas[this.currentid].shape == 'circle' ||
-				this.areas[this.currentid].shape == 'poly' ||
-				this.areas[this.currentid].shape == 'bezier1') {
-			if (this.config.bounding_box) {
-				this.areas[this.currentid].style.borderWidth = '1px';
-				this.areas[this.currentid].style.borderStyle = 'dotted';
-			}
-		}
+		this._setBorder(this.currentid, 'DRAW');
 		this._setopacity(this.areas[this.currentid], this.config.CL_DRAW_BG, this.config.draw_opacity);
 	}
 	else {

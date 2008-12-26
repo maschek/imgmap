@@ -7,14 +7,16 @@ Version 2.1
  * JSDoc toolkit based documentation using modified outline template of JProton
  * Elliminated some memleaks using drip.
  * Updated all examples to use separate interface code and maphandling code.
- * Removed example 5   
+ * Removed example 5
+ * New method _normShape() 
  * Fixed issue when dragging areas in Safari will cause selecting all kinds of things.
  * Fixed Issue 13: Suggestion: image url with timestamp
  * Fixed Issue 14: Javascript error in MSIE
  * Fixed Issue 17: Doesn't work with Adobe AIR 1.1 - new package built with latest SDK 
  * Internal and generated html shape names are HTML5 conform (circle, rect, poly)
  * Zoom (scale) functionality (new function scaleAllAreas, new property globalscale)
- * Added bezier (quadratic curve) support (just for fun, not standard image map shape)  
+ * Added bezier (quadratic curve) support (just for fun, not standard image map shape)
+ * Updated FCKEditor example
  * TODO: update tiny
  * TODO: set air queries synchronous  
 
