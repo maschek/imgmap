@@ -15,26 +15,45 @@ Example 7 shows how to use the imgmap component in an Adobe AIR application.
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image map areas</a>
 			</legend>
 			<div style="border-bottom: solid 1px #efefef">
-			<div id="button_container" style="float: left;">
-			<!-- buttons come here -->
-				<img src="add.gif" onclick="myimgmap.addNewArea()" alt="Add new area" title="Add new area" style="margin: 0 2px; cursor: pointer;"/>
-				<img src="delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area" style="margin: 0 2px; cursor: pointer;"/>
-				<img src="zoom.gif" id="i_preview" onclick="myimgmap.togglePreview();" alt="Preview image map" title="Preview image map" style="margin: 0 2px; cursor: pointer;"/>
-				<img src="html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML" style="margin: 0 2px; cursor: pointer;"/>
-			</div>
-			<div style="float: right; margin: 0 5px">
-				<select onchange="changelabeling(this)">
-				<option value=''>No labeling</option>
-				<option value='%n' selected='1'>Label with numbers</option>
-				<option value='%a'>Label with alt text</option>
-				<option value='%h'>Label with href</option>
-				<option value='%c'>Label with coords</option>
-				</select>
-			</div>
-			<div style="float: right; margin: 0 5px">
-				<input type="checkbox" onclick="toggleBoundingBox(this)"/>
-				bounding box
-			</div>
+				<table cellspacing="0" width="100%">
+				<tr>
+				<td width="110">
+				<div id="button_container">
+					<!-- buttons come here -->
+					<img src="add.gif" onclick="myimgmap.addNewArea()" alt="Add new area" title="Add new area"/>
+					<img src="delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area"/>
+					<img src="zoom.gif" id="i_preview" onclick="myimgmap.togglePreview();" alt="Preview image map" title="Preview image map"/>
+					<img src="html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML"/>
+				</div>
+				</td>
+				<td>
+					<label for="dd_zoom">Zoom</label>:
+					<select onchange="gui_zoom(this)" id="dd_zoom">
+					<option value='0.25'>25%</option>
+					<option value='0.5'>50%</option>
+					<option value='1' selected="1">100%</option>
+					<option value='2'>200%</option>
+					<option value='3'>300%</option>
+					</select>
+					<label for="dd_output">Output</label>:
+					<select id="dd_output" onchange="return gui_outputChanged(this)">
+					<option value='imagemap'>Standard imagemap</option>
+					<option value='css'>CSS imagemap</option>
+					<option value='wiki'>Wiki imagemap</option>
+					</select>
+				</td>
+				<td align="right" width="50%">
+					<input type="checkbox" id="bb" onClick="toggleBoundingBox(this)"/> <label for="bb">bounding box</label>&nbsp;
+					<select onchange="changelabeling(this)">
+					<option value=''>No labeling</option>
+					<option value='%n' selected='1'>Label with numbers</option>
+					<option value='%a'>Label with alt text</option>
+					<option value='%h'>Label with href</option>
+					<option value='%c'>Label with coords</option>
+					</select>
+				</td>
+				</tr>
+				</table>
 			</div>
 			<div id="form_container" style="clear: both;">
 			<!-- form elements come here -->
@@ -59,19 +78,15 @@ Example 7 shows how to use the imgmap component in an Adobe AIR application.
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Code</a>
 			</legend>
 			<div>
-			<img src="clipboard.gif" onclick="myimgmap.toClipBoard()" style="float: right; margin: 5px; cursor: pointer;"/>
-			This is the generated image map HTML code.
-			Click into the textarea below and press Ctrl+C to copy the code to your clipboard. Alternatively you can use the
-			clipboard icon on the right. Please note, that you have to attach this code to your image, via the usemap property
-			(<a href="http://www.htmlhelp.com/reference/html40/special/map.html">read more</a>). 
-			
+			<div id="output_help">
+			</div>
 			<textarea id="html_container"></textarea></div>
 		</fieldset>
 	</form>
 
-<script type="text/javascript" src="imgmap.js"></script>
-<script type="text/javascript" src="interface1.js"></script>
 <script type="text/javascript" src="air.js"></script>
+<script type="text/javascript" src="imgmap.js"></script>
+<script type="text/javascript" src="default_interface.js"></script>
 
 </body>
 </html>

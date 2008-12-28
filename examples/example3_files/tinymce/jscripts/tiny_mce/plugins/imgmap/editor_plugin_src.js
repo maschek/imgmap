@@ -10,7 +10,7 @@ var TinyMCE_imgmapPlugin = {
 			author    : 'Adam Maschek, John Ericksen',
 			authorurl : 'http://imgmap.googlecode.com',
 			infourl   : 'http://imgmap.googlecode.com',
-			version   : "1.0"
+			version   : "1.1"
 		};
 	},
 

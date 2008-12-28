@@ -1,6 +1,6 @@
 /*
 	ImgMap plugin for FCKeditor
-	version 0.4 14/12/2007
+	version 0.5 27/12/2008
 
 	See docs/install.html
 

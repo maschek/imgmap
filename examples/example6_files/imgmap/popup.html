@@ -35,6 +35,9 @@
 			</legend>
 
 			<div>
+				<table cellspacing="0" width="100%">
+				<tr>
+				<td width="110">
 				<div id="button_container" style="float: left;">
 					<!-- buttons come here -->
 					<a href="javascript:setMode('pointer')"><img src="images/pointer.png" alt="Pointer" id="imgpointer"></a>
@@ -43,7 +46,18 @@
 					<a href="javascript:setMode('poly')"><img src="images/poly.png" alt="Polygon" id="imgpoly"></a>
 					<img src="images/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area" style="margin: 0 2px; cursor: pointer;"/>
 				</div>
-				<div style="float: right; margin: 0 5px">
+				</td>
+				<td>
+					<label for="dd_zoom" fckLang="imgmapLabelZoom">Zoom</label>:
+					<select onchange="gui_zoom(this)" id="dd_zoom">
+					<option value='0.25'>25%</option>
+					<option value='0.5'>50%</option>
+					<option value='1' selected="1">100%</option>
+					<option value='2'>200%</option>
+					<option value='3'>300%</option>
+					</select>
+				</td>
+				<td align="right" width="50%">
 					<select onchange="changelabeling(this)">
 					<option value='' fckLang="imgmapNoLabel">No labeling</option>
 					<option value='%n' selected='selected' fckLang="imgmapLabelNumber">Label with numbers</option>
@@ -52,7 +66,9 @@
 					<option value='%t' fckLang="imgmapLabelTitle">Label with title</option>
 					<option value='%c' fckLang="imgmapLabelCoords">Label with coords</option>
 					</select>
-				</div>
+				</td>
+				</tr>
+				</table>
 			</div>
 
 			<div id="properties" style="visibility:hidden;">

@@ -12,6 +12,7 @@ FCKLang.imgmapLabelAlt = 'Etiquetas con el texto alternativo' ;
 FCKLang.imgmapLabelHref = 'Etiquetas con la URL' ;
 FCKLang.imgmapLabelTitle = 'Etiquetas con el título' ;
 FCKLang.imgmapLabelCoords = 'Etiquetas con las coordenadas' ;
+FCKLang.imgmapLabelZoom = 'Zoom' ;
 
 FCKLang.imgmapMap = 'Mapa' ;
 FCKLang.imgmapMapName = 'Nombre del mapa' ;
