@@ -22,7 +22,6 @@
  *	This is the main script file of the Online Image Map Editor.
  * 
  *	TODO:
- *	-pic_container dynamic create(pos rel)?
  *	-scriptload race condition fix
  *	-destroy/cleanup function ?
  *	-testing highlighter
@@ -43,55 +42,106 @@
  *	 
  */
 /**
- *	@author	adam
+ *	@author	Adam Maschek
  *	@constructor
  *	@param config	The config object. 
  */
 function imgmap(config) {
+
+	/** Version string of imgmap */
 	this.version = "2.0beta6";
-	this.buildDate = "2008/05/20 20:08";
-	this.buildNumber = "81";
+	
+	/** Build date of imgmap */
+	this.buildDate = "2008/10/30 12:24";
+	
+	/** Sequential build number of imgmap */
+	this.buildNumber = "87";
+	
+	/** Config object of the imgmap instance */
 	this.config = {};
+	
+	/** Status flag to indicate current drawing mode */
 	this.is_drawing = 0;
+	
+	/**	Array to hold language strings */
 	this.strings   = [];
+	
+	/** Helper array for some drawing operations */
 	this.memory    = [];
+	
+	/**	Array to hold reference to all areas (canvases) */
 	this.areas     = [];
+	
+	/**	Array to hold last log entries */
 	this.logStore  = [];
+
+	/**	Associative array to hold bound event handlers */
+	this.eventHandlers  = {};
+	
 	this.currentid = 0;
 	this.draggedId  = null;
 	this.selectedId = null;
 	this.nextShape = 'rect';
+
+	/** possible values: 0 - edit, 1 - preview */
 	this.viewmode  = 0;
-	//possible values: 0 - edit, 1 - preview
 	
-	/**
-	 *	array of dynamically loaded javascripts
-	 */	 	
+	/** array of dynamically loaded javascripts */
 	this.loadedScripts = [];
 	this.isLoaded   = false;
 	this.cntReloads = 0;
-	this.mapname    = '';//holds the name of the actively edited map, use getMapName to read it
-	this.mapid      = '';//holds the id of the actively edited map, use getMapIdto read it
+	
+	/**	holds the name of the actively edited map, use getMapName to read it */
+	this.mapname    = '';
+	
+	/**	holds the id of the actively edited map, use getMapIdto read it */
+	this.mapid      = '';
+	
+	/** watermark to attach to output */
 	this.waterMark  = '<!-- Created by Online Image Map Editor (http://www.maschek.hu/imagemap/index) -->';
+	
+	/** global scale of areas (1-normal, 2-doubled, 0.5-half, etc.) */
+	this.globalscale = 1;
 
-	//is_drawing draw mode constants 
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_DRAW          = 1;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_MOVE          = 11;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_RESIZE_TOP    = 12;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_RESIZE_RIGHT  = 13;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_RESIZE_BOTTOM = 14;
+	/** is_drawing draw mode constant */
 	this.DM_RECTANGLE_RESIZE_LEFT   = 15;
 	
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_DRAW             = 2;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_MOVE             = 21;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_RESIZE_TOP       = 22;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_RESIZE_RIGHT     = 23;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_RESIZE_BOTTOM    = 24;
+	/** is_drawing draw mode constant */
 	this.DM_SQUARE_RESIZE_LEFT      = 25;
 	
+	/** is_drawing draw mode constant */
 	this.DM_POLYGON_DRAW            = 3;
+	/** is_drawing draw mode constant */
 	this.DM_POLYGON_LASTDRAW        = 30;
+	/** is_drawing draw mode constant */
 	this.DM_POLYGON_MOVE            = 31;
+
+	/** is_drawing draw mode constant */
+	this.DM_BEZIER_DRAW             = 4;
+	/** is_drawing draw mode constant */
+	this.DM_BEZIER_LASTDRAW         = 40;
+	/** is_drawing draw mode constant */
+	this.DM_BEZIER_MOVE             = 41;
 
 	//set some config defaults
 	this.config.mode     = "editor";
@@ -102,21 +152,38 @@ function imgmap(config) {
 	this.config.defaultLang = 'en';
 	this.config.loglevel    = 0;
 	this.config.custom_callbacks = {};//possible values: see below!
+	
+	/**	Callback events that you can handle in your GUI. */
 	this.event_types        = [
-		'onModeChanged', 'onClipboard', 'onHtmlChanged', 'onAddArea', 'onRemoveArea', 'onDrawArea', 
-		'onResizeArea', 'onRelaxArea', 'onFocusArea', 'onBlurArea', 'onMoveArea', 'onSelectRow', 'onLoadImage', 
-		'onSetMap', 'onGetMap', 'onSelectArea', 'onStatusMessage', 'onAreaChanged'];
+		'onModeChanged',
+		'onHtmlChanged',
+		'onAddArea',
+		'onRemoveArea',
+		'onDrawArea', 
+		'onResizeArea',
+		'onRelaxArea',
+		'onFocusArea',
+		'onBlurArea',
+		'onMoveArea',
+		'onSelectRow',
+		'onLoadImage', 
+		'onSetMap',
+		'onGetMap',
+		'onSelectArea',
+		'onStatusMessage',
+		'onAreaChanged'];
 
-	this.config.CL_DRAW_BOX        = '#dd2400';
+	//default color values
+	this.config.CL_DRAW_BOX        = '#E32636';
 	this.config.CL_DRAW_SHAPE      = '#d00';
 	this.config.CL_DRAW_BG         = '#fff';
-	this.config.CL_NORM_BOX        = '#dd2400';
+	this.config.CL_NORM_BOX        = '#E32636';
 	this.config.CL_NORM_SHAPE      = '#d00';
 	this.config.CL_NORM_BG         = '#fff';
-	this.config.CL_HIGHLIGHT_BOX   = '#dd2400';
+	this.config.CL_HIGHLIGHT_BOX   = '#E32636';
 	this.config.CL_HIGHLIGHT_SHAPE = '#d00';
 	this.config.CL_HIGHLIGHT_BG    = '#fff';
-	this.config.CL_KNOB            = '#ffeeee';
+	this.config.CL_KNOB            = '#555';
 
 	this.config.bounding_box       = true;
 	this.config.label              = '%n';
@@ -150,9 +217,9 @@ function imgmap(config) {
 	this.isSafari  = ua.indexOf('Safari') != -1;
 	this.isOpera   = (typeof window.opera != 'undefined');
 
-	this.addEvent(document, 'keydown',   this.doc_keydown.bind(this));
-	this.addEvent(document, 'keyup',     this.doc_keyup.bind(this));
-	this.addEvent(document, 'mousedown', this.doc_mousedown.bind(this));
+	this.addEvent(document, 'keydown',   this.eventHandlers.doc_keydown = this.doc_keydown.bind(this));
+	this.addEvent(document, 'keyup',     this.eventHandlers.doc_keyup = this.doc_keyup.bind(this));
+	this.addEvent(document, 'mousedown', this.eventHandlers.doc_mousedown = this.doc_mousedown.bind(this));
 	
 	if (config) {
 		this.setup(config);
@@ -166,7 +233,7 @@ function imgmap(config) {
  *	@date	22-02-2007 0:14:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@param	objorid	A DOM object, or id of a DOM object.
- *	@return	The identified DOM object or null on error.  
+ *	@return	The identified DOM object or null on error.
  */
 imgmap.prototype.assignOID = function(objorid) {
 	try {
@@ -194,16 +261,18 @@ imgmap.prototype.assignOID = function(objorid) {
  *	@date	22-02-2007 0:15:42
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@param	config	config object
- *	@return	True if all went ok.  
+ *	@return	True if all went ok.
  */
 imgmap.prototype.setup = function(config) {
 	//this.config = config;
 	for (var i in config) {
-		this.config[i] = config[i];
+		if (config.hasOwnProperty(i)) {
+			this.config[i] = config[i];
+		}
 	}
 	//this.log('setup');
-	//set container elements - supposedly they already exist in the DOM
-	if (config) {
+	//set pic_container element - supposedly it already exists in the DOM
+	if (config && config.pic_container) {
 		this.pic_container = this.assignOID(config.pic_container);
 		this.disableSelection(this.pic_container);
 	}
@@ -258,17 +327,19 @@ imgmap.prototype.setup = function(config) {
 	this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
 	
 	//check event hooks
-	var found, j;
+	var found, j, le;
 	for (i in this.config.custom_callbacks) {
-		found = false;
-		for (j=0; j<this.event_types.length; j++) {
-			if (i == this.event_types[j]) {
-				found = true;
-				break;
+		if (this.config.custom_callbacks.hasOwnProperty(i)) {
+			found = false;
+			for (j=0, le = this.event_types.length; j<le; j++) {
+				if (i == this.event_types[j]) {
+					found = true;
+					break;
+				}
 			}
-		}
-		if (!found) {
-			this.log("Unknown custom callback: " + i, 1);
+			if (!found) {
+				this.log("Unknown custom callback: " + i, 1);
+			}
 		}
 	}
 	
@@ -295,9 +366,10 @@ imgmap.prototype.retryDelayed = function(fn, delay, tries) {
 
 
 /**
- *	Things to do when the page with scripts is loaded.
+ *	EVENT HANDLER: Handle event when the page with scripts is loaded.
  *	@date	22-02-2007 0:16:22
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	e	The event object.
  */
 imgmap.prototype.onLoad = function(e) {
 	if (this.isLoaded) {return true;}
@@ -372,7 +444,9 @@ imgmap.prototype.onLoad = function(e) {
 /**
  *	Attach new 'evt' event handler 'callback' to 'obj'
  *	@date	24-02-2007 21:16:20
- *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	obj	The object on which the handler is defined.
+ *	@param	evt	The name of the event, like mousedown.
+ *	@param	callback	The callback function (named if you want it to be removed).
  */
 imgmap.prototype.addEvent = function(obj, evt, callback) {
 	if (obj.attachEvent) {
@@ -391,9 +465,14 @@ imgmap.prototype.addEvent = function(obj, evt, callback) {
 
 
 /**
- *	Detach event from object
+ *	Detach 'evt' event handled by 'callback' from 'obj' object.
+ *	Callback must be a non anonymous function, see eventHandlers.
+ *	@see	#eventHandlers 
+ *	Example: myimgmap.removeEvent(myimgmap.pic, 'mousedown', myimgmap.eventHandlers.img_mousedown); 
  *	@date	24-11-2007 15:22:17
- *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	obj	The object on which the handler is defined.
+ *	@param	evt	The name of the event, like mousedown.
+ *	@param	callback	The named callback function.
  */
 imgmap.prototype.removeEvent = function(obj, evt, callback) {
 	if (obj.detachEvent) {
@@ -437,7 +516,9 @@ imgmap.prototype.addLoadEvent = function(obj, callback) {
  *	Include another js script into the current document.
  *	@date	22-02-2007 0:17:04
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
- *	@param	url	The url of the script we want to load. 
+ *	@param	url	The url of the script we want to load.
+ *	@see	#script_load
+ *	@see	#addLoadEvent
  */
 imgmap.prototype.loadScript = function(url) {
 	if (url === '') {return false;}
@@ -464,7 +545,8 @@ imgmap.prototype.loadScript = function(url) {
 
 
 /**
- *	Event handler of external script loaded.
+ *	EVENT HANDLER: Event handler of external script loaded.
+ *	@param	e	The event object. 
  */
 imgmap.prototype.script_load = function(e) {
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
@@ -497,7 +579,9 @@ imgmap.prototype.script_load = function(e) {
  */
 imgmap.prototype.loadStrings = function(obj) {
 	for (var key in obj) {
-		this.strings[key] = obj[key];
+		if (obj.hasOwnProperty(key)) {
+			this.strings[key] = obj[key];
+		}
 	}
 };
 
@@ -506,14 +590,22 @@ imgmap.prototype.loadStrings = function(obj) {
  *	This function is to load a given img url to the pic_container.
  *	
  *	Loading an image will clear all current maps.
- *	   
+ *	@see	#useImage 
  *	@param img The imageurl or object to load (if object, function will get url, and do a recall)
- *	@param imgw The width we want to force on the image	  
- *	@param imgh The height we want to force on the image	 
+ *	@param imgw The width we want to force on the image	(optional)
+ *	@param imgh The height we want to force on the image (optional)
+ *	@returns True on success 
  */
 imgmap.prototype.loadImage = function(img, imgw, imgh) {
+	//test for container
+	if (typeof this.pic_container == 'undefined') {
+		this.log('You must have pic_container defined to use loadImage!', 2);
+		return false;
+	}
 	//wipe all
 	this.removeAllAreas();
+	//reset scale
+	this.globalscale = 1;
 	this.fireEvent('onHtmlChanged', '');//empty
 	if (!this._getLastArea()) {
 		//init with one new area if there was none editable
@@ -524,10 +616,10 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		if (typeof this.pic == 'undefined') {
 			this.pic = document.createElement('IMG');
 			this.pic_container.appendChild(this.pic);
-			//event handler hooking
-			this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
-			this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
-			this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
+			//event handler hooking - only at the first load
+			this.addEvent(this.pic, 'mousedown', this.eventHandlers.img_mousedown = this.img_mousedown.bind(this));
+			this.addEvent(this.pic, 'mouseup',   this.eventHandlers.img_mouseup = this.img_mouseup.bind(this));
+			this.addEvent(this.pic, 'mousemove', this.eventHandlers.img_mousemove = this.img_mousemove.bind(this));
 			this.pic.style.cursor = this.config.cursor_default;
 		}
 		//img ='../../'+img;
@@ -541,6 +633,7 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		if (imgw && imgw > 0) {this.pic.setAttribute('width',  imgw);}
 		if (imgh && imgh > 0) {this.pic.setAttribute('height', imgh);}
 		this.fireEvent('onLoadImage', this.pic);
+		return true;
 	}
 	else if (typeof img == 'object') {
 		//we have to use the src of the image object
@@ -560,14 +653,18 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		if (!imgh) {
 			imgh = img.clientHeight;
 		}
-		this.loadImage(src, imgw, imgh);
+		//recurse, this time with the url string
+		return this.loadImage(src, imgw, imgh);
 	}
 };
 
 
 /**
  *	We use this when there is an existing image object we want to handle with imgmap.
+ *	Mainly used in highlighter mode.
  *	@author	adam
+ *	@see	#loadImage
+ *	@see	#imgmap_spawnObjects
  *	@date	2007
  *	@param	img	DOM object or id of image we want to use.
  */
@@ -580,14 +677,35 @@ imgmap.prototype.useImage = function(img) {
 	}
 	img = this.assignOID(img);
 	if (typeof img == 'object') {
+		if (typeof this.pic != 'undefined') {
+			//remove previous handlers
+			this.removeEvent(this.pic, 'mousedown', this.eventHandlers.img_mousedown);
+			this.removeEvent(this.pic, 'mouseup',   this.eventHandlers.img_mouseup);
+			this.removeEvent(this.pic, 'mousemove', this.eventHandlers.img_mousemove);
+			this.pic.style.cursor = '';
+		}
 		this.pic = img;
-		//event handler hooking
-		this.addEvent(this.pic, 'mousedown', this.img_mousedown.bind(this));
-		this.addEvent(this.pic, 'mouseup',   this.img_mouseup.bind(this));
-		this.addEvent(this.pic, 'mousemove', this.img_mousemove.bind(this));
+		//hook event handlers
+		this.addEvent(this.pic, 'mousedown', this.eventHandlers.img_mousedown = this.img_mousedown.bind(this));
+		this.addEvent(this.pic, 'mouseup',   this.eventHandlers.img_mouseup = this.img_mouseup.bind(this));
+		this.addEvent(this.pic, 'mousemove', this.eventHandlers.img_mousemove = this.img_mousemove.bind(this));
 		this.pic.style.cursor = this.config.cursor_default;
-		this.pic_container = this.pic.parentNode;
+		
+		if (this.pic.parentNode.className == 'pic_container') {
+			//use existing container
+			this.pic_container = this.pic.parentNode;
+		}
+		else {
+			//dynamically create container
+			this.pic_container = document.createElement("div");
+			this.pic_container.className = 'pic_container';
+			this.pic.parentNode.insertBefore(this.pic_container, this.pic);
+			//ref: If the node already exists it is removed from current parent node, then added to new parent node.
+			this.pic_container.appendChild(this.pic);
+		}
+
 		this.fireEvent('onLoadImage', this.pic);
+		return true;
 	}
 };
 
@@ -597,7 +715,8 @@ imgmap.prototype.useImage = function(img) {
  *	Use this to update your GUI. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	26-07-2008 13:22:54
- */   
+ *	@param	str	The status string
+ */
 imgmap.prototype.statusMessage = function(str) {
 	this.fireEvent('onStatusMessage', str);
 };
@@ -605,12 +724,12 @@ imgmap.prototype.statusMessage = function(str) {
 
 /**
  *	Adds basic logging functionality using firebug console object if available.
- *	Uses AIR introspector if available. 
+ *	Also tries to use AIR introspector if available. 
  *	@date	20-02-2007 17:55:18
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@param	obj	The object or string you want to debug/echo.
  *	@level	level	The log level, 0 being the smallest issue.  
- */   
+ */
 imgmap.prototype.log = function(obj, level) {
 	if (level === '' || typeof level == 'undefined') {level = 0;}
 	if (this.config.loglevel != -1 && level >= this.config.loglevel) {
@@ -636,7 +755,7 @@ imgmap.prototype.log = function(obj, level) {
 			//alert(level + ': ' + obj);
 			//dump with all pevious errors:
 			var msg = '';
-			for (var i=0; i<this.logStore.length; i++) {
+			for (var i=0, le = this.logStore.length; i<le; i++) {
 				msg+= this.logStore[i].level + ': ' + this.logStore[i].obj + "\n";
 			}
 			alert(msg);
@@ -653,10 +772,11 @@ imgmap.prototype.log = function(obj, level) {
  *	Invokes getMapInnerHTML. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-06 15:10:27
+ *	@param	flags	Currently ony 'noscale' used to prevent scaling of coordinates in preview mode. 
  *	@return The generated html code. 
  */
-imgmap.prototype.getMapHTML = function() {
-	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML() + this.waterMark + '</map>';
+imgmap.prototype.getMapHTML = function(flags) {
+	var html = '<map id="'+this.getMapId()+'" name="'+this.getMapName()+'">' + this.getMapInnerHTML(flags) + this.waterMark + '</map>';
 	this.fireEvent('onGetMap', html);
 	//alert(html);
 	return html;
@@ -667,20 +787,31 @@ imgmap.prototype.getMapHTML = function() {
  *	Get the map areas part only of the current imagemap.
  *	@see	#getMapHTML 
  *	@author	adam
+ *	@param	flags	Currently ony 'noscale' used to prevent scaling of coordinates in preview mode. 
  *	@return	The generated map code without the map wrapper.  
  */
-imgmap.prototype.getMapInnerHTML = function() {
-	var html = '';
+imgmap.prototype.getMapInnerHTML = function(flags) {
+	var html, coords;
+	html = '';
 	//foreach area properties
-	for (var i=0; i<this.areas.length; i++) {
+	for (var i=0, le = this.areas.length; i<le; i++) {
 		if (this.areas[i]) {
 			if (this.areas[i].shape && this.areas[i].shape != 'undefined') {
-					html+= '<area shape="' + this.areas[i].shape + '"' +
-						' alt="' + this.areas[i].aalt + '"' +
-						' title="' + this.areas[i].atitle + '"' +
-						' coords="' + this.areas[i].lastInput + '"' +
-						' href="' +	this.areas[i].ahref + '"' +
-						' target="' + this.areas[i].atarget + '" />';
+				coords = this.areas[i].lastInput;
+				if (flags && flags.match(/noscale/)) {
+					//for preview use real coordinates, not scaled
+					var cs = coords.split(',');
+					for (var j=0, le2 = cs.length; j<le2; j++) {
+						cs[j] = Math.round(cs[j] * this.globalscale);
+					}
+					coords = cs.join(',');
+				}
+				html+= '<area shape="' + this.areas[i].shape + '"' +
+					' alt="' + this.areas[i].aalt + '"' +
+					' title="' + this.areas[i].atitle + '"' +
+					' coords="' + coords + '"' +
+					' href="' +	this.areas[i].ahref + '"' +
+					' target="' + this.areas[i].atarget + '" />';
 			}
 		}
 	}
@@ -726,6 +857,22 @@ imgmap.prototype.getMapId = function() {
 
 
 /**
+ *	Convert wild shape names to normal ones.
+ *	@date	25-12-2008 19:27:06
+ *	@param	shape	The name of the shape to convert.
+ *	@return	The normalized shape name, rect as default.
+ */
+imgmap.prototype._normShape = function(shape) {
+	if (!shape) {return 'rect';}
+	shape = shape.trim().toLowerCase();
+	if (shape.substring(0, 4) == 'rect') {return 'rect';}
+	if (shape.substring(0, 4) == 'circ') {return 'circle';}
+	if (shape.substring(0, 4) == 'poly') {return 'poly';}
+	return 'rect';
+};
+
+
+/**
  *	Try to normalize coordinates that came from:
  *	1. html textarea
  *	2. user input in the active area's input field
@@ -735,8 +882,9 @@ imgmap.prototype.getMapId = function() {
  *		150,217, 190,257, 150,297,110,257
  *	@author	adam
  *	@param	coords	The coordinates in a string.
- *	@param	shape	The shape of the object (rect, circle, poly).
- *	@param	flag	Flags that modify the operation.
+ *	@param	shape	The shape of the object (rect, circle, poly, bezier1).
+ *	@param	flag	Flags that modify the operation. (fromcircle, frompoly, fromrect, preserve)
+ *	@returns The normalized coordinates. 
  */
 imgmap.prototype._normCoords = function(coords, shape, flag) {
 	//function level var declarations
@@ -753,9 +901,13 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	var oldcoords = coords;
 	//replace some general junk
 	coords = coords.replace(/(\d)(\D)+(\d)/g, "$1,$3");
-	coords = coords.replace(/,(\D|0)+(\d)/g, ",$2");
+	coords = coords.replace(/,\D+(\d)/g, ",$1");//cut leading junk
+	coords = coords.replace(/,0+(\d)/g, ",$1");//cut leading zeros
 	coords = coords.replace(/(\d)(\D)+,/g, "$1,");
-	coords = coords.replace(/^(\D|0)+(\d)/g, "$2");
+	coords = coords.replace(/^\D+(\d)/g, "$1");//cut leading junk
+	coords = coords.replace(/^0+(\d)/g, "$1");//cut leading zeros
+	coords = coords.replace(/(\d)(\D)+$/g, "$1");//cut trailing junk
+	//console.log('>'+coords + ' - ' + shape + ' - ' + flag);
 	//now fix other issues
 	var parts = coords.split(',');
 	if (shape == 'rect') {
@@ -769,7 +921,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 		else if (flag == 'frompoly') {
 			sx = parseInt(parts[0], 10); gx = parseInt(parts[0], 10);
 			sy = parseInt(parts[1], 10); gy = parseInt(parts[1], 10);
-			for (i=0; i<parts.length; i++) {
+			for (i=0, le = parts.length; i<le; i++) {
 				if (i % 2 === 0 && parseInt(parts[i], 10) < sx) {
 					sx = parseInt(parts[i], 10);}
 				if (i % 2 === 1 && parseInt(parts[i], 10) < sy) {
@@ -783,9 +935,9 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			parts[0] = sx; parts[1] = sy;
 			parts[2] = gx; parts[3] = gy;
 		}
-		if (!(parseInt(parts[1], 10) > 0)) {parts[1] = parts[0];}
-		if (!(parseInt(parts[2], 10) > 0)) {parts[2] = parseInt(parts[0], 10) + 10;}
-		if (!(parseInt(parts[3], 10) > 0)) {parts[3] = parseInt(parts[1], 10) + 10;}
+		if (!(parseInt(parts[1], 10) >= 0)) {parts[1] = parts[0];}
+		if (!(parseInt(parts[2], 10) >= 0)) {parts[2] = parseInt(parts[0], 10) + 10;}
+		if (!(parseInt(parts[3], 10) >= 0)) {parts[3] = parseInt(parts[1], 10) + 10;}
 		if (parseInt(parts[0], 10) > parseInt(parts[2], 10)) {
 			temp = parts[0];
 			parts[0] = parts[2];
@@ -812,7 +964,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 		else if (flag == 'frompoly') {
 			sx = parseInt(parts[0], 10); gx = parseInt(parts[0], 10);
 			sy = parseInt(parts[1], 10); gy = parseInt(parts[1], 10);
-			for (i=0; i<parts.length; i++) {
+			for (i=0, le = parts.length; i<le; i++) {
 				if (i % 2 === 0 && parseInt(parts[i], 10) < sx) {
 					sx = parseInt(parts[i], 10);}
 				if (i % 2 === 1 && parseInt(parts[i], 10) < sy) {
@@ -849,7 +1001,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			var j = 0;
 			parts[j++] = centerX + radius;
 			parts[j++] = centerY;
-			var sides = 60;
+			var sides = 60;//constant = sides the fake circle will have
 			for (i=0; i<=sides; i++) {
 				var pointRatio = i/sides;
 				var xSteps = Math.cos(pointRatio*2*Math.PI);
@@ -861,11 +1013,10 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 			}
 			//console.log(parts);
 		}
-		coords = '';
-		for (i=0; i<parts.length; i++) {
-			coords+= parts[i]+",";
-		}
-		coords = coords.substring(0, coords.length - 1);
+		coords = parts.join(',');
+	}
+	else if (shape == 'bezier1') {
+		coords = parts.join(',');
 	}
 	if (flag == 'preserve' && oldcoords != coords) {
 		//return original and throw error
@@ -880,7 +1031,8 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
  *	Sets the coordinates according to the given HTML map code or DOM object.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-07 11:47:16
- *	@param	map	DOM object or string of a map you want to apply. 
+ *	@param	map	DOM object or string of a map you want to apply.
+ *	@return	True on success 
  */   
 imgmap.prototype.setMapHTML = function(map) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -905,18 +1057,13 @@ imgmap.prototype.setMapHTML = function(map) {
 	this.mapid   = oMap.id;
 	var newareas = oMap.getElementsByTagName('area');
 	var shape, coords, href, alt, title, target;
-	for (var i=0; i<newareas.length; i++) {
+	for (var i=0, le = newareas.length; i<le; i++) {
 		shape = coords = href = alt = title = target = '';
 		
 		id = this.addNewArea();//btw id == this.currentid, just this form is a bit clearer
 
-		if (newareas[i].getAttribute('shape', 2)) {
-			shape = newareas[i].getAttribute('shape', 2);
-		}
-		else {
-			shape = 'rect';
-		} 
-
+		shape = this._normShape(newareas[i].getAttribute('shape', 2));
+		
 		this.initArea(id, shape);
 		
 		if (newareas[i].getAttribute('coords', 2)) {
@@ -966,6 +1113,7 @@ imgmap.prototype.setMapHTML = function(map) {
 		
 	}//end for areas
 	this.fireEvent('onHtmlChanged', this.getMapHTML());
+	return true;
 };
 
 
@@ -973,7 +1121,8 @@ imgmap.prototype.setMapHTML = function(map) {
  *	Preview image with imagemap applied.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-06 14:51:01
- *	@url	http://www.quirksmode.org/bugreports/archives/2005/03/Usemap_attribute_wrongly_case_sensitive.html 
+ *	@url	http://www.quirksmode.org/bugreports/archives/2005/03/Usemap_attribute_wrongly_case_sensitive.html
+ *	@return	False on error, 0 when switched to edit mode, 1 when switched to preview mode
  */
 imgmap.prototype.togglePreview = function() {
 	var i;//generic cycle counter
@@ -984,19 +1133,19 @@ imgmap.prototype.togglePreview = function() {
 	if (!this.preview) {
 		this.preview = document.createElement('DIV');
 		this.preview.style.display = 'none';
-		this.pic.parentNode.appendChild(this.preview);
+		this.pic_container.appendChild(this.preview);
 	}
 	
 	if (this.viewmode === 0) {
 		//hide canvas elements and labels
-		for (i=0; i<this.areas.length; i++) {
+		for (i=0, le = this.areas.length; i<le; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = 'none';
 				if (this.areas[i].label) {this.areas[i].label.style.display = 'none';}
 			}
 		}
 		//activate image map
-		this.preview.innerHTML = this.getMapHTML();
+		this.preview.innerHTML = this.getMapHTML('noscale');
 		this.pic.setAttribute('border', '0', 0);
 		this.pic.setAttribute('usemap', '#' + this.mapname, 0);
 		this.pic.style.cursor  = 'auto';
@@ -1005,7 +1154,7 @@ imgmap.prototype.togglePreview = function() {
 	}
 	else {
 		//show canvas elements
-		for (i=0; i<this.areas.length; i++) {
+		for (i=0, le = this.areas.length; i<le; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = '';
 				if (this.areas[i].label && this.config.label) {this.areas[i].label.style.display = '';}
@@ -1026,8 +1175,10 @@ imgmap.prototype.togglePreview = function() {
 
 /**
  *	Adds a new area. It will later become a canvas.
+ *	GUI should use the onAddArea callback to act accordingly.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-06 16:49:25
+ *	@see	#initArea
  */
 imgmap.prototype.addNewArea = function() {
 		if (this.viewmode === 1) {return;}//exit if preview mode
@@ -1047,6 +1198,13 @@ imgmap.prototype.addNewArea = function() {
 };
 
 
+/**
+ *	Initialize a new area.
+ *	Create the canvas, initialize it.
+ *	Reset area parameters.
+ *	@param	id	The id of the area (already existing with undefined shape)
+ *	@param	shape	The shape the area will have (rect, circle, poly, bezier1)
+ */
 imgmap.prototype.initArea = function(id, shape) {
 	if (!this.areas[id]) {return false;}//if all was erased, return
 	//remove preinited dummy div or already placed canvas
@@ -1055,8 +1213,8 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id] = null;
 	//create CANVAS node
 	this.areas[id] = document.createElement('CANVAS');
-	this.pic.parentNode.appendChild(this.areas[id]);
-	this.pic.parentNode.style.position = 'relative';
+	this.pic_container.appendChild(this.areas[id]);
+	this.pic_container.style.position = 'relative';
 	//alert('init' + typeof G_vmlCanvasManager);
 	if (typeof G_vmlCanvasManager != "undefined") {
 		//override CANVAS with VML object
@@ -1092,7 +1250,7 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.memory[id].ypoints = [];
 	//create label node
 	this.areas[id].label = document.createElement('DIV');
-	this.pic.parentNode.appendChild(this.areas[id].label);
+	this.pic_container.appendChild(this.areas[id].label);
 	this.areas[id].label.className      = this.config.label_class;
 	this.assignCSS(this.areas[id].label,  this.config.label_style);
 	this.areas[id].label.style.position = 'absolute';
@@ -1100,40 +1258,29 @@ imgmap.prototype.initArea = function(id, shape) {
 
 
 /**
- *	Resets area border to a normal state after drawing .
+ *	Resets area border and opacity to a normal state after drawing.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	15-02-2007 22:07:28
+ *	@param	id	The id of the area. 
+ *	@see	#relaxAllAreas
  */
 imgmap.prototype.relaxArea = function(id) {
 	if (!this.areas[id]) {return;}
 	this.fireEvent('onRelaxArea', id);
-	if (this.areas[id].shape == 'rect') {
-		this.areas[id].style.borderWidth = '1px';
-		this.areas[id].style.borderStyle = 'solid';
-		this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
-	}
-	else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
-		if (this.config.bounding_box) {
-			this.areas[id].style.borderWidth = '1px';
-			this.areas[id].style.borderStyle = 'solid';
-			this.areas[id].style.borderColor = this.config.CL_NORM_BOX;
-		}
-		else {
-			//clear border
-			this.areas[id].style.border = '';
-		}
-	}
+	this._setBorder(id, 'NORM');
 	this._setopacity(this.areas[id], this.config.CL_NORM_BG, this.config.norm_opacity);
 };
 
 
 /**
  *	Resets area border and opacity of all areas.
+ *	Calls relaxArea on each of them. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	23-04-2007 23:31:09
+ *	@see	#relaxArea
  */
 imgmap.prototype.relaxAllAreas = function() {
-	for (var i=0; i<this.areas.length; i++) {
+	for (var i=0, le = this.areas.length; i<le; i++) {
 		if (this.areas[i]) {
 			this.relaxArea(i);
 		}
@@ -1142,7 +1289,33 @@ imgmap.prototype.relaxAllAreas = function() {
 
 
 /**
+ *	Set border of a given area according to style flag.
+ *	Possible values of style: NORM, HIGHLIGHT, DRAW.
+ *	Non-rectangle shapes wont get a border if config.bounding_box is false.
+ *	@date	26-12-2008 22:34:41
+ *	@param	id	The id of the area to set the border on.
+ *	@param	style	Coloring style (NORM, HIGHLIGHT, DRAW), see relevant colors in config.
+ *	@since	2.1
+ */
+imgmap.prototype._setBorder = function(id, style) {
+	if (this.areas[id].shape == 'rect' || this.config.bounding_box) {
+		this.areas[id].style.borderWidth = '1px';
+		this.areas[id].style.borderStyle = (style == 'DRAW' ? 'dotted' : 'solid');
+		this.areas[id].style.borderColor = this.config['CL_' + style + '_' + (this.areas[id].shape == 'rect' ? 'SHAPE' : 'BOX')];
+	}
+	else {
+		//clear border
+		this.areas[id].style.border = '';
+	}
+};
+
+
+/**
  *	Set opacity of area to the given percentage, as well as set the background color.
+ *	If percentage contains a dash(-), the setting of the opacity will be gradual. 
+ *	@param	area	The area object.
+ *	@param	bgcolor	New background color
+ *	@param	pct		Percentage of the opacity.   
  */
 imgmap.prototype._setopacity = function(area, bgcolor, pct) {
 	if (bgcolor) {area.style.backgroundColor = bgcolor;}
@@ -1177,7 +1350,7 @@ imgmap.prototype._setopacity = function(area, bgcolor, pct) {
 	if (!isNaN(pct)) {
 		pct = Math.round(parseInt(pct, 10));
 		//this.log('set ('+area.aid+'): ' + pct, 1);
-		area.style.opacity = pct / 101;
+		area.style.opacity = pct / 100;
 		area.style.filter  = 'alpha(opacity='+pct+')';
 	}
 };
@@ -1203,9 +1376,14 @@ imgmap.prototype._getopacity = function(area) {
 
 /**
  *	Removes the area marked by id.
- *	Callback will call the gui code to remove gui elements. 
+ *	removeAllAreas will indicate a mass flag so that the output HTML will only be updated at 
+ *	the end of the operation.
+ *	Callback will call the GUI code to remove GUI elements. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	11-02-2007 20:40:58
+ *	@param	id	The id of the area to remove.
+ *	@param	mass	Flag to indicate skipping the call of onHtmlChanged callback
+ *	@see	#removeAllAreas
  */
 imgmap.prototype.removeArea = function(id, mass) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -1240,11 +1418,13 @@ imgmap.prototype.removeArea = function(id, mass) {
 
 /**
  *	Removes all areas.
+ *	Will call removeArea on all areas. 
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-07 11:55:34
+ *	@see	#removeArea
  */
 imgmap.prototype.removeAllAreas = function() {
-	for (var i = 0; i < this.areas.length; i++) {
+	for (var i = 0, le = this.areas.length; i < le; i++) {
 		if (this.areas[i]) {
 			this.removeArea(i, true);
 		}
@@ -1254,6 +1434,66 @@ imgmap.prototype.removeAllAreas = function() {
 };
 
 
+/**
+ *	Scales all areas.
+ *	Will store scale parameter in globalscale property.
+ *	This is needed to know how to draw new areas on an already scaled canvas.  
+ *	@author	adam
+ *	@date	02-11-2008 14:13:14
+ *	@param scale	Scale factor (1-original, 0.5-half, 2-double, etc.)
+ */
+imgmap.prototype.scaleAllAreas = function(scale) {
+	var rscale = 1;//relative scale
+	try {
+		rscale = scale / this.globalscale;
+	}
+	catch (err) {
+		this.log("Invalid (global)scale", 1);
+	}
+	//console.log('gscale: '+this.globalscale);
+	//console.log('scale: '+scale);
+	//console.log('rscale: '+rscale);
+
+	this.globalscale = scale;
+	for (var i = 0, le = this.areas.length; i < le; i++) {
+		if (this.areas[i] && this.areas[i].shape != 'undefined') {
+			this.scaleArea(i, rscale);
+		}
+	}
+};
+
+
+/**
+ *	Scales one area.
+ *	@author	adam
+ *	@date	02-11-2008 14:13:14
+ *	@param rscale	Relative scale factor (1-keep, 0.5-half, 2-double, etc.)
+ */
+imgmap.prototype.scaleArea = function(id, rscale) {
+	
+	//set position and new dimensions
+	this.areas[id].style.top  = parseInt(this.areas[id].style.top, 10) * rscale + 'px';
+	this.areas[id].style.left = parseInt(this.areas[id].style.left, 10) * rscale + 'px';
+	this.setAreaSize(id, this.areas[id].width * rscale, this.areas[id].height * rscale);
+	
+	//handle polygon/bezier coordinates scaling
+	if (this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
+		for (var i=0, le = this.areas[id].xpoints.length; i<le; i++) {
+			this.areas[id].xpoints[i]*= rscale;
+			this.areas[id].ypoints[i]*= rscale;
+		}
+	}
+
+	this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
+	this._updatecoords(id);
+};
+
+
+/**
+ *	Put label in the top left corner according to label config.
+ *	By default it will contain the number of the area (area.aid) 
+ *	@param	id	The id of the area to add label to.
+ */
 imgmap.prototype._putlabel = function(id) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
 	if (!this.areas[id].label) {return;}//not yet inited
@@ -1282,6 +1522,11 @@ imgmap.prototype._putlabel = function(id) {
 };
 
 
+/**
+ *	Set area title and alt (for IE) according to the hint configuration.
+ *	This will show up in the usual yellow box when you hover over with the mouse.
+ *	@param	id	The id of the area to set hint at.
+ */
 imgmap.prototype._puthint = function(id) {
 	try {
 		if (!this.config.hint) {
@@ -1305,8 +1550,13 @@ imgmap.prototype._puthint = function(id) {
 };
 
 
+/**
+ *	Will call repaint on all areas.
+ *	Useful when you change labeling or hint config on the GUI.
+ *	@see #_repaint
+ */
 imgmap.prototype._repaintAll = function() {
-	for (var i=0; i<this.areas.length; i++) {
+	for (var i=0, le = this.areas.length; i<le; i++) {
 		if (this.areas[i]) {
 			this._repaint(this.areas[i], this.config.CL_NORM_SHAPE);
 		}
@@ -1314,10 +1564,20 @@ imgmap.prototype._repaintAll = function() {
 };
 
 
+/**
+ *	Repaints the actual canvas content.
+ *	This is the only canvas drawing magic that is happening.
+ *	In fact rectangles will not have any canvas content, just a normal css border.
+ *	After repainting the canvas, it will call putlabel and puthint methods.
+ *	@param	area	The area object.
+ *	@param	color	Color of the line to draw on the canvas.
+ *	@param	x	Only used for polygons/beziers as the newest control point x.
+ *	@param	y	Only used for polygons/beziers as the newest control point y.
+ */  
 imgmap.prototype._repaint = function(area, color, x, y) {
 	var ctx;//canvas context
-	var width;//canvas width
-	var height;//canvas height
+	var width, height, left, top;//canvas properties
+	var i;//loop counter
 	if (area.shape == 'circle') {
 		width  = parseInt(area.style.width, 10);
 		var radius = Math.floor(width/2) - 1;
@@ -1347,8 +1607,8 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 	else if (area.shape == 'poly') {
 		width  =  parseInt(area.style.width, 10);
 		height =  parseInt(area.style.height, 10);
-		var left   =  parseInt(area.style.left, 10);
-		var top    =  parseInt(area.style.top, 10);
+		left   =  parseInt(area.style.left, 10);
+		top    =  parseInt(area.style.top, 10);
 		if (area.xpoints) {
 			//get canvas context
 			ctx = area.getContext("2d");
@@ -1358,13 +1618,52 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			ctx.beginPath();
 			ctx.strokeStyle = color;
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
-			for (var i=1; i<area.xpoints.length; i++) {
+			for (i=1, le = area.xpoints.length; i<le; i++) {
 				ctx.lineTo(area.xpoints[i] - left , area.ypoints[i] - top);
 			}
 			if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_POLYGON_LASTDRAW) {
-				//only draw to current position if not moving
+				//only draw to the current position if not moving
 				ctx.lineTo(x - left - 5 , y - top - 5);
 			}
+			ctx.lineTo(area.xpoints[0] - left , area.ypoints[0] - top);
+			ctx.stroke();
+			ctx.closePath();
+		}
+		//put label
+		this._putlabel(area.aid);
+		this._puthint(area.aid);
+	}
+	else if (area.shape == 'bezier1') {
+		width  =  parseInt(area.style.width, 10);
+		height =  parseInt(area.style.height, 10);
+		left   =  parseInt(area.style.left, 10);
+		top    =  parseInt(area.style.top, 10);
+		if (area.xpoints) {
+			//get canvas context
+			ctx = area.getContext("2d");
+			//clear canvas
+			ctx.clearRect(0, 0, width, height);
+			//draw bezier1 (every second point is control point)
+			ctx.beginPath();
+			ctx.strokeStyle = color;
+			//move to the beginning position
+			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
+			//draw previous points - use every second point only
+			for (i=2, le = area.xpoints.length; i<le; i+=2) {
+				ctx.quadraticCurveTo(area.xpoints[i-1] - left, area.ypoints[i-1] - top, area.xpoints[i] - left, area.ypoints[i] - top);
+			}
+			if (this.is_drawing == this.DM_BEZIER_DRAW || this.is_drawing == this.DM_BEZIER_LASTDRAW) {
+				//only draw to the current position if not moving
+				if (area.xpoints.length % 2 === 0 && area.xpoints.length > 1) {
+					//drawing point - draw a curve to it using the previous control point
+					ctx.quadraticCurveTo(area.xpoints[area.xpoints.length - 1] - left - 5 , area.ypoints[area.ypoints.length - 1] - top - 5, x - left - 5 , y - top - 5);
+				}
+				else {
+					//control point - simply draw a line to it
+					ctx.lineTo(x - left - 5 , y - top - 5);
+				}
+			}
+			//close area by drawing a line to the first point
 			ctx.lineTo(area.xpoints[0] - left , area.ypoints[0] - top);
 			ctx.stroke();
 			ctx.closePath();
@@ -1377,19 +1676,24 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 
 
 /**
- *	Updates Area coordinates on the properties fieldset.
+ *	Updates Area coordinates.
  *	Called when needed, eg. on mousemove, mousedown.
- *	Also updates html container value.
+ *	Also updates html container value (thru hook).
+ *	Calls callback onAreaChanged and onHtmlChanged so that GUI can follow.
+ *	This is an important hook to your GUI.  
+ *	Uses globalscale to scale real coordinates to area coordinates. 
  *	@date	2006.10.24. 22:39:27
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	id	The id of the area. 
  */
 imgmap.prototype._updatecoords = function(id) {
-	var left   = parseInt(this.areas[id].style.left, 10);
-	var top    = parseInt(this.areas[id].style.top, 10);
-	var height = parseInt(this.areas[id].style.height, 10);
-	var width  = parseInt(this.areas[id].style.width, 10);
-	
-	var value = '' ;
+
+	var left   = Math.round(parseInt(this.areas[id].style.left, 10) / this.globalscale);
+	var top    = Math.round(parseInt(this.areas[id].style.top, 10) / this.globalscale);
+	var height = Math.round(parseInt(this.areas[id].style.height, 10) / this.globalscale);
+	var width  = Math.round(parseInt(this.areas[id].style.width, 10) / this.globalscale);
+
+	var value = '';
 	if (this.areas[id].shape == 'rect') {
 		value = left + ',' + top + ',' + (left + width) + ',' + (top + height);
 		this.areas[id].lastInput = value;
@@ -1399,11 +1703,11 @@ imgmap.prototype._updatecoords = function(id) {
 		value = (left + radius) + ',' +	(top + radius) + ',' + radius;
 		this.areas[id].lastInput = value;
 	}
-	else if (this.areas[id].shape == 'poly') {
-		value = '';
+	else if (this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 		if (this.areas[id].xpoints) {
-			for (var i=0; i<this.areas[id].xpoints.length; i++) {
-				value+= this.areas[id].xpoints[i] + ',' + this.areas[id].ypoints[i] + ',';
+			for (var i=0, le = this.areas[id].xpoints.length; i<le; i++) {
+				value+= Math.round(this.areas[id].xpoints[i] / this.globalscale) + ',' +
+						Math.round(this.areas[id].ypoints[i] / this.globalscale) + ',';
 			}
 			value = value.substring(0, value.length - 1);
 		}
@@ -1418,9 +1722,12 @@ imgmap.prototype._updatecoords = function(id) {
 
 /**
  *	Updates the visual representation of the area with the given id according
- *	to the input element that contains the coordinates.
+ *	to the new coordinates that typically come from an input on the GUI.
+ *	Uses globalscale to scale area coordinates to real coordinates. 
  *	@date	2006.10.24. 22:46:55
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
+ *	@param	id	The id of the area.
+ *	@param	coords	The new coords, they will be normalized.
  */
 imgmap.prototype._recalculate = function(id, coords) {
 	try {
@@ -1436,30 +1743,30 @@ imgmap.prototype._recalculate = function(id, coords) {
 			if (parts.length != 4 ||
 				parseInt(parts[0], 10) > parseInt(parts[2], 10) ||
 				parseInt(parts[1], 10) > parseInt(parts[3], 10)) {throw "invalid coords";}
-			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0], 10) + 'px';
-			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1], 10) + 'px';
-			this.setAreaSize(id, (parts[2] - parts[0]), (parts[3] - parts[1]));
+			this.areas[id].style.left   = this.globalscale * (this.pic.offsetLeft + parseInt(parts[0], 10)) + 'px';
+			this.areas[id].style.top    = this.globalscale * (this.pic.offsetTop  + parseInt(parts[1], 10)) + 'px';
+			this.setAreaSize(id, this.globalscale * (parts[2] - parts[0]), this.globalscale  * (parts[3] - parts[1]));
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
 		else if (this.areas[id].shape == 'circle') {
 			if (parts.length != 3 ||
 				parseInt(parts[2], 10) < 0) {throw "invalid coords";}
-			var width = 2 * (1 * parts[2] + 1);
+			var width = 2 * (parts[2]);
 			//alert(parts[2]);
 			//alert(width);
-			this.setAreaSize(id, width, width);
-			this.areas[id].style.left   = this.pic.offsetLeft + parseInt(parts[0], 10) - width/2 + 'px';
-			this.areas[id].style.top    = this.pic.offsetTop  + parseInt(parts[1], 10) - width/2 + 'px';
+			this.setAreaSize(id, this.globalscale * width, this.globalscale * width);
+			this.areas[id].style.left   = this.globalscale * (this.pic.offsetLeft + parseInt(parts[0], 10) - width/2) + 'px';
+			this.areas[id].style.top    = this.globalscale * (this.pic.offsetTop  + parseInt(parts[1], 10) - width/2) + 'px';
 			this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		}
-		else if (this.areas[id].shape == 'poly') {
+		else if (this.areas[id].shape == 'poly' || this.areas[id].shape == 'bezier1') {
 			if (parts.length < 2) {throw "invalid coords";}
 			this.areas[id].xpoints = [];
 			this.areas[id].ypoints = [];
-			for (var i=0; i<parts.length; i+=2) {
-				this.areas[id].xpoints[this.areas[id].xpoints.length]  = this.pic.offsetLeft + parseInt(parts[i], 10);
-				this.areas[id].ypoints[this.areas[id].ypoints.length]  = this.pic.offsetTop  + parseInt(parts[i+1], 10); 
-				this._polygongrow(this.areas[id], parts[i], parts[i+1]);
+			for (var i=0, le = parts.length; i<le; i+=2) {
+				this.areas[id].xpoints[this.areas[id].xpoints.length]  = this.globalscale * (this.pic.offsetLeft + parseInt(parts[i], 10));
+				this.areas[id].ypoints[this.areas[id].ypoints.length]  = this.globalscale * (this.pic.offsetTop  + parseInt(parts[i+1], 10)); 
+				this._polygongrow(this.areas[id], this.globalscale * parts[i], this.globalscale * parts[i+1]);
 			}
 			this._polygonshrink(this.areas[id]);//includes repaint
 		}
@@ -1468,7 +1775,7 @@ imgmap.prototype._recalculate = function(id, coords) {
 		var msg = (err.message) ? err.message : 'error calculating coordinates';
 		this.log(msg, 1);
 		this.statusMessage(this.strings.ERR_INVALID_COORDS);
-		if (this.areas[id].lastInput && input) {input.value = this.areas[id].lastInput;}
+		//#todo handle this if (this.areas[id].lastInput && input) {input.value = this.areas[id].lastInput;}
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		return;
 	}
@@ -1480,6 +1787,10 @@ imgmap.prototype._recalculate = function(id, coords) {
 /**
  *	Grow polygon area to be able to contain the given new coordinates.
  *	@author	adam
+ *	@param	area	The area to grow.
+ *	@param	newx	The new coordinate x.  
+ *	@param	newy	The new coordinate y.	 
+ *	@see	#_polygonshrink 
  */
 imgmap.prototype._polygongrow = function(area, newx, newy) {
 	//this.log('pgrow');
@@ -1508,20 +1819,31 @@ imgmap.prototype._polygongrow = function(area, newx, newy) {
 /**
  *	Shrink the polygon bounding area to the necessary size, by first reducing it
  *	to the minimum, and then gradually growing it.
+ *	We need this because while we were drawing the polygon, it might have expanded
+ *	the canvas more than needed.
+ *	Will repaint the area. 
  *	@author	adam
+ *	@param	area	The area to shrink.
+ *	@see	#_polygongrow 
  */
 imgmap.prototype._polygonshrink = function(area) {
 	//this.log('pshrink');
 	area.style.left = (area.xpoints[0]) + 'px';
 	area.style.top  = (area.ypoints[0]) + 'px';
 	this.setAreaSize(area.aid, 0, 0);
-	for (var i=0; i<area.xpoints.length; i++) {
+	for (var i=0, le = area.xpoints.length; i<le; i++) {
 		this._polygongrow(area, area.xpoints[i], area.ypoints[i]);
 	}
 	this._repaint(area, this.config.CL_NORM_SHAPE);
 };
 
 
+/**
+ *	EVENT HANDLER: Handles mousemove on the image.
+ *	This is the main drawing routine.
+ *	Depending on the current shape, will draw the rect/circle/poly to the new position. 
+ *	@param	e	The event object.
+ */
 imgmap.prototype.img_mousemove = function(e) {
 	//function level var declarations
 	var x;
@@ -1606,8 +1928,8 @@ imgmap.prototype.img_mousemove = function(e) {
 			this.areas[this.currentid].style.top = (this.memory[this.currentid].downy + diff*-1 + 1) + 'px';
 		}
 	}
-	else if (this.is_drawing == this.DM_POLYGON_DRAW) {
-		//polygon mode
+	else if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_BEZIER_DRAW) {
+		//polygon or bezier mode
 		this.fireEvent('onDrawArea', this.currentid);
 		this._polygongrow(this.areas[this.currentid], x, y);
 	}
@@ -1621,7 +1943,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		this.areas[this.currentid].style.left = x + 1 + 'px';
 		this.areas[this.currentid].style.top  = y + 1 + 'px';
 	}
-	else if (this.is_drawing == this.DM_POLYGON_MOVE) {
+	else if (this.is_drawing == this.DM_POLYGON_MOVE || this.is_drawing == this.DM_BEZIER_MOVE) {
 		this.fireEvent('onMoveArea', this.currentid);
 		x = x - this.memory[this.currentid].rdownx;
 		y = y - this.memory[this.currentid].rdowny;
@@ -1630,7 +1952,7 @@ imgmap.prototype.img_mousemove = function(e) {
 		xdiff = x - left;
 		ydiff = y - top;
 		if (this.areas[this.currentid].xpoints) {
-			for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
+			for (var i=0, le = this.areas[this.currentid].xpoints.length; i<le; i++) {
 				this.areas[this.currentid].xpoints[i] = this.memory[this.currentid].xpoints[i] + xdiff;
 				this.areas[this.currentid].ypoints[i] = this.memory[this.currentid].ypoints[i] + ydiff;
 			}
@@ -1777,6 +2099,11 @@ imgmap.prototype.img_mousemove = function(e) {
 };
 
 
+/**
+ *	EVENT HANDLER: Handles mouseup on the image.
+ *	Handles dragging and resizing.
+ *	@param	e	The event object.
+ */
 imgmap.prototype.img_mouseup = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
 	//console.log('img_mouseup');
@@ -1790,7 +2117,9 @@ imgmap.prototype.img_mouseup = function(e) {
 	if (this.is_drawing != this.DM_RECTANGLE_DRAW &&
 		this.is_drawing != this.DM_SQUARE_DRAW &&
 		this.is_drawing != this.DM_POLYGON_DRAW &&
-		this.is_drawing != this.DM_POLYGON_LASTDRAW) {
+		this.is_drawing != this.DM_POLYGON_LASTDRAW &&
+		this.is_drawing != this.DM_BEZIER_DRAW &&
+		this.is_drawing != this.DM_BEZIER_LASTDRAW) {
 		//end dragging
 		this.draggedId = null;
 		//finish state
@@ -1807,6 +2136,11 @@ imgmap.prototype.img_mouseup = function(e) {
 };
 
 
+/**
+ *	EVENT HANDLER: Handles mousedown on the image.
+ *	Handles beggining or end of draw, or polygon/bezier point set.
+ *	@param	e	The event object.
+ */
 imgmap.prototype.img_mousedown = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
 	if (!this.areas[this.currentid] && this.config.mode != "editor2") {return;}
@@ -1827,10 +2161,13 @@ imgmap.prototype.img_mousedown = function(e) {
 		if (this.is_drawing == this.DM_POLYGON_DRAW) {
 			this.is_drawing = this.DM_POLYGON_LASTDRAW;
 		}
+		else if (this.is_drawing == this.DM_BEZIER_DRAW) {
+			this.is_drawing = this.DM_BEZIER_LASTDRAW;
+		}
 	}
 	//console.log(this.is_drawing);
 	//this.statusMessage(x + ' - ' + y + ': ' + this.props[this.currentid].getElementsByTagName('select')[0].value);
-	if (this.is_drawing == this.DM_POLYGON_DRAW) {
+	if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_BEZIER_DRAW) {
 		//its not finish state yet
 		this.areas[this.currentid].xpoints[this.areas[this.currentid].xpoints.length] = x - 5;
 		this.areas[this.currentid].ypoints[this.areas[this.currentid].ypoints.length] = y - 5;
@@ -1838,9 +2175,9 @@ imgmap.prototype.img_mousedown = function(e) {
 		this.memory[this.currentid].downy  = y;
 		return;
 	}
-	else if (this.is_drawing && this.is_drawing != this.DM_POLYGON_DRAW) {
+	else if (this.is_drawing && this.is_drawing != this.DM_POLYGON_DRAW && this.is_drawing != this.DM_BEZIER_DRAW) {
 		//finish any other state
-		if (this.is_drawing == this.DM_POLYGON_LASTDRAW) {
+		if (this.is_drawing == this.DM_POLYGON_LASTDRAW || this.is_drawing == this.DM_BEZIER_LASTDRAW) {
 			//add last controlpoint and update coords
 			this.areas[this.currentid].xpoints[this.areas[this.currentid].xpoints.length] = x - 5;
 			this.areas[this.currentid].ypoints[this.areas[this.currentid].ypoints.length] = y - 5;
@@ -1878,11 +2215,19 @@ imgmap.prototype.img_mousedown = function(e) {
 		
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		if (this.config.bounding_box) {
-			this.areas[this.currentid].style.borderWidth = '1px';
-			this.areas[this.currentid].style.borderStyle = 'dotted';
-			this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-		}
+		this.areas[this.currentid].style.width  = 0;
+		this.areas[this.currentid].style.height = 0;
+		this.areas[this.currentid].xpoints = [];
+		this.areas[this.currentid].ypoints = [];
+		this.areas[this.currentid].xpoints[0] = x;
+		this.areas[this.currentid].ypoints[0] = y;
+	}
+	else if (this.areas[this.currentid].shape == 'bezier1') {
+		this.is_drawing = this.DM_BEZIER_DRAW;
+		this.statusMessage(this.strings.BEZIER_DRAW);
+		
+		this.areas[this.currentid].style.left = x + 'px';
+		this.areas[this.currentid].style.top  = y + 'px';
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 		this.areas[this.currentid].xpoints = [];
@@ -1896,9 +2241,6 @@ imgmap.prototype.img_mousedown = function(e) {
 		
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		this.areas[this.currentid].style.borderWidth = '1px';
-		this.areas[this.currentid].style.borderStyle = 'dotted';
-		this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 	}
@@ -1908,15 +2250,11 @@ imgmap.prototype.img_mousedown = function(e) {
 				
 		this.areas[this.currentid].style.left = x + 'px';
 		this.areas[this.currentid].style.top  = y + 'px';
-		if (this.config.bounding_box) {
-			this.areas[this.currentid].style.borderWidth = '1px';
-			this.areas[this.currentid].style.borderStyle = 'dotted';
-			this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-		}
 		this.areas[this.currentid].style.width  = 0;
 		this.areas[this.currentid].style.height = 0;
 	}
 
+	this._setBorder(this.currentid, 'DRAW');
 	this.memory[this.currentid].downx  = x;
 	this.memory[this.currentid].downy  = y;
 };
@@ -1924,25 +2262,17 @@ imgmap.prototype.img_mousedown = function(e) {
 
 /**
  *	Highlights a given area.
+ *	Sets opacity and repaints. 
  *	@date	2007.12.28. 18:23:00
+ *	@param	id	The id of the area to blur.
+ *	@param	flag	Modifier, possible values: grad - for gradual fade in
  */
 imgmap.prototype.highlightArea = function(id, flag) {
 	if (this.is_drawing) {return;}//exit if in drawing state
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - highlight it
 		this.fireEvent('onFocusArea', this.areas[id]);
-		if (this.areas[id].shape == 'rect') {
-			this.areas[id].style.borderWidth = '1px';
-			this.areas[id].style.borderStyle = 'solid';
-			this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_SHAPE;
-		}
-		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
-			if (this.config.bounding_box) {
-				this.areas[id].style.borderWidth = '1px';
-				this.areas[id].style.borderStyle = 'solid';
-				this.areas[id].style.borderColor = this.config.CL_HIGHLIGHT_BOX;
-			}
-		}
+		this._setBorder(id, 'HIGHLIGHT');
 		var opacity = this.config.highlight_opacity;
 		if (flag == 'grad') {
 			//apply gradient opacity
@@ -1956,25 +2286,17 @@ imgmap.prototype.highlightArea = function(id, flag) {
 
 /**
  *	Blurs a given area.
+ *	Sets opacity and repaints. 
  *	@date	2007.12.28. 18:23:26
+ *	@param	id	The id of the area to blur.
+ *	@param	flag	Modifier, possible values: grad - for gradual fade out
  */
 imgmap.prototype.blurArea = function(id, flag) {
 	if (this.is_drawing) {return;}//exit if in drawing state
 	if (this.areas[id] && this.areas[id].shape != 'undefined') {
 		//area exists - fade it back
 		this.fireEvent('onBlurArea', this.areas[id]);
-		if (this.areas[id].shape == 'rect') {
-			this.areas[id].style.borderWidth = '1px';
-			this.areas[id].style.borderStyle = 'solid';
-			this.areas[id].style.borderColor = this.config.CL_NORM_SHAPE;
-		}
-		else if (this.areas[id].shape == 'circle' || this.areas[id].shape == 'poly') {
-			if (this.config.bounding_box) {
-				this.areas[id].style.borderWidth = '1px';
-				this.areas[id].style.borderStyle = 'solid';
-				this.areas[id].style.borderColor = this.config.CL_NORM_BOX;
-			}
-		}
+		this._setBorder(id, 'NORM');
 		var opacity = this.config.norm_opacity;
 		if (flag == 'grad') {
 			//apply gradient opacity
@@ -1987,13 +2309,14 @@ imgmap.prototype.blurArea = function(id, flag) {
 
 
 /**
- *	Handles event of mousemove on imgmap areas.
+ *	EVENT HANDLER: Handles event of mousemove on imgmap areas.
  *	- changes cursor depending where we are inside the area (buggy in opera)
  *	- handles area resize
  *	- handles area move   
  *	@url	http://evolt.org/article/Mission_Impossible_mouse_position/17/23335/index.html
  *	@url	http://my.opera.com/community/forums/topic.dml?id=239498&t=1217158015&page=1 
  *	@author	adam 
+ *	@param	e	The event object.
  */
 imgmap.prototype.area_mousemove = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -2016,29 +2339,22 @@ imgmap.prototype.area_mousemove = function(e) {
 		var xdiff = (this.isMSIE) ? (window.event.offsetX) : (e.layerX);
 		var ydiff = (this.isMSIE) ? (window.event.offsetY) : (e.layerY);
 		//this.log(obj.aid + ' : ' + xdiff + ',' + ydiff);
-		if (xdiff < 6 && ydiff > 6) {
+		var resizable = (obj.shape == 'rect' || obj.shape == 'circle');
+		if (resizable && xdiff < 6 && ydiff > 6) {
 			//move left
-			if (obj.shape != 'poly') {
-				obj.style.cursor = 'w-resize';
-			}
+			obj.style.cursor = 'w-resize';
 		}
-		else if (xdiff > parseInt(obj.style.width, 10) - 6  && ydiff > 6) {
+		else if (resizable && xdiff > parseInt(obj.style.width, 10) - 6  && ydiff > 6) {
 			//move right
-			if (obj.shape != 'poly') {
-				obj.style.cursor = 'e-resize';
-			}
+			obj.style.cursor = 'e-resize';
 		}
-		else if (xdiff > 6 && ydiff < 6) {
+		else if (resizable && xdiff > 6 && ydiff < 6) {
 			//move top
-			if (obj.shape != 'poly') {
-				obj.style.cursor = 'n-resize';
-			}
+			obj.style.cursor = 'n-resize';
 		}
-		else if (ydiff > parseInt(obj.style.height, 10) - 6  && xdiff > 6) {
+		else if (resizable && ydiff > parseInt(obj.style.height, 10) - 6  && xdiff > 6) {
 			//move bottom
-			if (obj.shape != 'poly') {
-				obj.style.cursor = 's-resize';
-			}
+			obj.style.cursor = 's-resize';
 		}
 		else {
 			//move all
@@ -2055,14 +2371,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_LEFT;
 				this.statusMessage(this.strings.SQUARE_RESIZE_LEFT);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_LEFT;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_LEFT);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
 		else if (xdiff > parseInt(this.areas[this.currentid].style.width, 10) - 6  && ydiff > 6) {
@@ -2070,14 +2382,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_RIGHT;
 				this.statusMessage(this.strings.SQUARE_RESIZE_RIGHT);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_RIGHT;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_RIGHT);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
 		else if (xdiff > 6 && ydiff < 6) {
@@ -2085,14 +2393,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_TOP;
 				this.statusMessage(this.strings.SQUARE_RESIZE_TOP);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_TOP;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_TOP);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
 		else if (ydiff > parseInt(this.areas[this.currentid].style.height, 10) - 6  && xdiff > 6) {
@@ -2100,14 +2404,10 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_RESIZE_BOTTOM;
 				this.statusMessage(this.strings.SQUARE_RESIZE_BOTTOM);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_RESIZE_BOTTOM;
 				this.statusMessage(this.strings.RECTANGLE_RESIZE_BOTTOM);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 			}
 		}
 		else/*if (xdiff < 10 && ydiff < 10 ) */{
@@ -2115,31 +2415,32 @@ imgmap.prototype.area_mousemove = function(e) {
 			if (this.areas[this.currentid].shape == 'circle') {
 				this.is_drawing = this.DM_SQUARE_MOVE;
 				this.statusMessage(this.strings.SQUARE_MOVE);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
-				}
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
 			else if (this.areas[this.currentid].shape == 'rect') {
 				this.is_drawing = this.DM_RECTANGLE_MOVE;
 				this.statusMessage(this.strings.RECTANGLE_MOVE);
-				this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_SHAPE;
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
-			else if (this.areas[this.currentid].shape == 'poly') {
+			else if (this.areas[this.currentid].shape == 'poly' || this.areas[this.currentid].shape == 'bezier1') {
 				if (this.areas[this.currentid].xpoints) {
-					for (var i=0; i<this.areas[this.currentid].xpoints.length; i++) {
+					for (var i=0, le = this.areas[this.currentid].xpoints.length; i<le; i++) {
 						this.memory[this.currentid].xpoints[i] = this.areas[this.currentid].xpoints[i];
 						this.memory[this.currentid].ypoints[i] = this.areas[this.currentid].ypoints[i];
 					}
 				}
-				this.is_drawing = this.DM_POLYGON_MOVE;
-				this.statusMessage(this.strings.POLYGON_MOVE);
-				if (this.config.bounding_box) {
-					this.areas[this.currentid].style.borderColor = this.config.CL_DRAW_BOX;
+				
+				if (this.areas[this.currentid].shape == 'poly') {
+					this.is_drawing = this.DM_POLYGON_MOVE;
+					this.statusMessage(this.strings.POLYGON_MOVE);
 				}
+				else if (this.areas[this.currentid].shape == 'bezier1') {
+					this.is_drawing = this.DM_BEZIER_MOVE;
+					this.statusMessage(this.strings.BEZIER_MOVE);
+				}
+				
 				this.memory[this.currentid].rdownx = xdiff;
 				this.memory[this.currentid].rdowny = ydiff;
 			}
@@ -2150,16 +2451,7 @@ imgmap.prototype.area_mousemove = function(e) {
 		this.memory[this.currentid].height = parseInt(this.areas[this.currentid].style.height, 10);
 		this.memory[this.currentid].top    = parseInt(this.areas[this.currentid].style.top, 10);
 		this.memory[this.currentid].left   = parseInt(this.areas[this.currentid].style.left, 10);
-		if (this.areas[this.currentid].shape == 'rect') {
-			this.areas[this.currentid].style.borderWidth = '1px';
-			this.areas[this.currentid].style.borderStyle = 'dotted';
-		}
-		else if (this.areas[this.currentid].shape == 'circle' || this.areas[this.currentid].shape == 'poly') {
-			if (this.config.bounding_box) {
-				this.areas[this.currentid].style.borderWidth = '1px';
-				this.areas[this.currentid].style.borderStyle = 'dotted';
-			}
-		}
+		this._setBorder(this.currentid, 'DRAW');
 		this._setopacity(this.areas[this.currentid], this.config.CL_DRAW_BG, this.config.draw_opacity);
 	}
 	else {
@@ -2170,9 +2462,10 @@ imgmap.prototype.area_mousemove = function(e) {
 
 
 /**
- *	Handles event of mouseup on imgmap areas.
+ *	EVENT HANDLER: Handles event of mouseup on imgmap areas.
  *	Basically clears draggedId.
- *	@author	adam  
+ *	@author	adam
+ *	@param	e	The event object
  */
 imgmap.prototype.area_mouseup = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -2208,9 +2501,10 @@ imgmap.prototype.area_mouseup = function(e) {
 
 
 /**
- *	Handles event of mouseover on imgmap areas.
- *	Calls highlight on the given area.
- *	@author	adam  
+ *	EVENT HANDLER: Handles event of mouseover on imgmap areas.
+ *	Calls gradual highlight on the given area.
+ *	@author	adam
+ *	@param	e	The event object
  */
 imgmap.prototype.area_mouseover = function(e) {
 	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
@@ -2245,9 +2539,10 @@ imgmap.prototype.area_mouseover = function(e) {
 
 
 /**
- *	Handles event of mouseout on imgmap areas.
- *	Calls blur on the given area.
- *	@author	adam  
+ *	EVENT HANDLER: Handles event of mouseout on imgmap areas.
+ *	Calls gradient blur on the given area.
+ *	@author	adam
+ *	@param	e	The event object 
  */
 imgmap.prototype.area_mouseout = function(e) {
 	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
@@ -2270,9 +2565,10 @@ imgmap.prototype.area_mouseout = function(e) {
 
 
 /**
- *	Handles event of mousedown on imgmap areas.
+ *	EVENT HANDLER: Handles event of mousedown on imgmap areas.
  *	Sets the variables draggedid, selectedid and currentid to the given area. 
- *	@author	adam 
+ *	@author	adam
+ *	@param	e	The event object 
  */
 imgmap.prototype.area_mousedown = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -2317,44 +2613,12 @@ imgmap.prototype.area_mousedown = function(e) {
 
 
 /**
- *	Gets the position of the cursor in the input box.
- *	@author	Diego Perlini
- *	@url	http://javascript.nwbox.com/cursor_position/
- */
-imgmap.prototype.getSelectionStart = function(obj) {
-	if (obj.createTextRange) {
-		var r = document.selection.createRange().duplicate();
-		r.moveEnd('character', obj.value.length);
-		if (r.text === '') {return obj.value.length;}
-		return obj.value.lastIndexOf(r.text);
-	}
-	else {
-		return obj.selectionStart;
-	}
-};
-
-
-imgmap.prototype.setSelectionRange = function(obj, start, end) {
-	if (typeof end == "undefined") {end = start;}
-	if (obj.selectionStart) {
-		obj.setSelectionRange(start, end);
-		obj.focus(); // to make behaviour consistent with IE
-	}
-	else if (document.selection) {
-		var range = obj.createTextRange();
-		range.collapse(true);
-		range.moveStart("character", start);
-		range.moveEnd("character", end - start);
-		range.select();
-	}
-};
-
-
-/**
+ *	EVENT HANDLER: Handles event 'keydown' on document.
  *	Handles SHIFT hold while drawing.
  *	Note: Safari doesn't generate keyboard events for modifiers:
  *	@url	http://bugs.webkit.org/show_bug.cgi?id=11696 
  *	@author	adam
+ *	@param	e	The event object 
  */
 imgmap.prototype.doc_keydown = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -2375,8 +2639,10 @@ imgmap.prototype.doc_keydown = function(e) {
 
 
 /**
+ *	EVENT HANDLER: Handles event 'keyup' on document.
  *	Handles SHIFT release while drawing.
  *	@author	adam
+ *	@param	e	The event object
  */
 imgmap.prototype.doc_keyup = function(e) {
 	var key = (this.isMSIE) ? event.keyCode : e.keyCode;
@@ -2393,8 +2659,9 @@ imgmap.prototype.doc_keyup = function(e) {
 
 
 /**
- *	Handles event mousedown on document.
+ *	EVENT HANDLER: Handles event 'mousedown' on document.
  *	@author	adam
+ *	@param	e	The event object 
  */
 imgmap.prototype.doc_mousedown = function(e) {
 	if (this.viewmode === 1) {return;}//exit if preview mode
@@ -2406,6 +2673,9 @@ imgmap.prototype.doc_mousedown = function(e) {
 
 /**
  *	Get the real position of the element.
+ *	Deal with browser differences when trying to get the position of an area.
+ *	@param	element	The element you want the position of.
+ *	@return	An object with x and y members.
  */
 imgmap.prototype._getPos = function(element) {
 	var xpos = 0;
@@ -2416,8 +2686,9 @@ imgmap.prototype._getPos = function(element) {
 		if (elementOffsetParent) {
 			// While there is an offset parent
 			while ((elementOffsetParent = element.offsetParent)) {
-				xpos += element.offsetLeft;
-				ypos += element.offsetTop;
+				//offset might give negative in opera when the image is scrolled
+				if (element.offsetLeft > 0) {xpos += element.offsetLeft;}
+				if (element.offsetTop > 0) {ypos += element.offsetTop;}
 				element = elementOffsetParent;
 			}
 		}
@@ -2431,9 +2702,10 @@ imgmap.prototype._getPos = function(element) {
 
 
 /**
- *	Determines if given area is the last (visible and editable) area.
+ *	Gets the last (visible and editable) area.
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@date	2006-06-15 16:34:51
+ *	@returns	The last area object or null. 
  */
 imgmap.prototype._getLastArea = function() {
 	for (var i = this.areas.length-1; i>=0; i--) {
@@ -2446,57 +2718,11 @@ imgmap.prototype._getLastArea = function() {
 
 
 /**
- *	Tries to copy imagemap html or text parameter to the clipboard.
- *	@date	2006.10.24. 22:14:12
- */
-imgmap.prototype.toClipBoard = function(text) {
-	this.fireEvent('onClipboard', text);
-	if (typeof text == 'undefined') {text = this.getMapHTML();}
-	//alert(typeof window.clipboardData);
-	try {
-		if (window.clipboardData) {
-			// IE send-to-clipboard method.
-			window.clipboardData.setData('Text', text);
-		}
-		else if (window.netscape) {
-			// You have to sign the code to enable this or allow the action in
-			// about:config by changing user_pref("signed.applets.codebase_principal_support", true);
-			netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
-			
-			// Store support string in an object.
-			var str = Components.classes["@mozilla.org/supports-string;1"].createInstance(Components.interfaces.nsISupportsString);
-			if (!str) {return false;}
-			str.data = text;
-			
-			// Make transferable.
-			var trans = Components.classes["@mozilla.org/widget/transferable;1"].createInstance(Components.interfaces.nsITransferable);
-			if (!trans) {return false;}
-			
-			// Specify what datatypes we want to obtain, which is text in this case.
-			trans.addDataFlavor("text/unicode");
-			trans.setTransferData("text/unicode", str, text.length*2);
-			
-			var clipid = Components.interfaces.nsIClipboard;
-			var clip   = Components.classes["@mozilla.org/widget/clipboard;1"].getService(clipid);
-			if (!clip) {return false;}
-	
-			clip.setData(trans, null, clipid.kGlobalClipboard);
-		}
-		else if (typeof air == 'object') {
-			air.Clipboard.generalClipboard.clear();
-			air.Clipboard.generalClipboard.setData("air:text", text, false);
-		}
-	}
-	catch (err) {
-		this.log("Unable to set clipboard data", 1);
-	}
-};
-
-
-/**
  *	Parses cssText to single style declarations.
  *	@author	adam
  *	@date	25-09-2007 18:19:51
+ *	@param obj	The DOM object to apply styles on.
+ *	@param cssText	The css declarations to apply.
  */
 imgmap.prototype.assignCSS = function(obj, cssText) {
 	var parts = cssText.split(';');
@@ -2518,6 +2744,8 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
  *	To fire callback hooks on custom events, passing them the object of the event.
  *	@author	adam
  *	@date	13-10-2007 15:24:49
+ *	@param evt	The type of event
+ *	@param obj	The object of the event. (can be an id, a string, an object, whatever is most relevant)  
  */   
 imgmap.prototype.fireEvent = function(evt, obj) {
 	//this.log("Firing event: " + evt);
@@ -2529,7 +2757,7 @@ imgmap.prototype.fireEvent = function(evt, obj) {
 
 /**
  *	To set area dimensions.
- *	This is needed to achieve the same in all browsers. 
+ *	This is needed to achieve the same result in all browsers. 
  *	@author	adam
  *	@date	10-12-2007 22:29:41
  *	@param	id	The id of the area (canvas) to resize.
@@ -2537,7 +2765,7 @@ imgmap.prototype.fireEvent = function(evt, obj) {
  *	@param	h	The desired height in pixels.
  */
 imgmap.prototype.setAreaSize = function(id, w, h) {
-	if (!id) {id = this.currentid;}
+	if (id === null) {id = this.currentid;}
 	if (w !== null) {
 		this.areas[id].width  = w;
 		this.areas[id].style.width  = (w) + 'px';
@@ -2554,7 +2782,7 @@ imgmap.prototype.setAreaSize = function(id, w, h) {
 /**
  *	Tries to detect preferred language of user.
  *	@date	2007.12.28. 15:43:46
- *	@return The two byte language code. 
+ *	@return The two byte language code. (We dont care now for pt-br, etc.)
  */
 imgmap.prototype.detectLanguage = function() {
 	var lang;
@@ -2583,7 +2811,7 @@ imgmap.prototype.detectLanguage = function() {
  *	@author	Bret Taylor
  *	@url	http://ajaxcookbook.org/disable-text-selection/
  *	@date	27-07-2008 1:57:45
- *	@param	element	The dom element on which you want to disable selection.
+ *	@param	element	The DOM element on which you want to disable selection.
  */       
 imgmap.prototype.disableSelection = function(element) {
 	if (typeof element == 'undefined' || !element) {return false;}
@@ -2616,7 +2844,7 @@ Function.prototype.bind = function(object) {
 
 
 /**
- *	Trim function.
+ *	Extends String with trim function.
  *	@url	http://www.somacon.com/p355.php
  *	@addon
  */
@@ -2624,7 +2852,7 @@ String.prototype.trim = function() {
 	return this.replace(/^\s+|\s+$/g,"");
 };
 /**
- *	LTrim function.
+ *	Extends String with ltrim function.
  *	@url	http://www.somacon.com/p355.php
  *	@addon
  */
@@ -2632,7 +2860,7 @@ String.prototype.ltrim = function() {
 	return this.replace(/^\s+/,"");
 };
 /**
- *	RTrim function.
+ *	Extends String with rtrim function.
  *	@url	http://www.somacon.com/p355.php
  *	@addon
  */
@@ -2643,6 +2871,8 @@ String.prototype.rtrim = function() {
 
 /**
  *	Spawn an imgmap object for each imagemap found in the document.
+ *	This is used for highlighter mode only.
+ *	@param config	An imgmap config object  
  */
 function imgmap_spawnObjects(config) {
 	//console.log('spawnobjects');
@@ -2650,8 +2880,8 @@ function imgmap_spawnObjects(config) {
 	var imgs = document.getElementsByTagName('img');
 	var imaps = [];
 	//console.log(maps.length);
-	for (var i=0; i<maps.length; i++) {
-		for (var j=0; j<imgs.length; j++) {
+	for (var i=0, le=maps.length; i<le; i++) {
+		for (var j=0, le2=imgs.length; j<le2; j++) {
 		//console.log(i);
 		//	console.log(maps[i].name);
 		//	console.log(imgs[j].getAttribute('usemap'));

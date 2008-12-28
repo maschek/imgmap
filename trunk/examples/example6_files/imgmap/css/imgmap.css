@@ -104,16 +104,13 @@ LEGEND A {
 	height: 1em;
 }
 
-#button_container {
-	padding: 5px;
-	line-height: 16px;
-}
 #button_container a {
 	outline: 0;
 }
 #button_container img {
 	border: 0;
-	padding: 1px;
+	padding: 0px 1px 0 0;
+	cursor: pointer;
 }
 #button_container .ActiveMode {
 	border: 1px solid #666;

@@ -31,11 +31,11 @@ To use the uploader component ("An image on your computer") you will need to ope
 						width="240"
 						height="24"></iframe>
 				</div>
-				<a href="javascript:myimgmap.loadImage(window.frames['uploader'].document.getElementById('src').getAttribute('rel'))" class="source_accept">accept</a><br/>
+				<a href="javascript:gui_loadImage(window.frames['uploader'].document.getElementById('src').getAttribute('rel'))" class="source_accept">accept</a><br/>
 				
 				<div class="source_desc">An image on the Internet:</div>
 				<div class="source_url"><input type="txt" id="source_url2" value="http://"></div>
-				<a href="javascript:myimgmap.loadImage(document.getElementById('source_url2').value)" class="source_accept">accept</a><br/>
+				<a href="javascript:gui_loadImage(document.getElementById('source_url2').value)" class="source_accept">accept</a><br/>
 				
 				<div class="source_desc">Use a sample image:</div>
 				<div class="source_url">
@@ -46,7 +46,7 @@ To use the uploader component ("An image on your computer") you will need to ope
 						<option value="example_files/sample4.jpg" >sample 4</option>
 					</select>
 				</div>
-				<a href="javascript:myimgmap.loadImage(document.getElementById('source_url3').value)" class="source_accept">accept</a><br/>
+				<a href="javascript:void(0)" onclick="javascript:gui_loadImage(document.getElementById('source_url3').value);" class="source_accept">accept</a><br/>
 			</div>
 		</fieldset>
 		<fieldset>
@@ -60,6 +60,7 @@ To use the uploader component ("An image on your computer") you will need to ope
 				<img src="example1_files/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area" style="margin: 0 2px; cursor: pointer;"/>
 				<img src="example1_files/zoom.gif" id="i_preview" onclick="myimgmap.togglePreview();" alt="Preview image map" title="Preview image map" style="margin: 0 2px; cursor: pointer;"/>
 				<img src="example1_files/html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML" style="margin: 0 2px; cursor: pointer;"/>
+				Zoom:
 				<select onchange="gui_zoom(this)" id="dd_zoom">
 				<option value='0.25'>25%</option>
 				<option value='0.5'>50%</option>
@@ -68,7 +69,7 @@ To use the uploader component ("An image on your computer") you will need to ope
 				<option value='3'>300%</option>
 				</select>
 				Output: 
-				<select id="dd_output" onchange="gui_outputChanged(this)">
+				<select id="dd_output" onchange="return gui_outputChanged(this)">
 				<option value='imagemap'>Standard imagemap</option>
 				<option value='css'>CSS imagemap</option>
 				<option value='wiki'>Wiki imagemap</option>
@@ -110,17 +111,13 @@ To use the uploader component ("An image on your computer") you will need to ope
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Code</a>
 			</legend>
 			<div>
-			<img src="example1_files/clipboard.gif" onclick="myimgmap.toClipBoard()" style="float: right; margin: 5px; cursor: pointer;"/>
-			This is the generated image map HTML code.
-			Click into the textarea below and press Ctrl+C to copy the code to your clipboard. Alternatively you can use the
-			clipboard icon on the right. Please note, that you have to attach this code to your image, via the usemap property
-			(<a href="http://www.htmlhelp.com/reference/html40/special/map.html">read more</a>). 
-			
+			<div id="output_help">
+			</div>
 			<textarea id="html_container"></textarea></div>
 		</fieldset>
 	</form>
 
 <script type="text/javascript" src="../imgmap.js"></script>
-<script type="text/javascript" src="example1_files/interface1.js"></script>
+<script type="text/javascript" src="example1_files/default_interface.js"></script>
 </body>
 </html>

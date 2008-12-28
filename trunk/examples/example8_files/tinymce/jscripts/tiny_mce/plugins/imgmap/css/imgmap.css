@@ -142,9 +142,9 @@ A.source_accept:hover {
 	width: 100%;
 }
 
-#button_container {
-	padding: 5px;
-	line-height: 16px;
+#button_container img {
+	margin: 0 1px;
+	cursor: pointer;
 }
 
 #fieldset_html {

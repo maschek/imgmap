@@ -156,7 +156,6 @@ function imgmap(config) {
 	/**	Callback events that you can handle in your GUI. */
 	this.event_types        = [
 		'onModeChanged',
-		'onClipboard',
 		'onHtmlChanged',
 		'onAddArea',
 		'onRemoveArea',
@@ -605,6 +604,8 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 	}
 	//wipe all
 	this.removeAllAreas();
+	//reset scale
+	this.globalscale = 1;
 	this.fireEvent('onHtmlChanged', '');//empty
 	if (!this._getLastArea()) {
 		//init with one new area if there was none editable
@@ -1306,7 +1307,7 @@ imgmap.prototype._setBorder = function(id, style) {
 		//clear border
 		this.areas[id].style.border = '';
 	}
-}
+};
 
 
 /**
@@ -2685,8 +2686,9 @@ imgmap.prototype._getPos = function(element) {
 		if (elementOffsetParent) {
 			// While there is an offset parent
 			while ((elementOffsetParent = element.offsetParent)) {
-				xpos += element.offsetLeft;
-				ypos += element.offsetTop;
+				//offset might give negative in opera when the image is scrolled
+				if (element.offsetLeft > 0) {xpos += element.offsetLeft;}
+				if (element.offsetTop > 0) {ypos += element.offsetTop;}
 				element = elementOffsetParent;
 			}
 		}
@@ -2712,58 +2714,6 @@ imgmap.prototype._getLastArea = function() {
 		}
 	}
 	return null;
-};
-
-
-/**
- *	Tries to copy imagemap html or text parameter to the clipboard.
- *	Not sure if this should really be part of the mapping code.
- *	If in special environment (eg AIR), use specific functions. 
- *	@date	2006.10.24. 22:14:12
- *	@param	text	Text to copy, otherwise getMapHTML will be used.
- *	@see	#getMapHTML
- */
-imgmap.prototype.toClipBoard = function(text) {
-	this.fireEvent('onClipboard', text);
-	if (typeof text == 'undefined') {text = this.getMapHTML();}
-	//alert(typeof window.clipboardData);
-	try {
-		if (window.clipboardData) {
-			// IE send-to-clipboard method.
-			window.clipboardData.setData('Text', text);
-		}
-		else if (window.netscape) {
-			// You have to sign the code to enable this or allow the action in
-			// about:config by changing user_pref("signed.applets.codebase_principal_support", true);
-			netscape.security.PrivilegeManager.enablePrivilege('UniversalXPConnect');
-			
-			// Store support string in an object.
-			var str = Components.classes["@mozilla.org/supports-string;1"].createInstance(Components.interfaces.nsISupportsString);
-			if (!str) {return false;}
-			str.data = text;
-			
-			// Make transferable.
-			var trans = Components.classes["@mozilla.org/widget/transferable;1"].createInstance(Components.interfaces.nsITransferable);
-			if (!trans) {return false;}
-			
-			// Specify what datatypes we want to obtain, which is text in this case.
-			trans.addDataFlavor("text/unicode");
-			trans.setTransferData("text/unicode", str, text.length*2);
-			
-			var clipid = Components.interfaces.nsIClipboard;
-			var clip   = Components.classes["@mozilla.org/widget/clipboard;1"].getService(clipid);
-			if (!clip) {return false;}
-	
-			clip.setData(trans, null, clipid.kGlobalClipboard);
-		}
-		else if (typeof air == 'object') {
-			air.Clipboard.generalClipboard.clear();
-			air.Clipboard.generalClipboard.setData("air:text", text, false);
-		}
-	}
-	catch (err) {
-		this.log("Unable to set clipboard data", 1);
-	}
 };
 
 

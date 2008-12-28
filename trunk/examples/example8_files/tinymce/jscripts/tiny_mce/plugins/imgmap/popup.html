@@ -17,13 +17,28 @@
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image map areas</a>
 			</legend>
 			<div style="border-bottom: solid 1px #efefef">
-			<div id="button_container" style="float: left;">
-			<!-- buttons come here -->
-				<img src="images/add.gif" onclick="myimgmap.addNewArea()" alt="Add new area" title="Add new area" style="margin: 0 2px; cursor: pointer;"/>
-				<img src="images/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area" style="margin: 0 2px; cursor: pointer;"/>
-				<img src="images/html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML" style="margin: 0 2px; cursor: pointer;"/>
+			<table cellspacing="0" width="100%">
+			<tr>
+			<td width="110">
+			<div id="button_container">
+				<!-- buttons come here -->
+				<img src="images/add.gif" onclick="myimgmap.addNewArea()" alt="Add new area" title="Add new area"/>
+				<img src="images/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area"/>
+				<img src="images/html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML"/>
 			</div>
-			<div style="float: right; margin: 0 5px">
+			</td>
+			<td>
+				<label for="dd_zoom">Zoom</label>:
+				<select onchange="gui_zoom(this)" id="dd_zoom">
+				<option value='0.25'>25%</option>
+				<option value='0.5'>50%</option>
+				<option value='1' selected="1">100%</option>
+				<option value='2'>200%</option>
+				<option value='3'>300%</option>
+				</select>
+			</td>
+			<td align="right" width="50%">
+				<input type="checkbox" id="bb" onClick="toggleBoundingBox(this)"/><label for="bb">bounding box</label>&nbsp;
 				<select onchange="changelabeling(this)">
 				<option value=''>No labeling</option>
 				<option value='%n' selected='1'>Label with numbers</option>
@@ -31,11 +46,9 @@
 				<option value='%h'>Label with href</option>
 				<option value='%c'>Label with coords</option>
 				</select>
-			</div>
-			<div style="float: right; margin: 0 5px">
-				<input type="checkbox" onClick="toggleBoundingBox(this)"/>
-				bounding box
-			</div>
+			</td>
+			</tr>
+			</table>			
 			</div>
 			<div id="form_container" style="clear: both;">
 			<!-- form elements come here -->

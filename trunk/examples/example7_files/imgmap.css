@@ -10,7 +10,9 @@ INPUT {
 	vertical-align: middle;
 	font-size: 95%;
 }
-
+TABLE, TD {
+	font-size: 100%;
+}
 FIELDSET {
 	margin: 0;
 	padding: 5px 5px;
@@ -113,13 +115,13 @@ A.source_accept:hover {
 	border: none!important;
 }
 .img_coords {
-	width: 72px;
+	width: 90px;
 }
 .img_href {
-	width: 82px;
+	width: 122px;
 }
 .img_alt {
-	width: 82px;
+	width: 92px;
 }
 .img_target {
 	width: 82px;
@@ -146,9 +148,10 @@ A.source_accept:hover {
 	width: 100%;
 }
 
-#button_container {
-	padding: 5px;
-	line-height: 16px;
+#button_container img {
+	border: 0;
+	padding: 0px 1px 0 0;
+	cursor: pointer;
 }
 
 #fieldset_html {

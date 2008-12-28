@@ -381,3 +381,19 @@ function gui_statusMessage(str) {
 	window.defaultStatus = str;//for IE
 }
 
+function gui_zoom() {
+	var scale = document.getElementById('dd_zoom').value;
+	var pic = document.getElementById('pic_container').getElementsByTagName('img')[0];
+	if (typeof pic == 'undefined') {return false;}
+	if (typeof pic.oldwidth == 'undefined' || !pic.oldwidth) {
+		pic.oldwidth = pic.width;
+	}
+	if (typeof pic.oldheight == 'undefined' || !pic.oldheight) {
+		pic.oldheight = pic.height;
+	}
+	pic.width  = pic.oldwidth * scale;
+	pic.height = pic.oldheight * scale;
+	myimgmap.scaleAllAreas(scale);
+}
+
+

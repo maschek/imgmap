@@ -97,7 +97,7 @@ function removeAction() {
 
 
 
-/** FUNCTION SECTION (code taken from interface1) *****************************/
+/** FUNCTION SECTION (code taken from default_interface) *****************************/
 
 
 /**
@@ -526,4 +526,19 @@ function gui_selectArea(obj) {
 	gui_row_select(obj.aid, true, false);
 }
 
+
+function gui_zoom() {
+	var scale = document.getElementById('dd_zoom').value;
+	var pic = document.getElementById('pic_container').getElementsByTagName('img')[0];
+	if (typeof pic == 'undefined') {return false;}
+	if (typeof pic.oldwidth == 'undefined' || !pic.oldwidth) {
+		pic.oldwidth = pic.width;
+	}
+	if (typeof pic.oldheight == 'undefined' || !pic.oldheight) {
+		pic.oldheight = pic.height;
+	}
+	pic.width  = pic.oldwidth * scale;
+	pic.height = pic.oldheight * scale;
+	myimgmap.scaleAllAreas(scale);
+}
 

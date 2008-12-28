@@ -13,6 +13,7 @@ FCKLang.imgmapLabelAlt = 'Label with alt text' ;
 FCKLang.imgmapLabelHref = 'Label with href' ;
 FCKLang.imgmapLabelTitle = 'Label with title' ;
 FCKLang.imgmapLabelCoords = 'Label with coords' ;
+FCKLang.imgmapLabelZoom = 'Zoom' ;
 
 FCKLang.imgmapMap = 'Map' ;
 FCKLang.imgmapMapName = 'Map name' ;

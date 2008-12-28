@@ -30,6 +30,18 @@ function loadUrl(url) {
 	}
 }
 
+function rewriteURLs() {
+	var links = document.getElementsByTagName('a');
+	for (var i = 0; i < links.length; i++) {
+		if (links[i].href.match(/^http:/)) {
+			links[i].onclick = function () {
+				air.navigateToURL(new air.URLRequest(this.href));
+				return false;
+			};
+		}
+	}
+}
+
 /** DRAG N DROP HANDLING PART *************************************************/
 
 document.getElementById('pic_container').addEventListener("dragenter", preventDefault);
@@ -131,15 +143,15 @@ function createHelpMenu() {
 }
 
 function showRecentDocumentMenu() {
-	//air.Introspector.Console.log(fileMenu.submenu.items[2]);
 	var recentMenu = fileMenu.submenu.items[2].submenu;
+	var i;
 	//first remove all old menuitems
-	for (var i = 0; i < recentMenu.numItems; i++) {
+	//have to loop backwards otherwise not good
+	for (i = recentMenu.numItems - 1; i >= 0; i--) {
 		recentMenu.removeItemAt(i);
 	}
 	//add new items to the submenu
-	for (var i = 0; i < recentDocuments.length; i++) {
-		air.trace(recentDocuments[i]);
+	for (i = 0; i < recentDocuments.length; i++) {
 		var menuItem = recentMenu.addItem(new air.NativeMenuItem(recentDocuments[i]));
 		menuItem.data = recentDocuments[i];
 		menuItem.addEventListener(air.Event.SELECT, selectRecentDocument);
@@ -172,17 +184,17 @@ function selectCommand(event) {
 			pre = temp;
 		}
 		var url = window.prompt("URL to open", pre);
-		if (url) loadUrl(url);
+		if (url) {loadUrl(url);}
 	}
 	if (event.target.label == "Exit") {
-		air.NativeApplication.nativeApplication.exit()
+		air.NativeApplication.nativeApplication.exit();
 	}
 }
 
 function selectCommandMenu(event) {
-	if (event.currentTarget.parent != null) {
+	if (event.currentTarget.parent !== null) {
 		var menuItem = findItemForMenu(event.currentTarget);
-		if(menuItem != null){
+		if(menuItem !== null){
 			air.trace("Select event for \"" + event.target.label +
 			"\" command handled by menu: " + menuItem.label);
 		}
@@ -200,7 +212,7 @@ function selectCommandMenu(event) {
 
 function findItemForMenu(menu){
 	for (var item in menu.parent.items) {
-		if (item != null) {
+		if (item !== null) {
 			if (item.submenu == menu) {
 				return item;
 			}
@@ -213,62 +225,54 @@ function findItemForMenu(menu){
 /** DATABASE HANDLING PART ****************************************************/
 
 var conn = new air.SQLConnection();
-conn.addEventListener(air.SQLEvent.OPEN, sql_connEvent);
 conn.addEventListener(air.SQLErrorEvent.ERROR, sql_connError);
 var dbFile = air.File.applicationStorageDirectory.resolvePath("imgmap.db");
-conn.openAsync(dbFile);
-
-function sql_connEvent(event) {
-	air.trace("Database connection successful");
-}
+conn.open(dbFile, air.SQLMode.UPDATE);//sync mode
 
 function sql_connError(event) {
 	air.trace("Error message:", event.error.message);
 	air.trace("Details:", event.error.details);
 }
 
+function query(sql) {
+	try {
+		var stmt = new air.SQLStatement();
+		stmt.sqlConnection = conn;//global
+		stmt.text = sql;
+		stmt.execute();
+		var result = stmt.getResult();
+		return result;
+	}
+	catch (err) {
+		if (err.details.match(/no such table: .mru_files./)) {
+			createTable('mru_files');
+			//recurse
+			return query(sql);
+		}
+		else {
+			air.trace("Error message:", err.message);
+			air.trace("Details:", err.details);
+		}
+		return false;
+	}
+}
 
 function loadRecentDocuments() {
-	var stmt = new air.SQLStatement();
-	stmt.sqlConnection = conn;//global
-	stmt.text = "SELECT DISTINCT url FROM mru_files ORDER BY id DESC LIMIT 10";
-	stmt.addEventListener(air.SQLErrorEvent.ERROR, sql_queryError);
-	stmt.addEventListener(air.SQLEvent.RESULT, function (event) {
-		var result = stmt.getResult();
-		if (result && result.data) {
-			var numResults = result.data.length;
-			recentDocuments = [];//blank out array
-			for (var i = 0; i < numResults; i++) {
-				var row = result.data[i];
-				recentDocuments.push(row.url);
-			}
-			showRecentDocumentMenu();
+	var result = query("SELECT DISTINCT url FROM mru_files ORDER BY id DESC LIMIT 10");
+	if (result && result.data) {
+		var numResults = result.data.length;
+		recentDocuments = [];//blank out array
+		for (var i = 0; i < numResults; i++) {
+			var row = result.data[i];
+			recentDocuments.push(row.url);
 		}
-	});
-	stmt.execute();
+		showRecentDocumentMenu();
+	}
 }
 
 
 function saveRecentDocument(url) {
-	var stmt = new air.SQLStatement();
-	stmt.sqlConnection = conn;//global
-	stmt.text = "INSERT INTO mru_files (url) VALUES ('" + url + "')";
-	stmt.addEventListener(air.SQLErrorEvent.ERROR, sql_queryError);
-	stmt.addEventListener(air.SQLEvent.RESULT, function (event) {
-		air.trace("MRU saved");
-	});
-	stmt.execute();
-}
-
-function sql_queryError(event) {
-	//air.Introspector.Console.log(event.error);
-	if (event.error.details == 'no such table: mru_files') {
-		createTable('mru_files');
-	}
-	else {
-		air.trace("Error message:", event.error.message);
-		air.trace("Details:", event.error.details);
-	}
+	query("INSERT INTO mru_files (url) VALUES ('" + url + "')");
 }
 
 function createTable(name) {
@@ -280,11 +284,9 @@ function createTable(name) {
 		")";
 	}
 	if (sql) {
-		var stmt = new air.SQLStatement();
-		stmt.sqlConnection = conn;//global
-		stmt.text = sql;
-		stmt.addEventListener(air.SQLErrorEvent.ERROR, sql_queryError);
-		stmt.execute();
+		if (query(sql)) {
+			air.trace('Created table '+name);
+		}
 	}
 }
 

@@ -20,18 +20,25 @@
 	</target>
 
 	<target name="jslint">
-		<echo>Checking main javascript for errors (using jslint)</echo>
+		<echo>Checking imgmap.js for errors (using jslint)</echo>
 		<java jar="custom_rhino.jar" fork="true" failonerror="true">
 			<arg value="http://www.jslint.com/rhino/jslint.js" />
 			<arg file="../imgmap.js" />
 			<redirector output="jslint_imgmap.txt" />
 		</java>
 
-		<echo>Checking interface1 for errors (using jslint)</echo>
+		<echo>Checking default_interface.js for errors (using jslint)</echo>
 		<java jar="custom_rhino.jar" fork="true" failonerror="true">
 			<arg value="http://www.jslint.com/rhino/jslint.js" />
-			<arg file="../examples/example1_files/interface1.js" />
-			<redirector output="jslint_interface1.txt" />
+			<arg file="../examples/example1_files/default_interface.js" />
+			<redirector output="jslint_default_interface.txt" />
+		</java>
+
+		<echo>Checking air.js for errors (using jslint)</echo>
+		<java jar="custom_rhino.jar" fork="true" failonerror="true">
+			<arg value="http://www.jslint.com/rhino/jslint.js" />
+			<arg file="../examples/example7_files/air.js" />
+			<redirector output="jslint_air.txt" />
 		</java>
 	</target>
 
