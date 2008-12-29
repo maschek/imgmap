@@ -38,7 +38,7 @@
  *	@date	26-02-2007 2:24:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@copyright
- *	@version 2.0beta6
+ *	@version 2.1
  *	 
  */
 /**
@@ -49,13 +49,13 @@
 function imgmap(config) {
 
 	/** Version string of imgmap */
-	this.version = "2.0beta6";
+	this.version = "2.1";
 	
 	/** Build date of imgmap */
-	this.buildDate = "2008/10/30 12:24";
+	this.buildDate = "2008/12/29 09:47";
 	
 	/** Sequential build number of imgmap */
-	this.buildNumber = "87";
+	this.buildNumber = "89";
 	
 	/** Config object of the imgmap instance */
 	this.config = {};
@@ -895,7 +895,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	var gy;//greatest y
 	var temp;
 	
-	//console.log(coords + ' - ' + shape + ' - ' + flag);
+	//console.log('normcoords: ' + coords + ' - ' + shape + ' - ' + flag);
 	coords = coords.trim();
 	if (coords === '') {return '';}
 	var oldcoords = coords;
@@ -1102,14 +1102,7 @@ imgmap.prototype.setMapHTML = function(map) {
 		this._recalculate(id, coords);//contains repaint
 		this.relaxArea(id);
 		
-		var obj = {}; obj[id] = {};
-		obj[id].shape  = shape;
-		obj[id].coords = coords;
-		obj[id].href   = href;
-		obj[id].alt    = alt;
-		obj[id].title  = title;
-		obj[id].target = target;
-		this.fireEvent('onAreaChanged', obj);
+		this.fireEvent('onAreaChanged', this.areas[id]);
 		
 	}//end for areas
 	this.fireEvent('onHtmlChanged', this.getMapHTML());
@@ -1714,8 +1707,7 @@ imgmap.prototype._updatecoords = function(id) {
 		this.areas[id].lastInput = value;
 	}
 
-	var obj = {}; obj[id] = {}; obj[id].coords = value;
-	this.fireEvent('onAreaChanged', obj);
+	this.fireEvent('onAreaChanged', this.areas[id]);
 	this.fireEvent('onHtmlChanged', this.getMapHTML());
 };
 
@@ -1775,7 +1767,9 @@ imgmap.prototype._recalculate = function(id, coords) {
 		var msg = (err.message) ? err.message : 'error calculating coordinates';
 		this.log(msg, 1);
 		this.statusMessage(this.strings.ERR_INVALID_COORDS);
-		//#todo handle this if (this.areas[id].lastInput && input) {input.value = this.areas[id].lastInput;}
+		if (this.areas[id].lastInput) {
+			this.fireEvent('onAreaChanged', this.areas[id]);
+		}
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		return;
 	}
