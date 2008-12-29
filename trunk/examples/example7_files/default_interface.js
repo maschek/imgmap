@@ -148,18 +148,19 @@ function getSelectionStart(obj) {
 
 /**
  *	Sets the position of the cursor in the input box.
+ *	@link	http://www.codingforums.com/archive/index.php/t-90176.html
  */
 function setSelectionRange(obj, start, end) {
 	if (typeof end == "undefined") {end = start;}
-	if (obj.selectionStart) {
-		setSelectionRange(obj, start, end);
+	if (obj.setSelectionRange) {
 		obj.focus(); // to make behaviour consistent with IE
+		obj.setSelectionRange(start, end);
 	}
-	else if (document.selection) {
+	else if (obj.createTextRange) {
 		var range = obj.createTextRange();
 		range.collapse(true);
-		range.moveStart("character", start);
-		range.moveEnd("character", end - start);
+		range.moveEnd('character', end);
+		range.moveStart('character', start);
 		range.select();
 	}
 }
@@ -358,15 +359,14 @@ function gui_statusMessage(str) {
 	window.defaultStatus = str;//for IE
 }
 
-function gui_areaChanged(obj) {
-	for (var id in obj) {
-		if (props[id]) {
-			if (obj[id].shape)  {props[id].getElementsByTagName('select')[0].value = obj[id].shape;}
-			if (obj[id].coords) {props[id].getElementsByTagName('input')[2].value  = obj[id].coords;}
-			if (obj[id].href)   {props[id].getElementsByTagName('input')[3].value  = obj[id].href;}
-			if (obj[id].alt)    {props[id].getElementsByTagName('input')[4].value  = obj[id].alt;}
-			if (obj[id].target) {props[id].getElementsByTagName('select')[1].value = obj[id].target;}
-		}
+function gui_areaChanged(area) {
+	var id = area.aid;
+	if (props[id]) {
+		if (area.shape)  {props[id].getElementsByTagName('select')[0].value = area.shape;}
+		if (area.lastInput) {props[id].getElementsByTagName('input')[2].value  = area.lastInput;}
+		if (area.ahref)   {props[id].getElementsByTagName('input')[3].value  = area.ahref;}
+		if (area.aalt)    {props[id].getElementsByTagName('input')[4].value  = area.aalt;}
+		if (area.atarget) {props[id].getElementsByTagName('select')[1].value = area.atarget;}
 	}
 }
 
@@ -641,7 +641,7 @@ desc bottom-left
  
  */
 function output_wiki() {
-	var html, coords, top, left, width, height;
+	var html, coords;
 	html = '<imagemap>';
 	if (typeof myimgmap.pic != 'undefined') {
 		html+= 'Image:' + myimgmap.pic.src + '|' + myimgmap.pic.title + '\n';
