@@ -1,0 +1,26 @@
+#summary How to set up the plugin to work with MediaWiki
+#labels Phase-Deploy
+
+this page is not yet complete
+
+= Introduction =
+
+MediaWiki by default comes with a wiki text editor, but can be extended to use FCKEditor or TinyMCE. To be able to use imagemaps, you will also need the [http://www.mediawiki.org/wiki/Extension:ImageMap wiki imagemap plugin].
+
+
+= Using FCKEditor =
+
+  # To set up FCK, follow the instructions carefully in the [http://mediawiki.fckeditor.net/index.php/FCKeditor_integration_guide FCKeditor integration guide]
+  # Once you have set up FCK, you will have to patch it, otherwise it will not accept <imagemap> tags. Patch and details can be found [http://dev.fckeditor.net/ticket/2432 here]. This is not a stable and approved patch, so use it at your own will.
+  # To allow imagemap tags, edit your LocalSettings.php and add:
+{{{
+$RTEprotectedTags[ 'imagemap' ] = array(
+    'protect' => true,
+
+);
+}}}
+  # Once done, you can put the imgmap plugin at place, general instructions at [FCKEditor_setup], the only difference is that:
+   * You have to copy the plugin to the {yourwiki}/extensions/FCKeditor/plugins/imgmap directory
+   * You have to edit {yourwiki}/extensions/FCKeditor/fckeditor_config.js to add the plugin and to add the toolbar button
+  # Finally you can [http://www.mediawiki.org/wiki/Extension:ImageMap set up the Imagemap extension]
+  # Clear your browser cache, and try your editor.
