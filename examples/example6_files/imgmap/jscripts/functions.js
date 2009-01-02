@@ -43,7 +43,7 @@ window.onload = function()
 	if ( !img_obj )
 	{
 		alert( FCKLang.msgImageNotSelected ) ;
-		window.parent.close() ;
+		closeWindow();
 		return ;
 	}
 
@@ -127,13 +127,27 @@ function Ok() {
 
 		oEditor.FCKUndo.SaveUndoStep();
 
+		myimgmap.mapid = myimgmap.mapname = $('MapName').value ;
+		var wiki = false;
+		for ( var i = 0 ; i < FCKConfig.Plugins.Items.length ; i++ ) {
+			if (FCKConfig.Plugins.Items[i][0] == 'mediawiki') {
+				//mediawiki plugin is present, we are most likely in a wiki env
+				wiki = true;
+				break;
+			}
+		}
+		if (wiki) {
+			out = output_wiki(img_obj.getAttribute('_fck_mw_filename', 2));
+			oEditor.FCK.InsertHtml(out);
+			return true;
+		}
+		
+		//else normal map output
 		if (typeof map_obj == 'undefined' || map_obj === null) {
-			map_obj = oEditor.FCK.EditorDocument.createElement('MAP');
+			map_obj = oEditor.FCK.EditorDocument.createElement('map');
 			img_obj.parentNode.appendChild(map_obj);
 		}
-
-		myimgmap.mapid = myimgmap.mapname = $('MapName').value ;
-
+		
 		map_obj.innerHTML = MapInnerHTML ;
 
 		// IE bug: it's not possible to directly assing the name and make it work easily
@@ -156,11 +170,22 @@ function removeMap() {
 	if (img_obj !== null && img_obj.nodeName == "IMG") {
 		img_obj.removeAttribute('usemap', 0);
 	}
+	//myimgmap.log(typeof map_obj);
 	if (typeof map_obj != 'undefined' && map_obj !== null) {
 		map_obj.parentNode.removeChild(map_obj);
 	}
 
-	window.parent.close();
+	closeWindow();
+}
+
+function closeWindow() {
+	if (typeof window.parent.CloseDialog == 'function') {
+		window.parent.CloseDialog();
+	}
+	else {
+		//older fck
+		window.parent.close();
+	}
 }
 
 
@@ -396,4 +421,40 @@ function gui_zoom() {
 	myimgmap.scaleAllAreas(scale);
 }
 
-
+/**
+ *	Grab the areas array and make wiki output.
+ *	@link	http://www.mediawiki.org/wiki/Extension:ImageMap
+ *	<imagemap>
+Image:Foo.jpg|200px|picture of a foo
+poly 131 45 213 41 210 110 127 109 [[Display]]
+poly 104 126 105 171 269 162 267 124 [[Keyboard]]
+rect 15 95 94 176   [[Foo type A]]
+# A comment, this line is ignored
+circle 57 57 20    [[Foo type B]]
+desc bottom-left
+</imagemap>
+ 
+ */
+function output_wiki(src) {
+	var html, coords;
+	html = '<imagemap>';
+	if (typeof src != 'undefined') {
+		html+= 'Image:' + src + '|' + myimgmap.pic.title + '\n';
+	}
+	else if (typeof myimgmap.pic != 'undefined') {
+		html+= 'Image:' + myimgmap.pic.src + '|' + myimgmap.pic.title + '\n';
+	}
+	
+	//foreach areas
+	for (var i=0; i<myimgmap.areas.length; i++) {
+		if (myimgmap.areas[i]) {
+			if (myimgmap.areas[i].shape && myimgmap.areas[i].shape != 'undefined') {
+				coords = myimgmap.areas[i].lastInput.split(',').join(' ');
+				html+= myimgmap.areas[i].shape + ' ' + coords + ' [[' + myimgmap.areas[i].ahref + '|' + myimgmap.areas[i].aalt + ']]\n';
+			}
+		}
+	}
+	html+= '#' + myimgmap.waterMark + '\n</imagemap>';
+	//alert(html);
+	return html;
+}
