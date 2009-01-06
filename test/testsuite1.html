@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+	<title>QUnit test for imgmap</title>
+	<link rel="stylesheet" href="data/testsuite.css" type="text/css" media="screen" />
+	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+	<script type="text/javascript" src="data/testrunner.js"></script>
+	<script type="text/javascript" src="../imgmap.js"></script>
+	<!--[if gte IE 6]>
+	<script language="javascript" type="text/javascript" src="../excanvas.js"></script>
+	<![endif]-->
+</head>
+<body>
+  
+ <h1>QUnit test for imgmap</h1>
+ <h2 id="banner"></h2>
+ <h2 id="userAgent"></h2>
+
+ <ol id="tests"></ol>
+ <div id="main"></div>
+ 
+ <div id="test">
+ <div id="pic_container"></div>
+ <img id="pic2" src="../examples/example_files/sample2.jpg"/>
+ </div>
+
+<script type="text/javascript">
+$(document).ready(function(){
+
+
+//init testings
+test("imgmap class present and instance creation", function() {
+	equals(typeof imgmap, 'function');
+	//create imgmap instance
+	myimgmap = new imgmap();
+	equals(typeof myimgmap, 'object');
+	//ok(myimgmap.isLoaded, 'isLoaded');
+	equals(typeof myimgmap.config, 'object');
+	equals(myimgmap.config.mode, 'editor', 'default mode is editor');
+
+});
+	
+//image loading
+test("image loading", function() {
+	//has to throw error
+	ok(!myimgmap.loadImage('../examples/example_files/sample1.jpg'), 'loadImage with string');
+	myimgmap.pic_container = $('#pic_container')[0];
+	//now it is better
+	ok(myimgmap.loadImage('../examples/example_files/sample1.jpg'), 'loadImage with string');
+	ok(myimgmap.pic.src.match(/.*examples\/example\_files\/sample1\.jpg.*/), 'src match');
+	//myimgmap.pic = null;
+	ok(myimgmap.loadImage($('#pic2')[0]), 'loadImage with obj');
+	ok(myimgmap.pic.src.match(/.*examples\/example\_files\/sample2\.jpg.*/), 'src match');
+	//return;
+	//console.log(myimgmap.eventHandlers);
+	
+	//useimage
+	ok(myimgmap.useImage($('#pic2')[0]), 'useImage with obj');
+	ok(myimgmap.pic.src.match(/.*examples\/example\_files\/sample2\.jpg.*/), 'src match');
+	equals(myimgmap.pic.parentNode.className, 'pic_container');
+	equals(myimgmap.pic.parentNode, myimgmap.pic_container, 'container is parent');
+
+	ok(myimgmap.useImage('pic2'), 'useImage with same obj but with id');
+	ok(myimgmap.pic.src.match(/.*examples\/example\_files\/sample2\.jpg.*/), 'src match');
+	equals(myimgmap.pic.parentNode.className, 'pic_container');
+	equals(myimgmap.pic.parentNode, myimgmap.pic_container, 'container is parent');
+	
+	
+	
+	//unload
+	
+});
+	
+test("preview", function() {
+	equals(myimgmap.viewmode, '0', 'default viewmode');	
+	equals(myimgmap.togglePreview(), '1', 'togglePreview');
+	equals(typeof myimgmap.preview, 'object');
+	equals(myimgmap.viewmode, '1');
+	equals(myimgmap.is_drawing, '0');
+	equals(myimgmap.togglePreview(), '0', 'togglePreview');
+	equals(typeof myimgmap.preview, 'object');
+	equals(myimgmap.viewmode, '0');
+	equals(myimgmap.is_drawing, '0');
+});
+
+test("set map", function() {
+
+	var map = '<map name="20" id="20"><area href="#" shape="rectjunk" coords="junk0,0, 020,20 junk" alt="20" title="20" />';
+	ok(myimgmap.setMapHTML(map), 'setMapHTML rectjunk');
+	//console.log(myimgmap.areas[0]);
+	equals(myimgmap.mapname, '20');
+	equals(myimgmap.mapid, '20');
+	equals(myimgmap.mapname, myimgmap.getMapName());
+	equals(myimgmap.mapid, myimgmap.getMapId());
+	equals(myimgmap.areas[0].shape, 'rect');
+	equals(myimgmap.areas[0].width, '20');
+	equals(myimgmap.areas[0].height, '20');
+	equals(myimgmap.areas[0].lastInput, '0,0,20,20');
+
+	map = '<map name="circlejunk" id="circlejunk"><area href="#" shape="circlejunk" coords="100  ,100,r100" alt="circlejunk"  />';
+	ok(myimgmap.setMapHTML(map), 'setMapHTML circlejunk');
+	//console.log(myimgmap.areas[0]);
+	equals(myimgmap.mapname, 'circlejunk');
+	equals(myimgmap.mapid, 'circlejunk');
+	equals(myimgmap.mapname, myimgmap.getMapName());
+	equals(myimgmap.mapid, myimgmap.getMapId());
+	equals(myimgmap.areas[0].shape, 'circle', 'IE might fail this, then the next ones are also bad');
+	equals(myimgmap.areas[0].width, '200');
+	equals(myimgmap.areas[0].height, '200');
+	equals(myimgmap.areas[0].lastInput, '100,100,100');
+
+	map = '<map name="circle" id="circle"><area href="#" shape="circle" coords="100,100,100" alt="circle"  /></map>';
+	ok(myimgmap.setMapHTML(map), 'setMapHTML circle');
+	equals(myimgmap.areas[0].shape, 'circle');
+	equals(myimgmap.areas[0].width, '200');
+	equals(myimgmap.areas[0].height, '200');
+	equals(myimgmap.areas[0].lastInput, '100,100,100');
+
+	map = '<map name="poly" id="poly"><area href="#" shape="polyjunk" coords=" 0,00,20,20,0,100," alt="poly" title="poly" />';
+	ok(myimgmap.setMapHTML(map), 'setMapHTML polyjunk');
+	//console.log(myimgmap.areas[0]);
+	equals(myimgmap.mapname, 'poly');
+	equals(myimgmap.mapid, 'poly');
+	equals(myimgmap.mapname, myimgmap.getMapName());
+	equals(myimgmap.mapid, myimgmap.getMapId());
+	equals(myimgmap.areas[0].shape, 'poly', 'IE might fail this');
+	equals(myimgmap.areas[0].width, '20');
+	equals(myimgmap.areas[0].height, '100');
+	equals(myimgmap.areas[0].lastInput, '0,0,20,20,0,100');
+
+	map = '<map name="poly" id="poly"><area href="#" shape="poly" coords=" 0,00,20,20,0,100," alt="poly" title="poly" />';
+	ok(myimgmap.setMapHTML(map), 'setMapHTML poly');
+	//console.log(myimgmap.areas[0]);
+	equals(myimgmap.mapname, 'poly');
+	equals(myimgmap.mapid, 'poly');
+	equals(myimgmap.mapname, myimgmap.getMapName());
+	equals(myimgmap.mapid, myimgmap.getMapId());
+	equals(myimgmap.areas[0].shape, 'poly');
+	equals(myimgmap.areas[0].width, '20');
+	equals(myimgmap.areas[0].height, '100');
+	equals(myimgmap.areas[0].lastInput, '0,0,20,20,0,100');
+
+});
+
+test("stress test", function() {
+	myimgmap.removeAllAreas();
+	for (i=0; i<12; i++) {
+		for (j=0; j<10; j++) {
+			id = myimgmap.addNewArea();
+			equals(id, i*10 + j);
+			myimgmap.initArea(id, 'rect');
+			coords = 30*j+','+30*i+','+(30*j+30)+','+(30*i+30);
+			myimgmap._recalculate(id, coords);
+			myimgmap.areas[id].ahref = id;
+		}
+	}
+	equals(myimgmap.togglePreview(), '1', 'togglePreview');
+	equals(typeof myimgmap.preview, 'object');
+	equals(myimgmap.viewmode, '1');
+	equals(myimgmap.togglePreview(), '0', 'togglePreview');
+	equals(myimgmap.viewmode, '0');
+	if (!confirm('Giving the browser a break. Wanna continue?')) {
+		return;
+	}
+	myimgmap.removeAllAreas();
+	for (i=0; i<12; i++) {
+		for (j=0; j<10; j++) {
+			id = myimgmap.addNewArea();
+			equals(id, i*10 + j);
+			myimgmap.initArea(id, 'circle');
+			coords = 30*j+','+30*i+',15';
+			myimgmap._recalculate(id, coords);
+			myimgmap.areas[id].ahref = id;
+		}
+	}
+	
+	
+});
+
+
+});
+</script>
+</body>
+</html>

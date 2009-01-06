@@ -517,7 +517,7 @@ function gui_outputChanged() {
 		temp+= '(<a href="http://css-tricks.com/absolute-positioning-inside-relative-positioning/">read more</a>).'; 
 	}
 	else if (output == 'wiki') {
-		temp = 'This is the generated image map Wiki code to use with MediaWiki ImageMap extansion. ';
+		temp = 'This is the generated image map Wiki code to use with MediaWiki ImageMap extension. ';
 		temp+= 'Click into the textarea below and press Ctrl+C to copy the code to your clipboard. ';
 		if (clipboard_enabled) {
 			temp+= 'Alternatively you can use the clipboard icon on the right. ';
