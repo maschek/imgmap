@@ -3,6 +3,27 @@
 
 = Changelog =
 
+Version 2.1
+ * Separated most drawing-specific and gui-specific codes. This means easier integration with ANY kind of user interface.
+ * GUI specific functions went to default_interface.js 
+ * JSDoc toolkit based documentation using modified outline template of JProton.
+ * Updated all examples to use separate interface code and map handling code.
+ * Removed example 5, since all examples use callbacks now.
+ * Fixed issue when dragging areas in Safari will cause selecting all kinds of things.
+ * Fixed issue when scrolled image in Opera will result drawing with offset.
+ * Fixed Issue 13: Suggestion: image url with timestamp
+ * Fixed Issue 14: Javascript error in MSIE
+ * Fixed Issue 17: Doesn't work with Adobe AIR 1.1 - new package built with latest SDK 
+ * Internal and generated html shape names are HTML conform (circle, rect, poly)
+ * Zoom (scale) functionality (new function scaleAllAreas, new property globalscale)
+ * Zoom introduced to all plugins. 
+ * Added CSS output and Wiki output formats. 
+ * Added bezier (quadratic curve) support (just for fun, not standard image map shape, disabled by default)
+ * Updated FCKEditor example to use latest FCK.
+ * TODO: Elliminated some memleaks using drip.
+ * TODO: update tiny
+ * AIR queries are now synchronous.  
+
 Version 2.0beta6
  * TinyMCE3 support (plugin zip and also as example8)
  * Adobe AIR version (air file and also as example7)
