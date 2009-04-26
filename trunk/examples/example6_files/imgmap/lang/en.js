@@ -23,3 +23,5 @@ FCKLang.imgmapPointer = 'Pointer' ;
 FCKLang.imgmapRectangle = 'Rectangle' ;
 FCKLang.imgmapCircle = 'Circle' ;
 FCKLang.imgmapPolygon = 'Polygon' ;
+FCKLang.imgmapDeleteArea = 'Delete selected area' ;
+
