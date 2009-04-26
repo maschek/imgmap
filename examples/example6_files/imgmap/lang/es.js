@@ -22,3 +22,4 @@ FCKLang.imgmapPointer = 'Puntero' ;
 FCKLang.imgmapRectangle = 'Rectángulo' ;
 FCKLang.imgmapCircle = 'Círculo' ;
 FCKLang.imgmapPolygon = 'Polígono' ;
+FCKLang.imgmapDeleteArea = 'Eliminar zona';
