@@ -1,16 +1,42 @@
 #summary How to set up the plugin to work with MediaWiki
 #labels Phase-Deploy
 
-this page is not yet complete
+Everything below was tested against:
+ * MediaWiki 1.14.0
+ * Extension:Imagemap latest as of 26/04/2009
+ * Extension:FCKeditor latest as of 26/04/2009
+ * FCKeditor 2.6.4
+ * imgmap latest SVN version (you have to check out from the repository)
 
 = Introduction =
 
-MediaWiki by default comes with a wiki text editor, but can be extended to use FCKEditor or TinyMCE. To be able to use imagemaps, you will also need the [http://www.mediawiki.org/wiki/Extension:ImageMap wiki imagemap plugin].
+MediaWiki by default comes with a wiki text editor, and no image map support.
+Once you install the [http://www.mediawiki.org/wiki/Extension:ImageMap wiki imagemap plugin], you will be able to add image maps, however editing these will require lot of manual work.
+You can have a visual image map editor, if you also install the [http://mediawiki.fckeditor.net/index.php/FCKeditor_integration_guide FCKeditor extension] along with imgmap plugin, and tweak it a bit to play nicely with imgmap extension and mediawiki. Read on for the steps required.
+
+= Installing ImageMap wiki extension =
+
+Read the instructions carefully here:
+http://www.mediawiki.org/wiki/Extension:ImageMap
+Once you installed, test the extension.
 
 
-= Using FCKEditor =
+= Installing FCKEditor =
 
-  # To set up FCK, follow the instructions carefully in the [http://mediawiki.fckeditor.net/index.php/FCKeditor_integration_guide FCKeditor integration guide]
+Read the instructions here:
+http://mediawiki.fckeditor.net/index.php/FCKeditor_integration_guide
+Once installed, test your new editor.
+
+= Installing imgmap plugin for FCKEditor =
+
+  # Put the imgmap plugin at place, general instructions at [FCKEditor_setup], the only difference is that:
+   * You have to copy the plugin to the {yourwiki}/extensions/FCKeditor/plugins/imgmap directory
+   * You have to edit {yourwiki}/extensions/FCKeditor/fckeditor_config.js to add the plugin and to add the toolbar button
+  # Clear your browser cache, and try your editor.
+
+MORE EDIT COMES
+
+= Notes =
   # Once you have set up FCK, you will have to patch it, otherwise it will not accept <imagemap> tags. Patch and details can be found [http://dev.fckeditor.net/ticket/2432 here]. This is not a stable and approved patch, so use it at your own will.
   # To allow imagemap tags, edit your LocalSettings.php and add:
 {{{
@@ -19,8 +45,3 @@ $RTEprotectedTags[ 'imagemap' ] = array(
 
 );
 }}}
-  # Once done, you can put the imgmap plugin at place, general instructions at [FCKEditor_setup], the only difference is that:
-   * You have to copy the plugin to the {yourwiki}/extensions/FCKeditor/plugins/imgmap directory
-   * You have to edit {yourwiki}/extensions/FCKeditor/fckeditor_config.js to add the plugin and to add the toolbar button
-  # Finally you can [http://www.mediawiki.org/wiki/Extension:ImageMap set up the Imagemap extension]
-  # Clear your browser cache, and try your editor.
