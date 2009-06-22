@@ -2,13 +2,24 @@
 <html>
 <head>
 	<title>QUnit test for imgmap</title>
-	<link rel="stylesheet" href="data/testsuite.css" type="text/css" media="screen" />
+	<link rel="stylesheet" href="qunit/testsuite.css" type="text/css" media="screen" />
 	<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
-	<script type="text/javascript" src="data/testrunner.js"></script>
+	<script type="text/javascript" src="qunit/testrunner.js"></script>
 	<script type="text/javascript" src="../imgmap.js"></script>
 	<!--[if gte IE 6]>
 	<script language="javascript" type="text/javascript" src="../excanvas.js"></script>
 	<![endif]-->
+	<style type="text/css">
+	#log {
+		position: absolute;
+		top: 30px;
+		right:30px;
+		background: #fff;
+		border: solid 2px #555;
+		padding: 5px;
+		width: 400px;
+	}
+	</style>
 </head>
 <body>
   
@@ -19,12 +30,32 @@
  <ol id="tests"></ol>
  <div id="main"></div>
  
+ <div id="log">
+ <b>Test log:</b><br>
+ </div>
+ 
  <div id="test">
  <div id="pic_container"></div>
  <img id="pic2" src="../examples/example_files/sample2.jpg"/>
  </div>
 
 <script type="text/javascript">
+
+function test_log(msg) {
+	$('#log').html($('#log').html()+msg+'<br>');
+}
+
+function test_init(flag) {
+	if (typeof myimgmap != 'object') {
+		//global
+		myimgmap = new imgmap();
+		test_log('Created myimgmap instance');
+	}
+	if (flag == '1') {
+		if (!myimgmap.pic_container) {myimgmap.pic_container = $('#pic_container')[0];}
+		if (!myimgmap.pic) {myimgmap.loadImage('../examples/example_files/sample1.jpg');}
+	}
+}
 $(document).ready(function(){
 
 
@@ -32,7 +63,7 @@ $(document).ready(function(){
 test("imgmap class present and instance creation", function() {
 	equals(typeof imgmap, 'function');
 	//create imgmap instance
-	myimgmap = new imgmap();
+	test_init();
 	equals(typeof myimgmap, 'object');
 	//ok(myimgmap.isLoaded, 'isLoaded');
 	equals(typeof myimgmap.config, 'object');
@@ -42,7 +73,12 @@ test("imgmap class present and instance creation", function() {
 	
 //image loading
 test("image loading", function() {
+
+	//setup
+	test_init();
+
 	//has to throw error
+	test_log('You have to see an alert now.');
 	ok(!myimgmap.loadImage('../examples/example_files/sample1.jpg'), 'loadImage with string');
 	myimgmap.pic_container = $('#pic_container')[0];
 	//now it is better
@@ -72,6 +108,9 @@ test("image loading", function() {
 });
 	
 test("preview", function() {
+	//setup
+	test_init(1);
+
 	equals(myimgmap.viewmode, '0', 'default viewmode');	
 	equals(myimgmap.togglePreview(), '1', 'togglePreview');
 	equals(typeof myimgmap.preview, 'object');
@@ -84,7 +123,10 @@ test("preview", function() {
 });
 
 test("set map", function() {
+	//setup
+	test_init(1);
 
+	test_log('Setting malformed map with rectangle and getting back coordinates.');
 	var map = '<map name="20" id="20"><area href="#" shape="rectjunk" coords="junk0,0, 020,20 junk" alt="20" title="20" />';
 	ok(myimgmap.setMapHTML(map), 'setMapHTML rectjunk');
 	//console.log(myimgmap.areas[0]);
@@ -97,6 +139,7 @@ test("set map", function() {
 	equals(myimgmap.areas[0].height, '20');
 	equals(myimgmap.areas[0].lastInput, '0,0,20,20');
 
+	test_log('Setting malformed map with circle and getting back coordinates.');
 	map = '<map name="circlejunk" id="circlejunk"><area href="#" shape="circlejunk" coords="100  ,100,r100" alt="circlejunk"  />';
 	ok(myimgmap.setMapHTML(map), 'setMapHTML circlejunk');
 	//console.log(myimgmap.areas[0]);
@@ -116,6 +159,7 @@ test("set map", function() {
 	equals(myimgmap.areas[0].height, '200');
 	equals(myimgmap.areas[0].lastInput, '100,100,100');
 
+	test_log('Setting malformed map with polygon and getting back coordinates.');
 	map = '<map name="poly" id="poly"><area href="#" shape="polyjunk" coords=" 0,00,20,20,0,100," alt="poly" title="poly" />';
 	ok(myimgmap.setMapHTML(map), 'setMapHTML polyjunk');
 	//console.log(myimgmap.areas[0]);
@@ -143,6 +187,10 @@ test("set map", function() {
 });
 
 test("stress test", function() {
+	//setup
+	test_init(1);
+
+	test_log('Creating cca hundred rectangles.');
 	myimgmap.removeAllAreas();
 	for (i=0; i<12; i++) {
 		for (j=0; j<10; j++) {
@@ -162,6 +210,7 @@ test("stress test", function() {
 	if (!confirm('Giving the browser a break. Wanna continue?')) {
 		return;
 	}
+	test_log('Creating cca hundred circles.');
 	myimgmap.removeAllAreas();
 	for (i=0; i<12; i++) {
 		for (j=0; j<10; j++) {
