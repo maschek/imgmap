@@ -178,6 +178,7 @@ function imgmap(config) {
 		'onSetMap',
 		'onGetMap',
 		'onSelectArea',
+		'onDblClickArea',
 		'onStatusMessage',
 		'onAreaChanged'];
 
@@ -1237,6 +1238,7 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id].style.left     = this.pic.offsetLeft + 'px';
 	this._setopacity(this.areas[id], this.config.CL_DRAW_BG, this.config.draw_opacity);
 	//hook event handlers
+	this.areas[id].ondblclick  = this.area_dblclick.bind(this);
 	this.areas[id].onmousedown = this.area_mousedown.bind(this);
 	this.areas[id].onmouseup   = this.area_mouseup.bind(this);
 	this.areas[id].onmousemove = this.area_mousemove.bind(this);
@@ -2565,6 +2567,46 @@ imgmap.prototype.area_mouseout = function(e) {
 			obj = obj.parentNode.parentNode;
 		}
 		this.blurArea(obj.aid, 'grad');
+	}
+};
+
+
+/**
+ *	EVENT HANDLER: Handles event of double click on imgmap areas.
+ *	Basically only fires the custom callback.
+ *	@author	Colin Bell
+ *	@param	e	The event object
+ */
+imgmap.prototype.area_dblclick = function(e) {
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	//console.log('area_dblclick');
+	if (!this.is_drawing) {
+		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
+		if (obj.tagName == 'DIV') {
+			//do this because of label
+			obj = obj.parentNode;
+		}
+		if (obj.tagName == 'image' || obj.tagName == 'group' ||
+			obj.tagName == 'shape' || obj.tagName == 'stroke') {
+			//do this because of excanvas
+			obj = obj.parentNode.parentNode;
+		}
+		if (this.areas[this.currentid] != obj) {
+			//trying to draw on a different canvas, switch to this one
+			if (typeof obj.aid == 'undefined') {
+				this.log('Cannot identify target area', 1);
+				return;
+			}
+			this.currentid = obj.aid;
+		}
+		this.fireEvent('onDblClickArea', this.areas[this.currentid]);
+		//stop event propagation to document level
+		if (this.isMSIE) {
+			window.event.cancelBubble = true;
+		}
+		else {
+			e.stopPropagation();
+		}
 	}
 };
 
