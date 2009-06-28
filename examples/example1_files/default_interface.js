@@ -1,10 +1,11 @@
+/*jslint browser: true, newcap: false, white: false, onevar: false, plusplus: false, eqeqeq: false, nomen: false */
+/*global window:false, $:false, imgmap:false, air:false */
+
+/** GLOBALS SECTION ***********************************************************/
+
+var myimgmap, props, outputmode, imgroot;
 
 /** FUNCTION SECTION **********************************************************/
-
-function gui_colorChanged(obj) {
-	myimgmap.pic_container.style.backgroundColor = obj.value;
-	gui_toggleMore();
-}
 
 function gui_toggleMore() {
 	var parent = $('#more_actions').parent().find('.toggler');
@@ -22,6 +23,12 @@ function gui_toggleMore() {
 		}
 	});
 }
+
+function gui_colorChanged(obj) {
+	myimgmap.pic_container.style.backgroundColor = obj.value;
+	gui_toggleMore();
+}
+
 
 /**
  *	Handles mouseover on props row.
@@ -597,7 +604,7 @@ function gui_toClipBoard(text) {
 /** INIT SECTION **************************************************************/
 
 //instantiate the imgmap component, setting up some basic config values
-var myimgmap = new imgmap({
+myimgmap = new imgmap({
 mode : "editor",
 custom_callbacks : {
 	'onStatusMessage' : function(str) {gui_statusMessage(str);},//to display status messages on gui
@@ -613,9 +620,9 @@ bounding_box : false
 });
 
 //array of form elements
-var props = [];
-var imgroot = 'example1_files/';
-var outputmode = 'imgmap';
+props = [];
+imgroot = 'example1_files/';
+outputmode = 'imgmap';
 gui_outputChanged();
 
 myimgmap.addEvent(document.getElementById('html_container'), 'blur',  gui_htmlBlur);

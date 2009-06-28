@@ -1,3 +1,7 @@
+/*jslint browser: true, newcap: false, white: false, onevar: false, plusplus: false, eqeqeq: false, nomen: false */
+/*global window:false, $:false, imgmap:false, air:false, nativeWindow:false */
+
+
 /**
  *	Functions to add functionality to the editor as a desktop application.
  *	Includes menu handling, most recently used items (MRU) handling, etc.
@@ -78,10 +82,9 @@ function preventDefault(event) {
 createMenus();
 
 //var application = air.NativeApplication.nativeApplication;
-var recentDocuments = [];
 
 function createMenus() {
-	
+	var fileMenu, helpMenu;
 	//create file menu depending on chromes or chromelsess window style
 	if (air.NativeWindow.supportsMenu &&
 		nativeWindow.systemChrome != air.NativeWindowSystemChrome.NONE) {
@@ -142,8 +145,7 @@ function createHelpMenu() {
 	return hm;
 }
 
-function showRecentDocumentMenu() {
-	var recentMenu = fileMenu.submenu.items[2].submenu;
+function showRecentDocumentMenu(recentMenu, recentDocuments) {
 	var i;
 	//first remove all old menuitems
 	//have to loop backwards otherwise not good
@@ -205,7 +207,7 @@ function selectCommandMenu(event) {
 			air.navigateToURL(new air.URLRequest("http://www.maschek.hu/imagemap/imgmap"));
 		}
 		else if (event.target.label == "About") {
-			aboutwin = window.open("about.html", "aboutwin", "height=215,width=450");
+			var aboutwin = window.open("about.html", "aboutwin", "height=215,width=450");
 		}
 	}
 }
@@ -244,7 +246,7 @@ function query(sql) {
 		return result;
 	}
 	catch (err) {
-		if (err.details.match(/no such table: .mru_files./)) {
+		if (err.details.match(/no such table: \Wmru_files\W/)) {
 			createTable('mru_files');
 			//recurse
 			return query(sql);
@@ -257,16 +259,16 @@ function query(sql) {
 	}
 }
 
-function loadRecentDocuments() {
+function loadRecentDocuments(e) {
 	var result = query("SELECT DISTINCT url FROM mru_files ORDER BY id DESC LIMIT 10");
 	if (result && result.data) {
 		var numResults = result.data.length;
-		recentDocuments = [];//blank out array
+		var recentDocuments = [];
 		for (var i = 0; i < numResults; i++) {
 			var row = result.data[i];
 			recentDocuments.push(row.url);
 		}
-		showRecentDocumentMenu();
+		showRecentDocumentMenu(e.target, recentDocuments);
 	}
 }
 

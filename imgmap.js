@@ -42,7 +42,7 @@
  *	 
  */
 /*jslint browser: true, newcap: false, white: false, onevar: false, plusplus: false, eqeqeq: false, nomen: false */
-/*global imgmapStrings:true, window: true, G_vmlCanvasManager: true, air: true, imgmap_spawnObjects: true */
+/*global imgmapStrings:true, window:false, G_vmlCanvasManager:false, air:false, imgmap_spawnObjects:true */
 /**
  *	@author	Adam Maschek
  *	@constructor
