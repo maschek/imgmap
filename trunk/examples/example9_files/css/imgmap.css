@@ -1,0 +1,17 @@
+/* ICONS */
+
+#image_map_editor .pointer{
+	background-image:url('../icons/pointer.png') !important;
+}
+
+#image_map_editor .circle{
+	background-image:url('../icons/circle.png') !important;
+}
+
+#image_map_editor .rectangle{
+	background-image:url('../icons/rect.png') !important;
+}
+
+#image_map_editor .polygon{
+	background-image:url('../icons/poly.png') !important;
+}
