@@ -38,9 +38,11 @@
  *	@date	26-02-2007 2:24:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@copyright
- *	@version 2.1
+ *	@version 2.2
  *	 
  */
+/*jslint browser: true, newcap: false, white: false, onevar: false, plusplus: false, eqeqeq: false, nomen: false */
+/*global imgmapStrings:true, window: true, G_vmlCanvasManager: true, air: true, imgmap_spawnObjects: true */
 /**
  *	@author	Adam Maschek
  *	@constructor
@@ -49,13 +51,13 @@
 function imgmap(config) {
 
 	/** Version string of imgmap */
-	this.version = "2.1";
+	this.version = "2.2";
 	
 	/** Build date of imgmap */
-	this.buildDate = "2008/12/29 09:47";
+	this.buildDate = "2009/06/28 20:55";
 	
 	/** Sequential build number of imgmap */
-	this.buildNumber = "89";
+	this.buildNumber = "99";
 	
 	/** Config object of the imgmap instance */
 	this.config = {};
@@ -343,7 +345,7 @@ imgmap.prototype.setup = function(config) {
 	for (i in this.config.custom_callbacks) {
 		if (this.config.custom_callbacks.hasOwnProperty(i)) {
 			found = false;
-			for (j=0, le = this.event_types.length; j<le; j++) {
+			for (j = 0, le = this.event_types.length; j < le; j++) {
 				if (i == this.event_types[j]) {
 					found = true;
 					break;
@@ -905,7 +907,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	var sy;//smallest y
 	var gx;//greatest x
 	var gy;//greatest y
-	var temp;
+	var temp, le;
 	
 	//console.log('normcoords: ' + coords + ' - ' + shape + ' - ' + flag);
 	coords = coords.trim();
@@ -1068,7 +1070,7 @@ imgmap.prototype.setMapHTML = function(map) {
 	this.mapname = oMap.name;
 	this.mapid   = oMap.id;
 	var newareas = oMap.getElementsByTagName('area');
-	var shape, coords, href, alt, title, target;
+	var shape, coords, href, alt, title, target, id;
 	for (var i=0, le = newareas.length; i<le; i++) {
 		shape = coords = href = alt = title = target = '';
 		
@@ -1130,7 +1132,7 @@ imgmap.prototype.setMapHTML = function(map) {
  *	@return	False on error, 0 when switched to edit mode, 1 when switched to preview mode
  */
 imgmap.prototype.togglePreview = function() {
-	var i;//generic cycle counter
+	var i, le;//generic cycle counter
 	
 	if (!this.pic) {return false;}//exit if pic is undefined
 	
@@ -1143,7 +1145,7 @@ imgmap.prototype.togglePreview = function() {
 	
 	if (this.viewmode === 0) {
 		//hide canvas elements and labels
-		for (i=0, le = this.areas.length; i<le; i++) {
+		for (i = 0, le = this.areas.length; i < le; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = 'none';
 				if (this.areas[i].label) {this.areas[i].label.style.display = 'none';}
@@ -1159,7 +1161,7 @@ imgmap.prototype.togglePreview = function() {
 	}
 	else {
 		//show canvas elements
-		for (i=0, le = this.areas.length; i<le; i++) {
+		for (i = 0, le = this.areas.length; i < le; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = '';
 				if (this.areas[i].label && this.config.label) {this.areas[i].label.style.display = '';}
@@ -1583,7 +1585,7 @@ imgmap.prototype._repaintAll = function() {
 imgmap.prototype._repaint = function(area, color, x, y) {
 	var ctx;//canvas context
 	var width, height, left, top;//canvas properties
-	var i;//loop counter
+	var i, le;//loop counter
 	if (area.shape == 'circle') {
 		width  = parseInt(area.style.width, 10);
 		var radius = Math.floor(width/2) - 1;
@@ -1624,7 +1626,7 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			ctx.beginPath();
 			ctx.strokeStyle = color;
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
-			for (i=1, le = area.xpoints.length; i<le; i++) {
+			for (i = 1, le = area.xpoints.length; i < le; i++) {
 				ctx.lineTo(area.xpoints[i] - left , area.ypoints[i] - top);
 			}
 			if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_POLYGON_LASTDRAW) {
@@ -1655,7 +1657,7 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			//move to the beginning position
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
 			//draw previous points - use every second point only
-			for (i=2, le = area.xpoints.length; i<le; i+=2) {
+			for (i = 2, le = area.xpoints.length; i < le; i+= 2) {
 				ctx.quadraticCurveTo(area.xpoints[i-1] - left, area.ypoints[i-1] - top, area.xpoints[i] - left, area.ypoints[i] - top);
 			}
 			if (this.is_drawing == this.DM_BEZIER_DRAW || this.is_drawing == this.DM_BEZIER_LASTDRAW) {
@@ -2773,14 +2775,14 @@ imgmap.prototype._getLastArea = function() {
  */
 imgmap.prototype.assignCSS = function(obj, cssText) {
 	var parts = cssText.split(';');
-	for (var i=0; i<parts.length; i++) {
+	for (var i = 0; i < parts.length; i++) {
 		var p = parts[i].split(':');
 		//we need to camelcase by - signs
 		var pp = p[0].trim().split('-');
 		var prop = pp[0];
-		for (var j=1; j<pp.length; j++) {
+		for (var j = 1; j < pp.length; j++) {
 			//replace first letters to uppercase
-			prop+= pp[j].replace(/^./, pp[j].substring(0,1).toUpperCase());
+			prop+= pp[j].replace(/^\w/, pp[j].substring(0,1).toUpperCase());
 		}
 		obj.style[prop.trim()] = p[1].trim();
 	}
@@ -2926,6 +2928,7 @@ function imgmap_spawnObjects(config) {
 	var maps = document.getElementsByTagName('map');
 	var imgs = document.getElementsByTagName('img');
 	var imaps = [];
+	var imapn;
 	//console.log(maps.length);
 	for (var i=0, le=maps.length; i<le; i++) {
 		for (var j=0, le2=imgs.length; j<le2; j++) {
