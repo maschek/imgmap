@@ -45,10 +45,11 @@
                 		text: 'Save',
                 		handler: function(){
                 			imageMapWin.items.get(0).saveMap();
+                			imageMapWin.close();
                 		}
                 	},
                 	{
-                		text: 'Close',
+                		text: 'Cancel',
                 		handler: function(){
                 			imageMapWin.items.get(0).cleanUp();
                 			imageMapWin.close();
@@ -67,12 +68,12 @@
 </head>
 <body>
 
-<h1>Image Map Window</h1>
-<p>This example shows how to create an extension and utilize an external library.</p>
-<input type="button" id="show-btn" value="Edit the images map" /><br /><br />
-<p>Note that the js is not minified so it is readable. See <a href="Ext.ux.ImageMap.js">Ext.ux.ImageMap.js</a> for the full source code.</p>
+<p>Example 9 shows how to use imgmap with ExtJs library. Many thanks to Colin Bell. View his
+<a href="http://www.cbell.info/ext/examples/imagemap/index.html"> 
+original implementation.</a></p>
+<input type="button" id="show-btn" value="Edit the image map" /><br /><br />
 <map id="imgmap2009210102921" name="imgmap2009210102921">
-	<area shape="rect" alt="GateWest Website" title="GateWest New Media" coords="149,74,291,175" href="http://www.gatewest.co.uk" target="_blank" />
+	<area shape="rect" alt="Wikipedia" title="Wikipedia" coords="149,74,291,175" href="http://en.wikipedia.org/wiki/Main_Page" target="_blank" />
 	<area shape="rect" alt="Google Website" title="Google" coords="427,77,650,175" href="http://www.google.co.uk" target="_blank" />
 </map>
 <img id="testmap" src="example_files/sample1.jpg" usemap="#imgmap2009210102921"/>
