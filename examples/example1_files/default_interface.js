@@ -1,6 +1,27 @@
 
 /** FUNCTION SECTION **********************************************************/
 
+function gui_colorChanged(obj) {
+	myimgmap.pic_container.style.backgroundColor = obj.value;
+	gui_toggleMore();
+}
+
+function gui_toggleMore() {
+	var parent = $('#more_actions').parent().find('.toggler');
+	$('#more_actions').css({
+      top: $(parent).offset().top + ($(parent).outerHeight()),
+      left: $(parent).offset().left
+    });	
+	
+	$('#more_actions').slideToggle(200, function () {
+		if ($(this).css('display') == 'none') {
+			$(parent).addClass('toggler_off');
+		}
+		else {
+			$(parent).removeClass('toggler_off');
+		}
+	});
+}
 
 /**
  *	Handles mouseover on props row.
@@ -419,9 +440,14 @@ function changelabeling(obj) {
  *	(Relax just repaints the borders and opacity.)
  */
 function toggleBoundingBox(obj) {
-	//console.log(obj.checked);
+	obj.checked = !obj.checked;
+	obj.innerHTML = '&nbsp; bounding box';
+	if (obj.checked) {
+		obj.innerHTML = '&raquo; bounding box';
+	}
 	myimgmap.config.bounding_box = obj.checked;
 	myimgmap.relaxAllAreas();
+	gui_toggleMore();
 }
 
 /**
@@ -594,6 +620,9 @@ gui_outputChanged();
 
 myimgmap.addEvent(document.getElementById('html_container'), 'blur',  gui_htmlBlur);
 myimgmap.addEvent(document.getElementById('html_container'), 'focus', gui_htmlFocus);
+
+$('#color1').colorPicker();
+
 
 /** OUTPUT FUNCTIONS **********************************************************/
 

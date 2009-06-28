@@ -16,12 +16,14 @@ FIELDSET {
 	padding: 5px 5px;
 }
 
-LEGEND {
+LEGEND, .toggler {
 	background-image: url(bullet_green.gif);
 	background-repeat: no-repeat;
 	background-position: left center;
 	padding-left: 15px;
 	padding-right: 5px;
+	border: none!important;
+	cursor: pointer;
 }
 LEGEND A {
 	border: none!important;
@@ -33,7 +35,7 @@ LEGEND A {
 	border-bottom: none;
 	border-right: none;
 }
-.fieldset_off LEGEND {
+.fieldset_off LEGEND, .toggler_off {
 	background-image: url(bullet_orange.gif);
 }
 .fieldset_off DIV {
@@ -148,7 +150,19 @@ A.source_accept:hover {
 
 #button_container {
 	padding: 5px;
-	line-height: 16px;
+	line-height: 22px;
+	float: left;
+}
+#button_container select,
+#button_container img,
+#button_container > div,
+#button_container label
+{
+	float: left;
+}
+#button_container img {
+	margin: 2px 2px;
+	cursor: pointer;
 }
 
 #fieldset_html {
@@ -161,4 +175,19 @@ A.source_accept:hover {
 	padding: 1px 0 0 1px;
 	height: 100px;
 	width: 100%;
+}
+
+#more_actions {
+	background-color: #E7E7E7;
+	border: solid 1px #888;
+	padding: 5px;
+	width: 120px;
+	line-height: 15px;
+}
+#more_actions div div,
+#more_actions div a {
+	text-decoration: none;
+	color: #000;
+	float: left;
+	padding: 0 3px;
 }

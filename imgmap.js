@@ -143,9 +143,17 @@ function imgmap(config) {
 	/** is_drawing draw mode constant */
 	this.DM_BEZIER_MOVE             = 41;
 
-	//set some config defaults
+	//set some config defaults below
+	
+	/**
+	 *	Mode of operation
+	 *	possible values:
+	 *	editor - classical editor,
+	 *	editor2 - dreamweaver style editor,
+	 *	highlighter - map highlighter, will spawn imgmap instances for each map found in the current page
+	 *	highlighter_spawn - internal mode after spawning imgmap objects
+	 */
 	this.config.mode     = "editor";
-	//possible values: editor - classical editor, editor2 - dreamweaver style editor, highlighter - map highlighter
 	
 	this.config.baseroot    = '';
 	this.config.lang        = '';
@@ -216,15 +224,8 @@ function imgmap(config) {
 	this.isGecko   = ua.indexOf('Gecko')  != -1;
 	this.isSafari  = ua.indexOf('Safari') != -1;
 	this.isOpera   = (typeof window.opera != 'undefined');
-
-	this.addEvent(document, 'keydown',   this.eventHandlers.doc_keydown = this.doc_keydown.bind(this));
-	this.addEvent(document, 'keyup',     this.eventHandlers.doc_keyup = this.doc_keyup.bind(this));
-	this.addEvent(document, 'mousedown', this.eventHandlers.doc_mousedown = this.doc_mousedown.bind(this));
 	
-	if (config) {
-		this.setup(config);
-	}
-	
+	this.setup(config);
 }
 
 
@@ -264,13 +265,20 @@ imgmap.prototype.assignOID = function(objorid) {
  *	@return	True if all went ok.
  */
 imgmap.prototype.setup = function(config) {
-	//this.config = config;
+	//this.log('setup');
+
+	//copy non-default config parameters to this.config
 	for (var i in config) {
 		if (config.hasOwnProperty(i)) {
 			this.config[i] = config[i];
 		}
 	}
-	//this.log('setup');
+	
+	//set document event hooks
+	this.addEvent(document, 'keydown',   this.eventHandlers.doc_keydown = this.doc_keydown.bind(this));
+	this.addEvent(document, 'keyup',     this.eventHandlers.doc_keyup = this.doc_keyup.bind(this));
+	this.addEvent(document, 'mousedown', this.eventHandlers.doc_mousedown = this.doc_mousedown.bind(this));
+	
 	//set pic_container element - supposedly it already exists in the DOM
 	if (config && config.pic_container) {
 		this.pic_container = this.assignOID(config.pic_container);
@@ -324,7 +332,10 @@ imgmap.prototype.setup = function(config) {
 	if (!this.config.lang) {
 		this.config.lang = this.detectLanguage();
 	}
-	this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
+	if (typeof imgmapStrings == 'undefined') {
+		//language file might have already been loaded (ex highlighter mode)
+		this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
+	}
 	
 	//check event hooks
 	var found, j, le;
@@ -2501,7 +2512,7 @@ imgmap.prototype.area_mouseup = function(e) {
  *	@param	e	The event object
  */
 imgmap.prototype.area_mouseover = function(e) {
-	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
+	if (this.viewmode === 1 && this.config.mode !== 'highlighter_spawn') {return;}//exit if preview mode
 	if (!this.is_drawing) {
 		//this.log('area_mouseover');
 		//identify source object
@@ -2539,7 +2550,7 @@ imgmap.prototype.area_mouseover = function(e) {
  *	@param	e	The event object 
  */
 imgmap.prototype.area_mouseout = function(e) {
-	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
+	if (this.viewmode === 1 && this.config.mode !== 'highlighter_spawn') {return;}//exit if preview mode
 	if (!this.is_drawing) {
 		//this.log('area_mouseout');
 		//identify source object
@@ -2565,7 +2576,7 @@ imgmap.prototype.area_mouseout = function(e) {
  *	@param	e	The event object 
  */
 imgmap.prototype.area_mousedown = function(e) {
-	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (this.viewmode === 1 && this.config.mode !== 'highlighter_spawn') {return;}//exit if preview mode
 	//console.log('area_mousedown');
 	if (!this.is_drawing) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
@@ -2882,7 +2893,7 @@ function imgmap_spawnObjects(config) {
 			if ('#' + maps[i].name == imgs[j].getAttribute('usemap')) {
 				//we found one matching pair
 			//	console.log(maps[i]);
-				config.mode = '';
+				config.mode = 'highlighter_spawn';
 				imapn = new imgmap(config);
 				//imapn.setup(config);
 				imapn.useImage(imgs[j]);
