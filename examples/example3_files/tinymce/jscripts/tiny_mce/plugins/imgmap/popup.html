@@ -10,7 +10,7 @@
 	<link rel="stylesheet" href="css/imgmap.css" type="text/css"/>
 	<meta http-equiv="imagetoolbar" content="no"/>
 </head>
-<body id="imgmap" onload="delayedLoad()">
+<body id="imgmap">
 	<form id="img_area_form">
 		<fieldset>
 			<legend>
@@ -91,18 +91,10 @@
 
 <script type="text/javascript">
 
-function delayedLoad(){
-	if(navigator.appName=="Microsoft Internet Explorer")
-	{
-	//ie load
-		tinyMCEPopup.onLoadEval = 'init();';
-	}
-	else
-	{
-		tinyMCEPopup.executeOnLoad('init();');
-	}
-	
-}
+
+tinyMCEPopup.onLoadEval = 'init();';
+
+
 </script>
 
 </body>

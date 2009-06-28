@@ -10,9 +10,9 @@ var defaultFonts = "" +
 	"Geneva, Arial, Helvetica, sans-serif=Geneva, Arial, Helvetica, sans-serif";
 
 var defaultSizes = "9;10;12;14;16;18;24;xx-small;x-small;small;medium;large;x-large;xx-large;smaller;larger";
-var defaultMeasurement = "+pixels=px;points=pt;em;in;cm;mm;picas;ems;exs;%";
-var defaultSpacingMeasurement = "pixels=px;points=pt;in;cm;mm;picas;+ems;exs;%";
-var defaultIndentMeasurement = "pixels=px;+points=pt;in;cm;mm;picas;ems;exs;%";
+var defaultMeasurement = "+pixels=px;points=pt;inches=in;centimetres=cm;millimetres=mm;picas=pc;ems=em;exs=ex;%";
+var defaultSpacingMeasurement = "pixels=px;points=pt;inches=in;centimetres=cm;millimetres=mm;picas=pc;+ems=em;exs=ex;%";
+var defaultIndentMeasurement = "pixels=px;+points=pt;inches=in;centimetres=cm;millimetres=mm;picas=pc;ems=em;exs=ex;%";
 var defaultWeight = "normal;bold;bolder;lighter;100;200;300;400;500;600;700;800;900";
 var defaultTextStyle = "normal;italic;oblique";
 var defaultVariant = "normal;small-caps";
@@ -223,12 +223,12 @@ function setupFormData() {
 	f.positioning_height.value = getNum(ce.style.height);
 	selectByValue(f, 'positioning_height_measurement', getMeasurement(ce.style.height));
 
-	setupBox(f, ce, 'positioning_placement', '', '', new Array('top', 'right', 'bottom', 'left'));
+	setupBox(f, ce, 'positioning_placement', '', '', ['top', 'right', 'bottom', 'left']);
 
 	s = ce.style.clip.replace(new RegExp("rect\\('?([^']*)'?\\)", 'gi'), "$1");
 	s = s.replace(/,/g, ' ');
 
-	if (!hasEqualValues(new Array(getVal(s, 0), getVal(s, 1), getVal(s, 2), getVal(s, 3)))) {
+	if (!hasEqualValues([getVal(s, 0), getVal(s, 1), getVal(s, 2), getVal(s, 3)])) {
 		f.positioning_clip_top.value = getNum(getVal(s, 0));
 		selectByValue(f, 'positioning_clip_top_measurement', getMeasurement(getVal(s, 0)));
 		f.positioning_clip_right.value = getNum(getVal(s, 1));
@@ -247,12 +247,12 @@ function setupFormData() {
 }
 
 function getMeasurement(s) {
-	return s.replace(/^([0-9]+)(.*)$/, "$2");
+	return s.replace(/^([0-9.]+)(.*)$/, "$2");
 }
 
 function getNum(s) {
-	if (new RegExp('^[0-9]+[a-z%]+$', 'gi').test(s))
-		return s.replace(/[^0-9]/g, '');
+	if (new RegExp('^(?:[0-9.]+)(?:[a-z%]+)$', 'gi').test(s))
+		return s.replace(/[^0-9.]/g, '');
 
 	return s;
 }
@@ -279,7 +279,7 @@ function setValue(f, n, v) {
 
 function setupBox(f, ce, fp, pr, sf, b) {
 	if (typeof(b) == "undefined")
-		b = new Array('Top', 'Right', 'Bottom', 'Left');
+		b = ['Top', 'Right', 'Bottom', 'Left'];
 
 	if (isSame(ce, pr, sf, b)) {
 		f.elements[fp + "_same"].checked = true;
@@ -328,10 +328,10 @@ function setupBox(f, ce, fp, pr, sf, b) {
 }
 
 function isSame(e, pr, sf, b) {
-	var a = new Array(), i, x;
+	var a = [], i, x;
 
 	if (typeof(b) == "undefined")
-		b = new Array('Top', 'Right', 'Bottom', 'Left');
+		b = ['Top', 'Right', 'Bottom', 'Left'];
 
 	if (typeof(sf) == "undefined" || sf == null)
 		sf = "";
@@ -478,7 +478,7 @@ function generateCSS() {
 		ce.style.borderBottomWidth = f.border_width_bottom.value + (isNum(f.border_width_bottom.value) ? f.border_width_bottom_measurement.value : "");
 		ce.style.borderLeftWidth = f.border_width_left.value + (isNum(f.border_width_left.value) ? f.border_width_left_measurement.value : "");
 	} else
-		ce.style.borderWidth = f.border_width_top.value;
+		ce.style.borderWidth = f.border_width_top.value + (isNum(f.border_width_top.value) ? f.border_width_top_measurement.value : "");
 
 	if (!f.border_color_same.checked) {
 		ce.style.borderTopColor = f.border_color_top.value;

@@ -2,6 +2,12 @@
 
 = Changelog =
 
+Version 2.2
+ * Updated excanvas to r3 - should solve some IE8 problems
+ * Added Example 9 with ExtJs integration, thanks to Colin Bell
+ * Fixed Issue 21: Example 1 and online editor supports background change
+ * Fixed Issue 23: Possible to click on area in highlighter mode and fire a callback (follow the link)  
+
 Version 2.1
  * Separated most drawing-specific and gui-specific codes. This means easier integration with ANY kind of user interface.
  * GUI specific functions went to default_interface.js 

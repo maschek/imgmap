@@ -21,21 +21,21 @@
 
 	<target name="jslint">
 		<echo>Checking imgmap.js for errors (using jslint)</echo>
-		<java jar="custom_rhino.jar" fork="true" failonerror="true">
+		<java jar="custom_rhino.jar" fork="true" failonerror="false">
 			<arg value="http://www.jslint.com/rhino/jslint.js" />
 			<arg file="../imgmap.js" />
 			<redirector output="jslint_imgmap.txt" />
 		</java>
 
 		<echo>Checking default_interface.js for errors (using jslint)</echo>
-		<java jar="custom_rhino.jar" fork="true" failonerror="true">
+		<java jar="custom_rhino.jar" fork="true" failonerror="false">
 			<arg value="http://www.jslint.com/rhino/jslint.js" />
 			<arg file="../examples/example1_files/default_interface.js" />
 			<redirector output="jslint_default_interface.txt" />
 		</java>
 
 		<echo>Checking air.js for errors (using jslint)</echo>
-		<java jar="custom_rhino.jar" fork="true" failonerror="true">
+		<java jar="custom_rhino.jar" fork="true" failonerror="false">
 			<arg value="http://www.jslint.com/rhino/jslint.js" />
 			<arg file="../examples/example7_files/air.js" />
 			<redirector output="jslint_air.txt" />
@@ -87,29 +87,29 @@
           target: Make Tiny package
          ================================= -->
     <target name="build_tiny" description="Make Tiny package" depends="init,release,compress">
-    	<echo>Creating TinyMCE package...</echo>
+    	<echo>Creating TinyMCE 2.x package...</echo>
     	<delete dir="${src}/temp" />
-    	<mkdir dir="${src}/temp"/>
-		<copy todir="${src}/temp">
+    	<mkdir dir="${src}/temp/imgmap"/>
+		<copy todir="${src}/temp/imgmap">
 			<fileset dir="${src}/examples/example3_files/tinymce/jscripts/tiny_mce/plugins/imgmap"/>
 		</copy>
 		
-    	<mkdir dir="${src}/temp/licenses"/>
-    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
+    	<mkdir dir="${src}/temp/imgmap/licenses"/>
+    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/imgmap/licenses"></copy>
 
-    	<copy file="${src}/imgmap.js" todir="${src}/temp/jscripts"></copy>
-    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/jscripts"></copy>
+    	<copy file="${src}/imgmap.js" todir="${src}/temp/imgmap/jscripts"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/imgmap/jscripts"></copy>
     	<!-- copy language files -->
-		<copy todir="${src}/temp/jscripts">
+		<copy todir="${src}/temp/imgmap/jscripts">
 			<fileset dir="${src}">
 			<include name="lang_*.js"/>
 			</fileset>
 		</copy>
     	
-    	<copy file="${src}/changelog" todir="${src}/temp"></copy>
-    	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
+    	<copy file="${src}/changelog" todir="${src}/temp/imgmap"></copy>
+    	<copy file="${src}/license_GPL.txt" todir="${src}/temp/imgmap"></copy>
 
-		<replaceregexp file="${src}/temp/popup.html"
+		<replaceregexp file="${src}/temp/imgmap/popup.html"
 				match="\.\./\.\./\.\./\.\./\.\./\.\./\.\./imgmap\.js"
 				replace="jscripts/imgmap_packed.js"
 				flags="i"
@@ -127,27 +127,27 @@
     <target name="build_tiny3" description="Make TinyMCE 3.x package" depends="init,release,compress">
     	<echo>Creating TinyMCE 3.x package...</echo>
     	<delete dir="${src}/temp" />
-    	<mkdir dir="${src}/temp"/>
-		<copy todir="${src}/temp">
+    	<mkdir dir="${src}/temp/imgmap"/>
+		<copy todir="${src}/temp/imgmap">
 			<fileset dir="${src}/examples/example8_files/tinymce/jscripts/tiny_mce/plugins/imgmap"/>
 		</copy>
 		
-    	<mkdir dir="${src}/temp/licenses"/>
-    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
+    	<mkdir dir="${src}/temp/imgmap/licenses"/>
+    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/imgmap/licenses"></copy>
 
-    	<copy file="${src}/imgmap.js" todir="${src}/temp/jscripts"></copy>
-    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/jscripts"></copy>
+    	<copy file="${src}/imgmap.js" todir="${src}/temp/imgmap/jscripts"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/imgmap/jscripts"></copy>
     	<!-- copy language files -->
-		<copy todir="${src}/temp/jscripts">
+		<copy todir="${src}/temp/imgmap/jscripts">
 			<fileset dir="${src}">
 			<include name="lang_*.js"/>
 			</fileset>
 		</copy>
     	
-    	<copy file="${src}/changelog" todir="${src}/temp"></copy>
-    	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
+    	<copy file="${src}/changelog" todir="${src}/temp/imgmap"></copy>
+    	<copy file="${src}/license_GPL.txt" todir="${src}/temp/imgmap"></copy>
 
-		<replaceregexp file="${src}/temp/popup.html"
+		<replaceregexp file="${src}/temp/imgmap/popup.html"
 				match="\.\./\.\./\.\./\.\./\.\./\.\./\.\./imgmap\.js"
 				replace="jscripts/imgmap_packed.js"
 				flags="i"
@@ -165,27 +165,27 @@
     <target name="build_fck" description="Make FCK package" depends="init,release,compress">
     	<echo>Creating FCKEditor package...</echo>
     	<delete dir="${src}/temp" />
-    	<mkdir dir="${src}/temp"/>
-		<copy todir="${src}/temp">
+    	<mkdir dir="${src}/temp/imgmap"/>
+		<copy todir="${src}/temp/imgmap">
 			<fileset dir="${src}/examples/example6_files/imgmap"/>
 		</copy>
 		
-    	<mkdir dir="${src}/temp/licenses"/>
-    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
+    	<mkdir dir="${src}/temp/imgmap/licenses"/>
+    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/imgmap/licenses"></copy>
 
-    	<copy file="${src}/imgmap.js" todir="${src}/temp/jscripts"></copy>
-    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/jscripts"></copy>
+    	<copy file="${src}/imgmap.js" todir="${src}/temp/imgmap/jscripts"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/imgmap/jscripts"></copy>
     	<!-- copy language files -->
-		<copy todir="${src}/temp/jscripts">
+		<copy todir="${src}/temp/imgmap/jscripts">
 			<fileset dir="${src}">
 			<include name="lang_*.js"/>
 			</fileset>
 		</copy>
 
-    	<copy file="${src}/changelog" todir="${src}/temp"></copy>
-    	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
+    	<copy file="${src}/changelog" todir="${src}/temp/imgmap"></copy>
+    	<copy file="${src}/license_GPL.txt" todir="${src}/temp/imgmap"></copy>
 
-		<replaceregexp file="${src}/temp/popup.html"
+		<replaceregexp file="${src}/temp/imgmap/popup.html"
 				match="\.\./\.\./\.\./imgmap\.js"
 				replace="jscripts/imgmap_packed.js"
 				flags="i"
@@ -314,7 +314,7 @@
 	<!-- - - - - - - - - - - - - - - - - - 
           target: Create release ZIP file
          - - - - - - - - - - - - - - - - - -->
-    <target name="zipall" description="Create release ZIP file" depends="init,compress,jsdoc">
+    <target name="zipall" description="Create release ZIP file" depends="init,compress,jsdoc,build_plugins">
     	<property name="build.zipfile" value="imgmap${version}r${buildNumber}.zip"/>
     	<echo>Creating final ZIP package as: ${build.zipfile}</echo>
     	<zip destfile="${src}/${build.zipfile}"

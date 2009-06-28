@@ -10,7 +10,7 @@
 	<link rel="stylesheet" href="css/imgmap.css" type="text/css"/>
 	<meta http-equiv="imagetoolbar" content="no"/>
 </head>
-<body id="imgmap" onload="delayedLoad()">
+<body id="imgmap">
 	<form id="img_area_form">
 		<fieldset>
 			<legend>
@@ -91,15 +91,9 @@
 
 <script type="text/javascript">
 
-function delayedLoad() {
-	//alert(tinymce.isWebKit);
-	if (tinymce.isIE || tinymce.isWebKit) {
-		tinyMCEPopup.onInit.add(init);
-	}
-	else {
-		tinyMCEPopup.onInit.add(init());
-	}
-}
+tinyMCEPopup.onInit.add(function() {
+	init();
+});
 
 </script>
 
