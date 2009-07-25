@@ -5,6 +5,8 @@
 
 Everything below was tried out with Joomla 1.5.4. By default Joomla uses TinyMCE 2.x so the basics are the same as for the [TinyMCE_setup].
 
+Joomla can also work with FCKeditor, please read [Joomla_FCK_setup].
+
 
 = Details =
 
@@ -27,4 +29,3 @@ Everything below was tried out with Joomla 1.5.4. By default Joomla uses TinyMCE
 }}}
   # go to Joomla admin/Plugin manager/Editor - TinyMCE 2.0/Advanced Parameters, and make sure Imagemap is set to Show.
   # go to article editor, click on any image, and notice the button highlighted on the toolbar, you are done:)
-
