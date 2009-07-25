@@ -1,0 +1,26 @@
+#summary How to set up image map editor for joomla with FCK editor.
+#labels Phase-Deploy
+
+= Introduction =
+
+You can get FCKeditor working with Joomla by downloading [http://www.joomlafckeditor.com/downloads Joomla FCKEditor plugin].
+Steps below tested with Joomla 1.5.12 and JoomlaFCK 2.6.4.1.
+
+
+= Details =
+
+ # Install imgmap plugin into `{joomla}\plugins\editors\fckeditor\editor\plugins\imgmap\`
+ # In `{joomla}\plugins\editors\fckeditor\fckconfig.js` somewhere at the end of the file add:
+{{{
+FCKConfig.Plugins.Add( 'imgmap', 'en') ;
+}}}
+ # In `{joomla}\plugins\editors\fckeditor\editor\jtoolbarsetconfig.xml` you will find the toolbar sets (Advanced/Creative/Blog/Default). Locate 
+{{{
+<plugin name="Image" acl="*"/>
+}}}
+ in the toolbarset you want to use, and add: 
+{{{
+<plugin name="imgmapPopup" acl="*"/>
+}}}
+
+*Finally* Clear your browser cache and launch article editor. You should see the imgmap icon next to the image icon. (Note: in case of the default Office2007 skin you only see a missing icon, this will be fixed in the next release)
