@@ -37,7 +37,7 @@
 		<echo>Checking air.js for errors (using jslint)</echo>
 		<java jar="custom_rhino.jar" fork="true" failonerror="false">
 			<arg value="http://www.jslint.com/rhino/jslint.js" />
-			<arg file="../examples/example7_files/air.js" />
+			<arg file="../examples/example_air_files/air.js" />
 			<redirector output="jslint_air.txt" />
 		</java>
 	</target>
@@ -91,7 +91,7 @@
     	<delete dir="${src}/temp" />
     	<mkdir dir="${src}/temp/imgmap"/>
 		<copy todir="${src}/temp/imgmap">
-			<fileset dir="${src}/examples/example3_files/tinymce/jscripts/tiny_mce/plugins/imgmap"/>
+			<fileset dir="${src}/examples/example_tiny_files/tinymce/jscripts/tiny_mce/plugins/imgmap"/>
 		</copy>
 		
     	<mkdir dir="${src}/temp/imgmap/licenses"/>
@@ -129,7 +129,7 @@
     	<delete dir="${src}/temp" />
     	<mkdir dir="${src}/temp/imgmap"/>
 		<copy todir="${src}/temp/imgmap">
-			<fileset dir="${src}/examples/example8_files/tinymce/jscripts/tiny_mce/plugins/imgmap"/>
+			<fileset dir="${src}/examples/example_tiny3_files/tinymce/jscripts/tiny_mce/plugins/imgmap"/>
 		</copy>
 		
     	<mkdir dir="${src}/temp/imgmap/licenses"/>
@@ -215,7 +215,7 @@
     	<delete dir="${src}/temp" />
     	<mkdir dir="${src}/temp/imgmap"/>
 		<copy todir="${src}/temp/imgmap">
-			<fileset dir="${src}/examples/example6_files/imgmap"/>
+			<fileset dir="${src}/examples/example_fck_files/imgmap"/>
 		</copy>
 		
     	<mkdir dir="${src}/temp/imgmap/licenses"/>
@@ -255,12 +255,12 @@
     	<delete dir="${src}/temp" />
     	<mkdir dir="${src}/temp"/>
 		<copy todir="${src}/temp">
-			<fileset dir="${src}/examples/example7_files"/>
+			<fileset dir="${src}/examples/example_air_files"/>
 		</copy>
 		
 		<!-- remove introspector since that is for debug only -->
 		<delete file="${src}/temp/AIRIntrospector.js" />
-		<copy file="${src}/examples/example7.xml" todir="${src}/temp"></copy>
+		<copy file="${src}/examples/example_air.xml" todir="${src}/temp"></copy>
 		
     	<mkdir dir="${src}/temp/licenses"/>
     	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
@@ -278,14 +278,14 @@
     	<copy file="${src}/license_GPL.txt" todir="${src}/temp"></copy>
 
 		<!-- replace reference to subdir -->
-		<replaceregexp file="${src}/temp/example7.xml"
-				match="example7_files\/"
+		<replaceregexp file="${src}/temp/example_air.xml"
+				match="example_air_files\/"
 				replace=""
 				flags="i"
 				byline="true"/>
 		
 		<!-- replace version info -->
-		<replaceregexp file="${src}/temp/example7.xml"
+		<replaceregexp file="${src}/temp/example_air.xml"
 				match="&lt;version&gt;.*?&lt;/version&gt;"
 				replace="&lt;version&gt;${version} (build ${buildNumber})&lt;/version&gt;"
 				flags="i"
@@ -299,14 +299,14 @@
 				byline="true"/>
 		
 		<!-- replace reference to introspector include -->
-		<replaceregexp file="${src}/temp/example7.html"
+		<replaceregexp file="${src}/temp/example_air.html"
 				match='&lt;script.*?src="AIRIntrospector\.js".*?/script&gt;'
 				replace=""
 				flags="i"
 				byline="true"/>
 		
 		<!-- replace reference to imgmap, use packed instead -->
-		<replaceregexp file="${src}/temp/example7.html"
+		<replaceregexp file="${src}/temp/example_air.html"
 				match='src="imgmap\.js"'
 				replace='src="imgmap_packed.js"'
 				flags="i"
@@ -328,7 +328,7 @@
 			<arg value="-keystore"/>
 			<arg value="cert.pfx"/>
 			<arg value="${src}/imgmap_desktop_${buildNumber}.air"/>
-			<arg value="${src}/temp/example7.xml"/>
+			<arg value="${src}/temp/example_air.xml"/>
 			<arg value="-C"/>
 			<arg value="${src}/temp"/>
 			<arg value="."/>
