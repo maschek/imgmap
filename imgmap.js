@@ -54,10 +54,10 @@ function imgmap(config) {
 	this.version = "2.2";
 	
 	/** Build date of imgmap */
-	this.buildDate = "2009/06/28 20:55";
+	this.buildDate = "2009/07/26 16:02";
 	
 	/** Sequential build number of imgmap */
-	this.buildNumber = "99";
+	this.buildNumber = "106";
 	
 	/** Config object of the imgmap instance */
 	this.config = {};
@@ -878,7 +878,7 @@ imgmap.prototype.getMapId = function() {
  */
 imgmap.prototype._normShape = function(shape) {
 	if (!shape) {return 'rect';}
-	shape = shape.trim().toLowerCase();
+	shape = this.trim(shape).toLowerCase();
 	if (shape.substring(0, 4) == 'rect') {return 'rect';}
 	if (shape.substring(0, 4) == 'circ') {return 'circle';}
 	if (shape.substring(0, 4) == 'poly') {return 'poly';}
@@ -910,7 +910,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	var temp, le;
 	
 	//console.log('normcoords: ' + coords + ' - ' + shape + ' - ' + flag);
-	coords = coords.trim();
+	coords = this.trim(coords);
 	if (coords === '') {return '';}
 	var oldcoords = coords;
 	//replace some general junk
@@ -2778,13 +2778,13 @@ imgmap.prototype.assignCSS = function(obj, cssText) {
 	for (var i = 0; i < parts.length; i++) {
 		var p = parts[i].split(':');
 		//we need to camelcase by - signs
-		var pp = p[0].trim().split('-');
+		var pp = this.trim(p[0]).split('-');
 		var prop = pp[0];
 		for (var j = 1; j < pp.length; j++) {
 			//replace first letters to uppercase
 			prop+= pp[j].replace(/^\w/, pp[j].substring(0,1).toUpperCase());
 		}
-		obj.style[prop.trim()] = p[1].trim();
+		obj.style[this.trim(prop)] = this.trim(p[1]);
 	}
 };
 
@@ -2893,28 +2893,12 @@ Function.prototype.bind = function(object) {
 
 
 /**
- *	Extends String with trim function.
- *	@url	http://www.somacon.com/p355.php
- *	@addon
+ *	Trims a string.
+ *	Changed not to extend String but use own function for better compatibility. 
+ *	@param str The string to trim. 
  */
-String.prototype.trim = function() {
-	return this.replace(/^\s+|\s+$/g,"");
-};
-/**
- *	Extends String with ltrim function.
- *	@url	http://www.somacon.com/p355.php
- *	@addon
- */
-String.prototype.ltrim = function() {
-	return this.replace(/^\s+/,"");
-};
-/**
- *	Extends String with rtrim function.
- *	@url	http://www.somacon.com/p355.php
- *	@addon
- */
-String.prototype.rtrim = function() {
-	return this.replace(/\s+$/,"");
+imgmap.prototype.trim = function(str) {
+	return str.replace(/^\s+|\s+$/g, '');
 };
 
 
