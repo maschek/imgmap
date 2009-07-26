@@ -54,10 +54,10 @@ function imgmap(config) {
 	this.version = "2.2";
 	
 	/** Build date of imgmap */
-	this.buildDate = "2009/07/26 16:02";
+	this.buildDate = "2009/07/26 16:29";
 	
 	/** Sequential build number of imgmap */
-	this.buildNumber = "106";
+	this.buildNumber = "108";
 	
 	/** Config object of the imgmap instance */
 	this.config = {};
