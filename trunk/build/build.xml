@@ -45,7 +45,7 @@
 	<!-- - - - - - - - - - - - - - - - - - 
           target: Add version, build and release date information
          - - - - - - - - - - - - - - - - - -->
-    <target name="release" description="Add version, build and release date information" depends="init,jslint">
+    <target name="release" description="Add version, build and release date information" depends="init">
     	<echo>Replacing release information in main sourcefile</echo>
 		<replaceregexp file="${src}/imgmap.js"
 		                         match="this.buildNumber\s*=\s*&#34;(\d*)&#34;"
@@ -338,7 +338,7 @@
 		<delete dir="${src}/temp" />
     </target>
 
-	<target name="build_plugins" description="Build plugins" depends="build_tiny,build_tiny3,build_fck,build_air">
+	<target name="build_plugins" description="Build plugins" depends="build_tiny,build_tiny3,build_fck,build_air,build_xinha">
 	</target>
 
 	<!-- - - - - - - - - - - - - - - - - - 
@@ -363,11 +363,11 @@
           target: Create release ZIP file
          - - - - - - - - - - - - - - - - - -->
     <target name="zipall" description="Create release ZIP file" depends="init,compress,jsdoc,build_plugins">
-    	<property name="build.zipfile" value="imgmap${version}r${buildNumber}.zip"/>
+    	<property name="build.zipfile" value="imgmap_${version}_${buildNumber}.zip"/>
     	<echo>Creating final ZIP package as: ${build.zipfile}</echo>
     	<zip destfile="${src}/${build.zipfile}"
     		 basedir="${src}"
-    		 excludes="build/**, temp/**, **/imgmap*.zip" />
+    		 excludes="build/**, temp/**, **/*.zip *.air" />
     	<checksum file="${src}/${build.zipfile}" property="build.md5"/>
     </target>
 	

@@ -28,7 +28,7 @@ $targetdir = 'temp/';
 if ($_POST['btn_add']) {
 	//volt filefeltoltes
 	if ($_FILES['file_src']['error'] > 0) $warning = "Upload error {$_FILES['file_src']['error']}.";
-	if ($_FILES['file_src']['size'] > 250000) $warning = "File too big (limit: 250k).";
+	if ($_FILES['file_src']['size'] > 2000000) $warning = "File too big (limit: 2M).";
 	if ($warning == '') {
 		$targetfile = session_id();
 		@move_uploaded_file($_FILES['file_src']['tmp_name'], $targetdir.$targetfile);
