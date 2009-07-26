@@ -84,10 +84,10 @@
 	</target>
 	
 	<!-- =================================
-          target: Make Tiny package
+          target: Make Tiny plugin
          ================================= -->
-    <target name="build_tiny" description="Make Tiny package" depends="init,release,compress">
-    	<echo>Creating TinyMCE 2.x package...</echo>
+    <target name="build_tiny" description="Make Tiny plugin" depends="init,release,compress">
+    	<echo>Creating TinyMCE 2.x plugin...</echo>
     	<delete dir="${src}/temp" />
     	<mkdir dir="${src}/temp/imgmap"/>
 		<copy todir="${src}/temp/imgmap">
@@ -114,18 +114,18 @@
 				replace="jscripts/imgmap_packed.js"
 				flags="i"
 				byline="true"/>
-    	<echo>Packaging ZIP: plugin_tinymce${buildNumber}.zip</echo>
-    	<zip destfile="${src}/plugin_tinymce${buildNumber}.zip"
+    	<echo>Packaging ZIP: plugin_tinymce_${buildNumber}.zip</echo>
+    	<zip destfile="${src}/plugin_tinymce_${buildNumber}.zip"
     		 basedir="${src}/temp"
     	/>
     	<delete dir="${src}/temp" />
     </target>
 
 	<!-- =================================
-          target: Make Tiny3 package
+          target: Make Tiny3 plugin
          ================================= -->
-    <target name="build_tiny3" description="Make TinyMCE 3.x package" depends="init,release,compress">
-    	<echo>Creating TinyMCE 3.x package...</echo>
+    <target name="build_tiny3" description="Make TinyMCE 3.x plugin" depends="init,release,compress">
+    	<echo>Creating TinyMCE 3.x plugin...</echo>
     	<delete dir="${src}/temp" />
     	<mkdir dir="${src}/temp/imgmap"/>
 		<copy todir="${src}/temp/imgmap">
@@ -152,18 +152,66 @@
 				replace="jscripts/imgmap_packed.js"
 				flags="i"
 				byline="true"/>
-    	<echo>Packaging ZIP: plugin_tinymce3.${buildNumber}.zip</echo>
-    	<zip destfile="${src}/plugin_tinymce3.${buildNumber}.zip"
+    	<echo>Packaging ZIP: plugin_tinymce3_${buildNumber}.zip</echo>
+    	<zip destfile="${src}/plugin_tinymce3_${buildNumber}.zip"
     		 basedir="${src}/temp"
     	/>
     	<delete dir="${src}/temp" />
     </target>
 
 	<!-- =================================
-          target: Make FCK package
+          target: Make Xinha plugin
          ================================= -->
-    <target name="build_fck" description="Make FCK package" depends="init,release,compress">
-    	<echo>Creating FCKEditor package...</echo>
+    <target name="build_xinha" description="Make Xinha plugin" depends="init,release,compress">
+    	<echo>Creating Xinha plugin...</echo>
+    	<delete dir="${src}/temp" />
+    	<mkdir dir="${src}/temp/ImageMap"/>
+		<copy todir="${src}/temp/ImageMap">
+			<fileset dir="${src}/examples/example_xinha_files/ImageMap"/>
+		</copy>
+		
+    	<mkdir dir="${src}/temp/ImageMap/licenses"/>
+    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/ImageMap/licenses"></copy>
+
+    	<copy file="${src}/imgmap.js" todir="${src}/temp/ImageMap/jscripts"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp/ImageMap/jscripts"></copy>
+    	<!-- copy language files -->
+		<copy todir="${src}/temp/ImageMap/jscripts">
+			<fileset dir="${src}">
+			<include name="lang_*.js"/>
+			</fileset>
+		</copy>
+    	
+    	<copy file="${src}/changelog" todir="${src}/temp/ImageMap"></copy>
+    	<copy file="${src}/license_GPL.txt" todir="${src}/temp/ImageMap"></copy>
+
+		<replaceregexp file="${src}/temp/ImageMap/popup.html"
+				match="\.\./\.\./\.\./imgmap\.js"
+				replace="jscripts/imgmap_packed.js"
+				flags="i"
+				byline="true"/>
+		<replaceregexp file="${src}/temp/ImageMap/popup.html"
+				match="\.\./xinha/popups/popup\.js"
+				replace="../../popups/popup.js"
+				flags="i"
+				byline="true"/>
+		<replaceregexp file="${src}/temp/ImageMap/ImageMap.js"
+				match=".\.\./\.\./\.\./.\s+\+\s+plugin_base"
+				replace="plugin_base"
+				flags="i"
+				byline="true"/>
+    	<echo>Packaging ZIP: plugin_xinha_${buildNumber}.zip</echo>
+    	<zip destfile="${src}/plugin_xinha_${buildNumber}.zip"
+    		 basedir="${src}/temp"
+    	/>
+    	<delete dir="${src}/temp" />
+    </target>
+
+	<!-- =================================
+          target: Make FCK plugin
+         ================================= -->
+    <target name="build_fck" description="Make FCK plugin" depends="init,release,compress">
+    	<echo>Creating FCKEditor plugin...</echo>
     	<delete dir="${src}/temp" />
     	<mkdir dir="${src}/temp/imgmap"/>
 		<copy todir="${src}/temp/imgmap">
@@ -190,8 +238,8 @@
 				replace="jscripts/imgmap_packed.js"
 				flags="i"
 				byline="true"/>
-    	<echo>Packaging ZIP: plugin_fck${buildNumber}.zip</echo>
-    	<zip destfile="${src}/plugin_fck${buildNumber}.zip"
+    	<echo>Packaging ZIP: plugin_fck_${buildNumber}.zip</echo>
+    	<zip destfile="${src}/plugin_fck_${buildNumber}.zip"
     		 basedir="${src}/temp"
     	/>
     	<delete dir="${src}/temp" />
@@ -279,7 +327,7 @@
 			<arg value="pkcs12"/>
 			<arg value="-keystore"/>
 			<arg value="cert.pfx"/>
-			<arg value="${src}/imgmap_desktop${buildNumber}.air"/>
+			<arg value="${src}/imgmap_desktop_${buildNumber}.air"/>
 			<arg value="${src}/temp/example7.xml"/>
 			<arg value="-C"/>
 			<arg value="${src}/temp"/>
