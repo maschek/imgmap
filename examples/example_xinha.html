@@ -1,0 +1,55 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Online Image Map Editor - Example Xinha</title>
+<link rel="stylesheet" href="example1_files/imgmap.css" type="text/css">
+<script type="text/javascript">
+
+var _editor_url  = 'example_xinha_files/xinha';
+var _editor_lang = "en";
+
+</script>
+<!-- Load up the actual editor core -->
+<script type="text/javascript" src="example_xinha_files/xinha/XinhaCore.js"></script>
+<script type="text/javascript">
+
+var xinha_plugins =
+[
+ {plugin:'ImageMap',url:'example_xinha_files/ImageMap/ImageMap.js'}
+];
+var xinha_editors =
+[
+  'myTextArea'
+];
+
+function xinha_init()
+{
+  if(!Xinha.loadPlugins(xinha_plugins, xinha_init)) return;
+  
+  var xinha_config = new Xinha.Config();
+
+  xinha_editors = Xinha.makeEditors(xinha_editors, xinha_config, xinha_plugins);
+
+  Xinha.startEditors(xinha_editors);
+
+}
+Xinha.addOnloadHandler(xinha_init);
+</script>
+</head>
+<body>
+
+<p style="font-size: 12px; font-weight: bold">
+Example Xinha shows how to use the imgmap with Xinha editor.
+</p>
+
+<form onsubmit="alert(this.myTextArea.value); return false;">
+<textarea id="myTextArea" name="myTextArea" rows="25" cols="80" style="width: 100%">
+	&lt;div&gt;
+		&lt;p&gt;Some paragraph&lt;/p&gt;
+		&lt;img src=&quot;example_files/sample1.jpg&quot;&gt;
+	&lt;/div&gt;
+</textarea>
+</form>
+
+</body>
+</html>

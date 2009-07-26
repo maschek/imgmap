@@ -1,0 +1,13 @@
+How to install the plugin
+=========================
+
+1. copy files to plugins/ImageMap/
+
+2. Add ImageMap plugin to your plugins array
+var xinha_plugins =
+[
+ 'Linker',
+ 'ImageMap'
+];
+
+3. Clear your browser cache and see the new button next to insert image button
