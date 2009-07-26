@@ -8,7 +8,7 @@ imgmap.desktop Adobe AIR application by Adam Maschek, 2008
 
 To test this application, please download and install the Adobe AIR SDK from:
 http://labs.adobe.com/downloads/airsdk.html
-, then run "adl example7.xml" from the command line.
+, then run "adl example_air.xml" from the command line.
 
 To install this application as a desktop executable, please download and install
 the Adobe AIR runtimes from:
@@ -41,7 +41,7 @@ http://www.maschek.hu/imagemap/desktop
 	<initialWindow>
 		<!-- The main SWF or HTML file of the application. Required. -->
 		<!-- Note: In Flex Builder, the SWF reference is set automatically. -->
-		<content>example7_files/example7.html</content>
+		<content>example_air_files/example7.html</content>
 		
 		<!-- Whether the window is initially visible. Optional. Default false. -->
 	    <visible>true</visible>
