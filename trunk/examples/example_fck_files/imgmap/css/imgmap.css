@@ -84,8 +84,8 @@ LEGEND A {
 
 #pic_container {
 	position: relative;
-	width: 100%;
-	height: 300px;
+	width: 634px;
+	height: 250px;
 	border: solid 0px #efefef;
 	overflow: auto;
 }
