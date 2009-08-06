@@ -7,12 +7,12 @@
 
 */
 
-imgmapCommand_GetState = function() {
+var imgmapCommand_GetState = function() {
 	if ( FCK.EditMode != FCK_EDITMODE_WYSIWYG )
 		return FCK_TRISTATE_DISABLED;
 
 	var oImage = FCK.Selection.GetSelectedElement() ;
-	if ( oImage && oImage.tagName == 'IMG'  )
+	if ( oImage && oImage.tagName == 'IMG' && !oImage.getAttribute('_fckfakelement') )
 	{
 		// Does it has an assigned map?
 		if (oImage.getAttribute( 'usemap' ))
@@ -26,8 +26,8 @@ imgmapCommand_GetState = function() {
 }
 
 
-FCKCommands.RegisterCommand( 'imgmapPopup', 
-	new FCKDialogCommand( FCKLang.imgmapDlgName, FCKLang.imgmapDlgTitle, FCKPlugins.Items['imgmap'].Path + 'popup.html', 700, 620, imgmapCommand_GetState ) ) ;
+FCKCommands.RegisterCommand( 'imgmapPopup',
+	new FCKDialogCommand( FCKLang.imgmapDlgName, FCKLang.imgmapDlgTitle, FCKPlugins.Items['imgmap'].Path + 'popup.html', 700, 570, imgmapCommand_GetState ) ) ;
 
 
 // create imgmap toolbar button.
@@ -44,7 +44,7 @@ FCKToolbarItems.RegisterItem('imgmapPopup', imgmapButton);
 FCK.ContextMenu.RegisterListener({
 	AddItems : function( menu, tag, tagName ) {
 		// under what circumstances do we display this option
-		if (tagName == 'IMG') {
+		if (tagName == 'IMG' && tag && !tag.getAttribute('_fckfakelement')) {
 			// when the option is displayed, show a separator  the command
 			menu.AddSeparator();
 			// the command needs the registered command name, the title for the context menu, and the icon path

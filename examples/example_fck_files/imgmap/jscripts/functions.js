@@ -16,6 +16,7 @@ window.$ = function( id )
 };
 
 var oEditor = window.parent.InnerDialogLoaded();
+var FCK = oEditor.FCK;
 var FCKConfig	= oEditor.FCKConfig;
 var FCKLang = oEditor.FCKLang;
 
@@ -92,7 +93,7 @@ window.onload = function()
 
 	//check if the image has a valid map already assigned
 	var mapname;
-	
+
 	//check if _sik_img_map attribute is set (used in mediawiki)
 	mapname = img_obj.getAttribute('_sik_img_map');
 	if (typeof mapname == 'string' && mapname !== '') {
@@ -102,16 +103,16 @@ window.onload = function()
 	}
 	else {
 		mapname = img_obj.getAttribute('usemap', 2) || img_obj.usemap;
-		//console.log(mapname);
+
 		if ( typeof mapname == 'string' && mapname !== '') {
 			mapname = mapname.substr(1);
 			var maps = oEditor.FCK.EditorDocument.getElementsByTagName('MAP');
-			//console.log(maps);
+
 			for (var i=0; i < maps.length; i++) {
 				if (maps[i].name == mapname) {
 					map_obj = maps[i];
 					myimgmap.setMapHTML(map_obj);
-	
+
 					$('MapName').value = mapname;
 					break;
 				}
@@ -168,13 +169,13 @@ function Ok() {
 			img_obj.setAttribute('_sik_img_map', mapwikicode);
 			return true;
 		}
-		
+
 		//else normal map output
 		if (typeof map_obj == 'undefined' || map_obj === null) {
 			map_obj = oEditor.FCK.EditorDocument.createElement('map');
 			img_obj.parentNode.appendChild(map_obj);
 		}
-		
+
 		map_obj.innerHTML = MapInnerHTML;
 
 		// IE bug: it's not possible to directly assing the name and make it work easily
@@ -184,7 +185,7 @@ function Ok() {
 
 		map_obj.name = myimgmap.getMapName();
 		map_obj.id   = myimgmap.getMapId();
-		
+
 		img_obj.setAttribute('usemap', "#" + myimgmap.getMapName(), 0);
 	}
 
@@ -450,14 +451,14 @@ function getAreaHtml(area)
 	if (area.atitle && area.atitle!='') html+= ' title="' + area.atitle + '"';
 	if (area.ahref && area.ahref!='') html+= ' href="' +	area.ahref + '" _fcksavedurl="' +	area.ahref + '"';
 	if (area.atarget && area.atarget!='') html+= ' target="' + area.atarget + '"';
-						
+
 	html+='/>';
 	return html;
 }
 
 /* edit the properties of an area */
 
-function SetUrl(value)
+function SetAreaUrl(value)
 {
 	var id = currentAreaId;
 	if ( id !== null)
@@ -532,7 +533,7 @@ function gui_statusMessage(str) {
 function gui_zoom() {
 	var scale = document.getElementById('dd_zoom').value;
 	var pic = document.getElementById('pic_container').getElementsByTagName('img')[0];
-	if (typeof pic == 'undefined') {return false;}
+	if (typeof pic == 'undefined') {return;}
 	if (typeof pic.oldwidth == 'undefined' || !pic.oldwidth) {
 		pic.oldwidth = pic.width;
 	}
