@@ -41,7 +41,7 @@ http://www.maschek.hu/imagemap/desktop
 	<initialWindow>
 		<!-- The main SWF or HTML file of the application. Required. -->
 		<!-- Note: In Flex Builder, the SWF reference is set automatically. -->
-		<content>example_air_files/example7.html</content>
+		<content>example_air_files/example_air.html</content>
 		
 		<!-- Whether the window is initially visible. Optional. Default false. -->
 	    <visible>true</visible>
