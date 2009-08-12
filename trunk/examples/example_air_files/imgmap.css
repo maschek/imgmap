@@ -131,7 +131,7 @@ A.source_accept:hover {
 	position: relative;
 	width: 100%;
 	height: 300px;
-	border: solid 0px #efefef;
+	border: 0;
 	overflow: auto;
 }
 

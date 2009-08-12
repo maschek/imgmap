@@ -38,9 +38,11 @@
  *	@date	26-02-2007 2:24:50
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  *	@copyright
- *	@version 2.0beta6
+ *	@version 2.2
  *	 
  */
+/*jslint browser: true, newcap: false, white: false, onevar: false, plusplus: false, eqeqeq: false, nomen: false */
+/*global imgmapStrings:true, window:false, G_vmlCanvasManager:false, air:false, imgmap_spawnObjects:true */
 /**
  *	@author	Adam Maschek
  *	@constructor
@@ -49,13 +51,13 @@
 function imgmap(config) {
 
 	/** Version string of imgmap */
-	this.version = "2.0beta6";
+	this.version = "2.2";
 	
 	/** Build date of imgmap */
-	this.buildDate = "2008/10/30 12:24";
+	this.buildDate = "2009/07/26 16:29";
 	
 	/** Sequential build number of imgmap */
-	this.buildNumber = "87";
+	this.buildNumber = "108";
 	
 	/** Config object of the imgmap instance */
 	this.config = {};
@@ -143,9 +145,17 @@ function imgmap(config) {
 	/** is_drawing draw mode constant */
 	this.DM_BEZIER_MOVE             = 41;
 
-	//set some config defaults
+	//set some config defaults below
+	
+	/**
+	 *	Mode of operation
+	 *	possible values:
+	 *	editor - classical editor,
+	 *	editor2 - dreamweaver style editor,
+	 *	highlighter - map highlighter, will spawn imgmap instances for each map found in the current page
+	 *	highlighter_spawn - internal mode after spawning imgmap objects
+	 */
 	this.config.mode     = "editor";
-	//possible values: editor - classical editor, editor2 - dreamweaver style editor, highlighter - map highlighter
 	
 	this.config.baseroot    = '';
 	this.config.lang        = '';
@@ -170,6 +180,7 @@ function imgmap(config) {
 		'onSetMap',
 		'onGetMap',
 		'onSelectArea',
+		'onDblClickArea',
 		'onStatusMessage',
 		'onAreaChanged'];
 
@@ -216,15 +227,8 @@ function imgmap(config) {
 	this.isGecko   = ua.indexOf('Gecko')  != -1;
 	this.isSafari  = ua.indexOf('Safari') != -1;
 	this.isOpera   = (typeof window.opera != 'undefined');
-
-	this.addEvent(document, 'keydown',   this.eventHandlers.doc_keydown = this.doc_keydown.bind(this));
-	this.addEvent(document, 'keyup',     this.eventHandlers.doc_keyup = this.doc_keyup.bind(this));
-	this.addEvent(document, 'mousedown', this.eventHandlers.doc_mousedown = this.doc_mousedown.bind(this));
 	
-	if (config) {
-		this.setup(config);
-	}
-	
+	this.setup(config);
 }
 
 
@@ -264,13 +268,20 @@ imgmap.prototype.assignOID = function(objorid) {
  *	@return	True if all went ok.
  */
 imgmap.prototype.setup = function(config) {
-	//this.config = config;
+	//this.log('setup');
+
+	//copy non-default config parameters to this.config
 	for (var i in config) {
 		if (config.hasOwnProperty(i)) {
 			this.config[i] = config[i];
 		}
 	}
-	//this.log('setup');
+	
+	//set document event hooks
+	this.addEvent(document, 'keydown',   this.eventHandlers.doc_keydown = this.doc_keydown.bind(this));
+	this.addEvent(document, 'keyup',     this.eventHandlers.doc_keyup = this.doc_keyup.bind(this));
+	this.addEvent(document, 'mousedown', this.eventHandlers.doc_mousedown = this.doc_mousedown.bind(this));
+	
 	//set pic_container element - supposedly it already exists in the DOM
 	if (config && config.pic_container) {
 		this.pic_container = this.assignOID(config.pic_container);
@@ -324,14 +335,17 @@ imgmap.prototype.setup = function(config) {
 	if (!this.config.lang) {
 		this.config.lang = this.detectLanguage();
 	}
-	this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
+	if (typeof imgmapStrings == 'undefined') {
+		//language file might have already been loaded (ex highlighter mode)
+		this.loadScript(this.config.baseroot + 'lang_' + this.config.lang + '.js');
+	}
 	
 	//check event hooks
 	var found, j, le;
 	for (i in this.config.custom_callbacks) {
 		if (this.config.custom_callbacks.hasOwnProperty(i)) {
 			found = false;
-			for (j=0, le = this.event_types.length; j<le; j++) {
+			for (j = 0, le = this.event_types.length; j < le; j++) {
 				if (i == this.event_types[j]) {
 					found = true;
 					break;
@@ -864,7 +878,7 @@ imgmap.prototype.getMapId = function() {
  */
 imgmap.prototype._normShape = function(shape) {
 	if (!shape) {return 'rect';}
-	shape = shape.trim().toLowerCase();
+	shape = this.trim(shape).toLowerCase();
 	if (shape.substring(0, 4) == 'rect') {return 'rect';}
 	if (shape.substring(0, 4) == 'circ') {return 'circle';}
 	if (shape.substring(0, 4) == 'poly') {return 'poly';}
@@ -893,10 +907,10 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	var sy;//smallest y
 	var gx;//greatest x
 	var gy;//greatest y
-	var temp;
+	var temp, le;
 	
-	//console.log(coords + ' - ' + shape + ' - ' + flag);
-	coords = coords.trim();
+	//console.log('normcoords: ' + coords + ' - ' + shape + ' - ' + flag);
+	coords = this.trim(coords);
 	if (coords === '') {return '';}
 	var oldcoords = coords;
 	//replace some general junk
@@ -1056,7 +1070,7 @@ imgmap.prototype.setMapHTML = function(map) {
 	this.mapname = oMap.name;
 	this.mapid   = oMap.id;
 	var newareas = oMap.getElementsByTagName('area');
-	var shape, coords, href, alt, title, target;
+	var shape, coords, href, alt, title, target, id;
 	for (var i=0, le = newareas.length; i<le; i++) {
 		shape = coords = href = alt = title = target = '';
 		
@@ -1102,14 +1116,7 @@ imgmap.prototype.setMapHTML = function(map) {
 		this._recalculate(id, coords);//contains repaint
 		this.relaxArea(id);
 		
-		var obj = {}; obj[id] = {};
-		obj[id].shape  = shape;
-		obj[id].coords = coords;
-		obj[id].href   = href;
-		obj[id].alt    = alt;
-		obj[id].title  = title;
-		obj[id].target = target;
-		this.fireEvent('onAreaChanged', obj);
+		this.fireEvent('onAreaChanged', this.areas[id]);
 		
 	}//end for areas
 	this.fireEvent('onHtmlChanged', this.getMapHTML());
@@ -1125,7 +1132,7 @@ imgmap.prototype.setMapHTML = function(map) {
  *	@return	False on error, 0 when switched to edit mode, 1 when switched to preview mode
  */
 imgmap.prototype.togglePreview = function() {
-	var i;//generic cycle counter
+	var i, le;//generic cycle counter
 	
 	if (!this.pic) {return false;}//exit if pic is undefined
 	
@@ -1138,7 +1145,7 @@ imgmap.prototype.togglePreview = function() {
 	
 	if (this.viewmode === 0) {
 		//hide canvas elements and labels
-		for (i=0, le = this.areas.length; i<le; i++) {
+		for (i = 0, le = this.areas.length; i < le; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = 'none';
 				if (this.areas[i].label) {this.areas[i].label.style.display = 'none';}
@@ -1154,7 +1161,7 @@ imgmap.prototype.togglePreview = function() {
 	}
 	else {
 		//show canvas elements
-		for (i=0, le = this.areas.length; i<le; i++) {
+		for (i = 0, le = this.areas.length; i < le; i++) {
 			if (this.areas[i]) {
 				this.areas[i].style.display = '';
 				if (this.areas[i].label && this.config.label) {this.areas[i].label.style.display = '';}
@@ -1233,6 +1240,7 @@ imgmap.prototype.initArea = function(id, shape) {
 	this.areas[id].style.left     = this.pic.offsetLeft + 'px';
 	this._setopacity(this.areas[id], this.config.CL_DRAW_BG, this.config.draw_opacity);
 	//hook event handlers
+	this.areas[id].ondblclick  = this.area_dblclick.bind(this);
 	this.areas[id].onmousedown = this.area_mousedown.bind(this);
 	this.areas[id].onmouseup   = this.area_mouseup.bind(this);
 	this.areas[id].onmousemove = this.area_mousemove.bind(this);
@@ -1577,7 +1585,7 @@ imgmap.prototype._repaintAll = function() {
 imgmap.prototype._repaint = function(area, color, x, y) {
 	var ctx;//canvas context
 	var width, height, left, top;//canvas properties
-	var i;//loop counter
+	var i, le;//loop counter
 	if (area.shape == 'circle') {
 		width  = parseInt(area.style.width, 10);
 		var radius = Math.floor(width/2) - 1;
@@ -1618,7 +1626,7 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			ctx.beginPath();
 			ctx.strokeStyle = color;
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
-			for (i=1, le = area.xpoints.length; i<le; i++) {
+			for (i = 1, le = area.xpoints.length; i < le; i++) {
 				ctx.lineTo(area.xpoints[i] - left , area.ypoints[i] - top);
 			}
 			if (this.is_drawing == this.DM_POLYGON_DRAW || this.is_drawing == this.DM_POLYGON_LASTDRAW) {
@@ -1649,7 +1657,7 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 			//move to the beginning position
 			ctx.moveTo(area.xpoints[0] - left, area.ypoints[0] - top);
 			//draw previous points - use every second point only
-			for (i=2, le = area.xpoints.length; i<le; i+=2) {
+			for (i = 2, le = area.xpoints.length; i < le; i+= 2) {
 				ctx.quadraticCurveTo(area.xpoints[i-1] - left, area.ypoints[i-1] - top, area.xpoints[i] - left, area.ypoints[i] - top);
 			}
 			if (this.is_drawing == this.DM_BEZIER_DRAW || this.is_drawing == this.DM_BEZIER_LASTDRAW) {
@@ -1714,8 +1722,7 @@ imgmap.prototype._updatecoords = function(id) {
 		this.areas[id].lastInput = value;
 	}
 
-	var obj = {}; obj[id] = {}; obj[id].coords = value;
-	this.fireEvent('onAreaChanged', obj);
+	this.fireEvent('onAreaChanged', this.areas[id]);
 	this.fireEvent('onHtmlChanged', this.getMapHTML());
 };
 
@@ -1775,7 +1782,9 @@ imgmap.prototype._recalculate = function(id, coords) {
 		var msg = (err.message) ? err.message : 'error calculating coordinates';
 		this.log(msg, 1);
 		this.statusMessage(this.strings.ERR_INVALID_COORDS);
-		//#todo handle this if (this.areas[id].lastInput && input) {input.value = this.areas[id].lastInput;}
+		if (this.areas[id].lastInput) {
+			this.fireEvent('onAreaChanged', this.areas[id]);
+		}
 		this._repaint(this.areas[id], this.config.CL_NORM_SHAPE);
 		return;
 	}
@@ -2507,7 +2516,7 @@ imgmap.prototype.area_mouseup = function(e) {
  *	@param	e	The event object
  */
 imgmap.prototype.area_mouseover = function(e) {
-	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
+	if (this.viewmode === 1 && this.config.mode !== 'highlighter_spawn') {return;}//exit if preview mode
 	if (!this.is_drawing) {
 		//this.log('area_mouseover');
 		//identify source object
@@ -2545,7 +2554,7 @@ imgmap.prototype.area_mouseover = function(e) {
  *	@param	e	The event object 
  */
 imgmap.prototype.area_mouseout = function(e) {
-	if (this.viewmode === 1 && this.config.mode !== '') {return;}//exit if preview mode
+	if (this.viewmode === 1 && this.config.mode !== 'highlighter_spawn') {return;}//exit if preview mode
 	if (!this.is_drawing) {
 		//this.log('area_mouseout');
 		//identify source object
@@ -2565,13 +2574,53 @@ imgmap.prototype.area_mouseout = function(e) {
 
 
 /**
+ *	EVENT HANDLER: Handles event of double click on imgmap areas.
+ *	Basically only fires the custom callback.
+ *	@author	Colin Bell
+ *	@param	e	The event object
+ */
+imgmap.prototype.area_dblclick = function(e) {
+	if (this.viewmode === 1) {return;}//exit if preview mode
+	//console.log('area_dblclick');
+	if (!this.is_drawing) {
+		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
+		if (obj.tagName == 'DIV') {
+			//do this because of label
+			obj = obj.parentNode;
+		}
+		if (obj.tagName == 'image' || obj.tagName == 'group' ||
+			obj.tagName == 'shape' || obj.tagName == 'stroke') {
+			//do this because of excanvas
+			obj = obj.parentNode.parentNode;
+		}
+		if (this.areas[this.currentid] != obj) {
+			//trying to draw on a different canvas, switch to this one
+			if (typeof obj.aid == 'undefined') {
+				this.log('Cannot identify target area', 1);
+				return;
+			}
+			this.currentid = obj.aid;
+		}
+		this.fireEvent('onDblClickArea', this.areas[this.currentid]);
+		//stop event propagation to document level
+		if (this.isMSIE) {
+			window.event.cancelBubble = true;
+		}
+		else {
+			e.stopPropagation();
+		}
+	}
+};
+
+
+/**
  *	EVENT HANDLER: Handles event of mousedown on imgmap areas.
  *	Sets the variables draggedid, selectedid and currentid to the given area. 
  *	@author	adam
  *	@param	e	The event object 
  */
 imgmap.prototype.area_mousedown = function(e) {
-	if (this.viewmode === 1) {return;}//exit if preview mode
+	if (this.viewmode === 1 && this.config.mode !== 'highlighter_spawn') {return;}//exit if preview mode
 	//console.log('area_mousedown');
 	if (!this.is_drawing) {
 		var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
@@ -2726,16 +2775,16 @@ imgmap.prototype._getLastArea = function() {
  */
 imgmap.prototype.assignCSS = function(obj, cssText) {
 	var parts = cssText.split(';');
-	for (var i=0; i<parts.length; i++) {
+	for (var i = 0; i < parts.length; i++) {
 		var p = parts[i].split(':');
 		//we need to camelcase by - signs
-		var pp = p[0].trim().split('-');
+		var pp = this.trim(p[0]).split('-');
 		var prop = pp[0];
-		for (var j=1; j<pp.length; j++) {
+		for (var j = 1; j < pp.length; j++) {
 			//replace first letters to uppercase
-			prop+= pp[j].replace(/^./, pp[j].substring(0,1).toUpperCase());
+			prop+= pp[j].replace(/^\w/, pp[j].substring(0,1).toUpperCase());
 		}
-		obj.style[prop.trim()] = p[1].trim();
+		obj.style[this.trim(prop)] = this.trim(p[1]);
 	}
 };
 
@@ -2844,28 +2893,12 @@ Function.prototype.bind = function(object) {
 
 
 /**
- *	Extends String with trim function.
- *	@url	http://www.somacon.com/p355.php
- *	@addon
+ *	Trims a string.
+ *	Changed not to extend String but use own function for better compatibility. 
+ *	@param str The string to trim. 
  */
-String.prototype.trim = function() {
-	return this.replace(/^\s+|\s+$/g,"");
-};
-/**
- *	Extends String with ltrim function.
- *	@url	http://www.somacon.com/p355.php
- *	@addon
- */
-String.prototype.ltrim = function() {
-	return this.replace(/^\s+/,"");
-};
-/**
- *	Extends String with rtrim function.
- *	@url	http://www.somacon.com/p355.php
- *	@addon
- */
-String.prototype.rtrim = function() {
-	return this.replace(/\s+$/,"");
+imgmap.prototype.trim = function(str) {
+	return str.replace(/^\s+|\s+$/g, '');
 };
 
 
@@ -2879,6 +2912,7 @@ function imgmap_spawnObjects(config) {
 	var maps = document.getElementsByTagName('map');
 	var imgs = document.getElementsByTagName('img');
 	var imaps = [];
+	var imapn;
 	//console.log(maps.length);
 	for (var i=0, le=maps.length; i<le; i++) {
 		for (var j=0, le2=imgs.length; j<le2; j++) {
@@ -2888,7 +2922,7 @@ function imgmap_spawnObjects(config) {
 			if ('#' + maps[i].name == imgs[j].getAttribute('usemap')) {
 				//we found one matching pair
 			//	console.log(maps[i]);
-				config.mode = '';
+				config.mode = 'highlighter_spawn';
 				imapn = new imgmap(config);
 				//imapn.setup(config);
 				imapn.useImage(imgs[j]);
