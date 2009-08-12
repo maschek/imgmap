@@ -262,13 +262,10 @@
 		<delete file="${src}/temp/AIRIntrospector.js" />
 		<copy file="${src}/examples/example_air.xml" todir="${src}/temp"></copy>
 		
-    	<mkdir dir="${src}/temp/licenses"/>
-    	<copy file="${src}/licenses/excanvas.txt" todir="${src}/temp/licenses"></copy>
-
-    	<copy file="${src}/imgmap.js" todir="${src}/temp"></copy>
-    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp"></copy>
+    	<copy file="${src}/imgmap.js" todir="${src}/temp" overwrite="true"></copy>
+    	<copy file="${src}/imgmap_packed.js" todir="${src}/temp" overwrite="true"></copy>
     	<!-- copy language files -->
-		<copy todir="${src}/temp">
+		<copy todir="${src}/temp" overwrite="true">
 			<fileset dir="${src}">
 			<include name="lang_*.js"/>
 			</fileset>
@@ -312,10 +309,10 @@
 				flags="i"
 				byline="true"/>
 		
-		<!-- replace reference to Example 7 (title and firs paragraph) -->
-		<replaceregexp file="${src}/temp/example7.html"
-				match="(\s\-\s|)Example 7.*?($|&lt;)"
-				replace="\2"
+		<!-- replace reference to Example AIR (first paragraph) -->
+		<replaceregexp file="${src}/temp/example_air.html"
+				match='&lt;p\sid=\"intro".*?/p&gt;'
+				replace=""
 				flags="i"
 				byline="true"/>
 		
