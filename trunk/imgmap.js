@@ -54,10 +54,10 @@ function imgmap(config) {
 	this.version = "2.2";
 	
 	/** Build date of imgmap */
-	this.buildDate = "2009/07/26 16:29";
+	this.buildDate = "2009/08/12 22:18";
 	
 	/** Sequential build number of imgmap */
-	this.buildNumber = "108";
+	this.buildNumber = "113";
 	
 	/** Config object of the imgmap instance */
 	this.config = {};
@@ -305,6 +305,7 @@ imgmap.prototype.setup = function(config) {
 		}
 		//search for scripts
 		var scripts = document.getElementsByTagName('script');
+		var found = false;
 		for (i=0; i<scripts.length; i++) {//i declared earlier
 			if (scripts[i].src && scripts[i].src.match(/imgmap\w*\.js(\?.*?)?$/)) {
 				var src = scripts[i].src;
@@ -318,9 +319,14 @@ imgmap.prototype.setup = function(config) {
 					this.config.baseroot = src;
 				}
 				//exit loop
+				found = true;
 				break;
 			}
 		}
+		if (!found && this.config.baseroot === '') {
+			this.log("Unable to detect baseroot.", 1);
+		}
+
 	}
 
 	//load excanvas js - as soon as possible
@@ -566,10 +572,9 @@ imgmap.prototype.script_load = function(e) {
 	var obj = (this.isMSIE) ? window.event.srcElement : e.currentTarget;
 	var url = obj.src;
 	var complete = false;
-	//alert(url);
 	if (typeof obj.readyState != 'undefined') {
 		//explorer
-		if (obj.readyState == 'complete') {
+		if (obj.readyState == 'complete' || obj.readyState == 'loaded') {
 			complete = true;
 		}
 	}
