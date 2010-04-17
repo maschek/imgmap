@@ -1,4 +1,4 @@
-#summary Maven 3 Dependency Management using JSTools Plugin
+#summary Maven 2 Dependency Management using JSTools Plugin
 #labels Phase-Deploy
 
 = Introduction =
