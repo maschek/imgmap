@@ -21,7 +21,7 @@
         <dependency>
             <groupId>com.moxiecode.tinymce</groupId>
             <artifactId>tinymce</artifactId>
-            <version>3.4.2</version>
+            <version>3.3.2</version>
         </dependency>
 
     </dependencies>
