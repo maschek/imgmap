@@ -1594,6 +1594,9 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 	if (area.shape == 'circle') {
 		width  = parseInt(area.style.width, 10);
 		var radius = Math.floor(width/2) - 1;
+		if (radius<0)
+			radius=0;
+
 		//get canvas context
 		//alert(area.tagName);
 		ctx = area.getContext("2d");
