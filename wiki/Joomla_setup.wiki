@@ -12,6 +12,34 @@ Joomla can also work with FCKeditor, please read [Joomla_FCK_setup].
 
 = Details =
 
+== Joomla 1.7 as reported by veldjmaxis, Oct 13, 2011 ==
+
+
+  # Copy folder "imgmap" to "JOOMLA_FOLDER/media/editors/tinymce/jscripts/tiny_mce/plugins/"
+  # Open tinymce.php from "JOOMLA_FOLDER/plugins/editors/tinymce/"
+  # Find line:
+{{{
+    // advimage $advimage = $this->params->def('advimage', 1); 
+
+    if ($advimage) {
+
+        $plugins	= 'advimage'; $elements	= 'img[class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name|style]'; 
+
+    } 
+}}}
+  # After that add:
+{{{
+    // imgmap $imgmap = $this->params->def('imgmap', 1); 
+
+    if ($imgmap) {
+
+        $plugins	= 'imgmap'; $elements	= 'img[usemap|class|src|border=0|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name],map[id|name],area[shape|alt|coords|href|target]'; $buttons4	= 'imgmap'; 
+
+}
+}}}
+  # Save file. Now Imgmap will work with tinymce in JOOMLA 1.7
+
+
 == New Joomla (Version 1.5.12 for example) ==
 
   # copy files from plugin_tinymce3{x}.zip to {yourjoomlainstance}/plugins/editors/tinymce/jscripts/tiny_mce/plugins/imgmap/
