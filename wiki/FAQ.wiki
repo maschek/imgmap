@@ -27,5 +27,3 @@ Press the blue "HTML" button
 = How to reload and edit existing maps? =
 
 See: http://code.google.com/p/imgmap/wiki/Loading_and_editing_maps
-
-= Which browsers are supported? =
