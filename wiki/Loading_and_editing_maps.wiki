@@ -1,4 +1,6 @@
+#summary How to reload and edit existing maps?
 #labels Phase-Implementation
+
 = How to reload and edit existing maps? =
 
 Often you want to save your created maps in a database, then load it back and be able to edit it again.
