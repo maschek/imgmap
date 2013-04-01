@@ -1226,7 +1226,7 @@ imgmap.prototype.initArea = function(id, shape) {
 	//create CANVAS node
 	this.areas[id] = document.createElement('CANVAS');
 	this.pic_container.appendChild(this.areas[id]);
-	this.pic_container.style.position = 'relative';
+	//this.pic_container.style.position = 'relative';
 	//alert('init' + typeof G_vmlCanvasManager);
 	if (typeof G_vmlCanvasManager != "undefined") {
 		//override CANVAS with VML object
@@ -1594,8 +1594,9 @@ imgmap.prototype._repaint = function(area, color, x, y) {
 	if (area.shape == 'circle') {
 		width  = parseInt(area.style.width, 10);
 		var radius = Math.floor(width/2) - 1;
-		if (radius<0)
+		if (radius < 0) {
 			radius=0;
+        }
 
 		//get canvas context
 		//alert(area.tagName);
