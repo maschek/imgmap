@@ -919,7 +919,7 @@ imgmap.prototype._normCoords = function(coords, shape, flag) {
 	if (coords === '') {return '';}
 	var oldcoords = coords;
 	//replace some general junk
-	coords = coords.replace(/(\d)(\D)+(\d)/g, "$1,$3");
+	coords = coords.replace(/(\d)([^\d\.])+(\d)/g, "$1,$3"); // Other software might create decimal points, respect them
 	coords = coords.replace(/,\D+(\d)/g, ",$1");//cut leading junk
 	coords = coords.replace(/,0+(\d)/g, ",$1");//cut leading zeros
 	coords = coords.replace(/(\d)(\D)+,/g, "$1,");
