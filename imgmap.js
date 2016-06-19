@@ -220,7 +220,7 @@ function imgmap(config) {
 	
 	//browser sniff
 	var ua = navigator.userAgent;
-	this.isMSIE    = (navigator.appName == "Microsoft Internet Explorer");
+	this.isMSIE    = (navigator.appName == "Microsoft Internet Explorer") || (navigator.appName == 'Netscape' && navigator.userAgent.search('Trident') != -1);
 	this.isMSIE5   = this.isMSIE && (ua.indexOf('MSIE 5')   != -1);
 	this.isMSIE5_0 = this.isMSIE && (ua.indexOf('MSIE 5.0') != -1);
 	this.isMSIE7   = this.isMSIE && (ua.indexOf('MSIE 7')   != -1);
