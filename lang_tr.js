@@ -1,5 +1,3 @@
-//english string resources
-
 var imgmapStrings = {
 
 READY                   : 'Hazır',
@@ -28,10 +26,9 @@ SQUARE_RESIZE_BOTTOM    : 'Daireyi yeniden boyutlandırma',
 SQUARE_RESIZE_LEFT      : 'Daireyi yeniden boyutlandırma',
 
 POLYGON_DRAW            : 'Çokgen çizimi. Çizimi tamamlamak için SHIFT tuşuyla beraber tıklayın.',
-POLYGON_MOVE            : 'Hareketli .okgen',
+POLYGON_MOVE            : 'Hareketli çokgen',
 
 ERR_EXCANVAS_LOAD       : 'Excanvas düzgün yüklenemedi. Sayfayı yeniden yükleyin',
 ERR_INVALID_COORDS      : 'Hatalı koordinatlar.'
 
 };
-//alert('lang loaded');
