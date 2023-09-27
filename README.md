@@ -27,7 +27,9 @@ Imgmap is licensed under the terms of the Open Source GPL license. You might use
 * You want to use it in an open source project that precludes using non-open source software
 * You wish to use it in a personal, educational or non-profit manner
 * You are using imgmap in a commercial application, the GPL works for you and you do not wish to support the project
-[View license terms] (https://raw.githubusercontent.com/maschek/imgmap/master/license_GPL.txt)
+
+[View license terms](https://raw.githubusercontent.com/maschek/imgmap/master/license_GPL.txt)
+
 Should you have any questions on licensing options, please contact licenses@maschek.hu for further information.
 
 ## Commercial License
@@ -35,6 +37,8 @@ You might want a traditional commercial license if:
 * You do not want any of the potential restrictions of an open source license
 * You need to own a commercial license in order to satisfy your own internal software licensing requirements
 * You want to support the project financially to ensure its continued success
+
+
 [View detailed license terms](https://raw.githubusercontent.com/maschek/imgmap/master/license_commercial.txt)
 
 ### Purchase a commercial license
