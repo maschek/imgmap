@@ -14,6 +14,39 @@ The editor is currently tested to work in Chrome, Firefox, Safari, Opera 9+ and 
 
 ![screenshot of the online editor](http://www.maschek.hu/ext/imgmap.png)
 
+# Features
+Main features of the image map editor
+
+**Supports all shapes (rect, circle, poly)**
+While you might have came across other in-browser editors that support rectangles or polygons in some way, imgmap supports ALL of the standard map shapes such as rectangles, circles and polygons.
+Note: Default shape is not currently supported, also not widely used.
+
+**Canvas based graphical engine**
+The drawing engine is based on the canvas element, which is native part of all modern web browsers.
+Note: Internet Explorer doesn't support canvas natively, thus the functionality is emulated.
+
+**Independent of javascript libraries**
+Imgmap doesn't depend on any of the popular javascript libraries like jQuery, Prototype, etc. You can simply drop it into your project without any collision with other libraries.
+
+**Unlimited number of areas to define**
+Imgmap exposes no limitations regarding the number of areas you can define.
+Note: Your browser might have such limitations however.
+
+**Get or set map html code easily**
+Easy to use API to set the imagemap from an existing HTML source, or to get the code of the one you are currently working with.
+
+**Fully jslint compliant**
+jslint is a javascript source code verifier, that detects a number of potential programming errors. Imgmap is free of such errors.
+
+**Multilanguage user interface**
+Imgmap supports by default a number of languages, but you can easy extend it with new ones.
+
+**Wide browser compatibility**
+Imgmap is compatible with Chrome, Firefox, Safari, Opeara and Internet Explorer 6+ as well as other browsers that are based on Gecko, Trident, Webkit or Presto layout engines.
+
+**Plugins available for popular WYSIWYG editors**
+Imgmap is shipped with plugins to the two most popular WYSIWYG editors: TinyMCE and FCKEditor.
+
 # Files/Download
 You can download the latest release on the project's github page:
 https://github.com/maschek/imgmap/releases/latest
