@@ -12,7 +12,8 @@ canvas element but can use VML instead. ExplorerCanvas works quite well, however
 and not as fast as the native canvas drawing, so expect some lags in IE.
 The editor is currently tested to work in Chrome, Firefox, Safari, Opera 9+ and IE 6+.
 
-![screenshot of the online editor](http://www.maschek.hu/ext/imgmap.png)
+![imgmap](https://github.com/maschek/imgmap/assets/819167/84d3d433-1b3c-42a7-8093-40fd5cc1b383)
+
 
 # Features
 Main features of the image map editor
