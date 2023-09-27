@@ -1,7 +1,8 @@
 # imgmap
+
 Javascript based imagemap editor
 
-See the online editor at: http://www.maschek.hu/imagemap/imgmap
+See the online editor at: http://www.maschek.hu/imagemap/
 
 With the imagemap editor you can easily draw ALL the standard image map shapes (rectangle, circle, polygon),
 and you can have full control over the generated HTML code as well.
@@ -14,6 +15,8 @@ The editor is currently tested to work in Chrome, Firefox, Safari, Opera 9+ and 
 
 ![imgmap](https://github.com/maschek/imgmap/assets/819167/84d3d433-1b3c-42a7-8093-40fd5cc1b383)
 
+# Questions?
+Go to: http://groups.google.com/group/imgmap-discuss
 
 # Features
 Main features of the image map editor
