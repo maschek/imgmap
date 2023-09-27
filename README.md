@@ -64,6 +64,20 @@ Price: 200 EUR
 
 Should you have any questions on licensing options, please contact licenses@maschek.hu for further information.
 
+# Changelog
+See [CHANGELOG.md](CHANGELOG.md)
+
+# Credits 
+**Big thanks go to the following teams/people:**
+
+Excanvas team
+
+**Plugins:**
+Alfonso Martínez de Lizarrondo, John Ericksen, Colin Bell
+
+**Language files**
+Alfonso Martínez de Lizarrondo, Iwan Fux, Paul Cazes, João Felipe Ferreira
+
 
 
 # Donate
