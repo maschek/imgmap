@@ -10,10 +10,10 @@ var myimgmap, props, outputmode, imgroot;
 function gui_toggleMore() {
 	var parent = $('#more_actions').parent().find('.toggler');
 	$('#more_actions').css({
-      top: $(parent).offset().top + ($(parent).outerHeight()),
-      left: $(parent).offset().left
-    });	
-	
+		top: $(parent).offset().top + ($(parent).outerHeight()),
+		left: $(parent).offset().left
+	});
+
 	$('#more_actions').slideToggle(200, function () {
 		if ($(this).css('display') == 'none') {
 			$(parent).addClass('toggler_off');
@@ -34,10 +34,10 @@ function gui_colorChanged(obj) {
  *	Handles mouseover on props row.
  */
 function gui_row_mouseover(e) {
-	if (myimgmap.is_drawing) {return;}//exit if in drawing state
-	if (myimgmap.viewmode === 1) {return;}//exit if preview mode
+	if (myimgmap.is_drawing) { return; }//exit if in drawing state
+	if (myimgmap.viewmode === 1) { return; }//exit if preview mode
 	var obj = (myimgmap.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
+	if (typeof obj.aid == 'undefined') { obj = obj.parentNode; }
 	//console.log(obj.aid);
 	myimgmap.highlightArea(obj.aid);
 }
@@ -46,10 +46,10 @@ function gui_row_mouseover(e) {
  *	Handles mouseout on props row.
  */
 function gui_row_mouseout(e) {
-	if (myimgmap.is_drawing) {return;}//exit if in drawing state
-	if (myimgmap.viewmode === 1) {return;}//exit if preview mode
+	if (myimgmap.is_drawing) { return; }//exit if in drawing state
+	if (myimgmap.viewmode === 1) { return; }//exit if preview mode
 	var obj = (myimgmap.isMSIE) ? window.event.srcElement : e.currentTarget;
-	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
+	if (typeof obj.aid == 'undefined') { obj = obj.parentNode; }
 	myimgmap.blurArea(obj.aid);
 }
 
@@ -57,11 +57,11 @@ function gui_row_mouseout(e) {
  *	Handles click on props row.
  */
 function gui_row_click(e) {
-	if (myimgmap.viewmode === 1) {return;}//exit if preview mode
+	if (myimgmap.viewmode === 1) { return; }//exit if preview mode
 	var obj = (myimgmap.isMSIE) ? window.event.srcElement : e.currentTarget;
 	//var multiple = (e.originalTarget.name == 'img_active');
 	//myimgmap.log(e.originalTarget);
-	if (typeof obj.aid == 'undefined') {obj = obj.parentNode;}
+	if (typeof obj.aid == 'undefined') { obj = obj.parentNode; }
 	//gui_row_select(obj.aid, false, multiple);
 	gui_row_select(obj.aid, false, false);
 	myimgmap.currentid = obj.aid;
@@ -73,14 +73,14 @@ function gui_row_click(e) {
  *	@date	2006-06-06 16:55:29
  */
 function gui_row_select(id, setfocus, multiple) {
-	if (myimgmap.is_drawing) {return;}//exit if in drawing state
-	if (myimgmap.viewmode === 1) {return;}//exit if preview mode
-	if (!document.getElementById('img_active_'+id)) {return;}
+	if (myimgmap.is_drawing) { return; }//exit if in drawing state
+	if (myimgmap.viewmode === 1) { return; }//exit if preview mode
+	if (!document.getElementById('img_active_' + id)) { return; }
 	//if (!multiple) 
 	gui_cb_unselect_all();
-	document.getElementById('img_active_'+id).checked = 1;
+	document.getElementById('img_active_' + id).checked = 1;
 	if (setfocus) {
-		document.getElementById('img_active_'+id).focus();
+		document.getElementById('img_active_' + id).focus();
 	}
 	//remove all background styles
 	for (var i = 0; i < props.length; i++) {
@@ -97,7 +97,7 @@ function gui_row_select(id, setfocus, multiple) {
  *	@author	adam 
  */
 function gui_cb_keydown(e) {
-	if (myimgmap.viewmode === 1) {return;}//exit if preview mode
+	if (myimgmap.viewmode === 1) { return; }//exit if preview mode
 	var key = (myimgmap.isMSIE) ? event.keyCode : e.keyCode;
 	//alert(key);
 	if (key == 46) {
@@ -112,7 +112,7 @@ function gui_cb_keydown(e) {
 function gui_cb_unselect_all() {
 	for (var i = 0; i < props.length; i++) {
 		if (props[i]) {
-			document.getElementById('img_active_'+i).checked = false;
+			document.getElementById('img_active_' + i).checked = false;
 		}
 	}
 }
@@ -124,7 +124,7 @@ function gui_cb_unselect_all() {
  *	@date	25-09-2007 17:12:43
  */
 function gui_coords_keydown(e) {
-	if (myimgmap.viewmode === 1) {return;}//exit if preview mode
+	if (myimgmap.viewmode === 1) { return; }//exit if preview mode
 	var key = (myimgmap.isMSIE || myimgmap.isOpera) ? event.keyCode : e.keyCode;
 	var obj = (myimgmap.isMSIE || myimgmap.isOpera) ? window.event.srcElement : e.originalTarget;
 	//obj is the input field
@@ -136,12 +136,12 @@ function gui_coords_keydown(e) {
 		var coords = obj.value.split(',');
 		var s = getSelectionStart(obj);//helper function
 		var j = 0;
-		for (var i=0, le = coords.length; i<le; i++) {
-			j+=coords[i].length;
+		for (var i = 0, le = coords.length; i < le; i++) {
+			j += coords[i].length;
 			if (j > s) {
 				//this is the coord we want
-				if (key == 40 && coords[i] > 0) {coords[i]--;}
-				if (key == 38) {coords[i]++;}
+				if (key == 40 && coords[i] > 0) { coords[i]--; }
+				if (key == 38) { coords[i]++; }
 				break;
 			}
 			//jump one more because of comma
@@ -166,7 +166,7 @@ function getSelectionStart(obj) {
 	if (obj.createTextRange) {
 		var r = document.selection.createRange().duplicate();
 		r.moveEnd('character', obj.value.length);
-		if (r.text === '') {return obj.value.length;}
+		if (r.text === '') { return obj.value.length; }
 		return obj.value.lastIndexOf(r.text);
 	}
 	else {
@@ -179,7 +179,7 @@ function getSelectionStart(obj) {
  *	@link	http://www.codingforums.com/archive/index.php/t-90176.html
  */
 function setSelectionRange(obj, start, end) {
-	if (typeof end == "undefined") {end = start;}
+	if (typeof end == "undefined") { end = start; }
 	if (obj.setSelectionRange) {
 		obj.focus(); // to make behaviour consistent with IE
 		obj.setSelectionRange(start, end);
@@ -201,30 +201,30 @@ function setSelectionRange(obj, start, end) {
  *	@author	Adam Maschek (adam.maschek(at)gmail.com)
  */
 function gui_input_change(e) {
-	if (myimgmap.viewmode === 1) {return;}//exit if preview mode
-	if (myimgmap.is_drawing) {return;}//exit if drawing
+	if (myimgmap.viewmode === 1) { return; }//exit if preview mode
+	if (myimgmap.is_drawing) { return; }//exit if drawing
 	//console.log('blur');
 	var obj = (myimgmap.isMSIE) ? window.event.srcElement : e.currentTarget;
 	//console.log(obj);
 	var id = obj.parentNode.aid;
 	//console.log(this.areas[id]);
-	if (obj.name == 'img_href')        {myimgmap.areas[id].ahref   = obj.value;}
-	else if (obj.name == 'img_alt')    {myimgmap.areas[id].aalt    = obj.value;}
-	else if (obj.name == 'img_title')  {myimgmap.areas[id].atitle  = obj.value;}
-	else if (obj.name == 'img_target') {myimgmap.areas[id].atarget = obj.value;}
+	if (obj.name == 'img_href') { myimgmap.areas[id].ahref = obj.value; }
+	else if (obj.name == 'img_alt') { myimgmap.areas[id].aalt = obj.value; }
+	else if (obj.name == 'img_title') { myimgmap.areas[id].atitle = obj.value; }
+	else if (obj.name == 'img_target') { myimgmap.areas[id].atarget = obj.value; }
 	else if (obj.name == 'img_shape') {
 		if (myimgmap.areas[id].shape != obj.value && myimgmap.areas[id].shape != 'undefined') {
 			//shape changed, adjust coords intelligently inside _normCoords
 			var coords = '';
 			if (props[id]) {
-				coords  =  props[id].getElementsByTagName('input')[2].value;
+				coords = props[id].getElementsByTagName('input')[2].value;
 			}
 			else {
-				coords = myimgmap.areas[id].lastInput || '' ;
+				coords = myimgmap.areas[id].lastInput || '';
 			}
-			coords = myimgmap._normCoords(coords, obj.value, 'from'+myimgmap.areas[id].shape);
+			coords = myimgmap._normCoords(coords, obj.value, 'from' + myimgmap.areas[id].shape);
 			if (props[id]) {
-				props[id].getElementsByTagName('input')[2].value  = coords;
+				props[id].getElementsByTagName('input')[2].value = coords;
 			}
 			myimgmap.areas[id].shape = obj.value;
 			myimgmap._recalculate(id, coords);
@@ -249,42 +249,42 @@ function gui_addArea(id) {
 	props[id] = document.createElement('DIV');
 	document.getElementById('form_container').appendChild(props[id]);
 
-	props[id].id        = 'img_area_' + id;
-	props[id].aid       = id;
+	props[id].id = 'img_area_' + id;
+	props[id].aid = id;
 	props[id].className = 'img_area';
 	//hook ROW event handlers
 	myimgmap.addEvent(props[id], 'mouseover', gui_row_mouseover);
-	myimgmap.addEvent(props[id], 'mouseout',  gui_row_mouseout);
-	myimgmap.addEvent(props[id], 'click',     gui_row_click);
+	myimgmap.addEvent(props[id], 'mouseout', gui_row_mouseout);
+	myimgmap.addEvent(props[id], 'click', gui_row_click);
 	var temp = '<input type="text"  name="img_id" class="img_id" value="' + id + '" readonly="1"/>';
 	//temp+= '<input type="checkbox" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">';
 	//could be checkbox in the future
-	temp+= '<input type="radio" name="img_active" class="img_active" id="img_active_'+id+'" value="'+id+'">';
-	temp+= '<select name="img_shape" class="img_shape">';
-	temp+= '<option value="rect">rectangle</option>';
+	temp += '<input type="radio" name="img_active" class="img_active" id="img_active_' + id + '" value="' + id + '">';
+	temp += '<select name="img_shape" class="img_shape">';
+	temp += '<option value="rect">rectangle</option>';
 	if (document.getElementById('dd_output').value != 'css') {
-		temp+= '<option value="circle">circle</option>';
-		temp+= '<option value="poly">polygon</option>';
-		temp+= '<option value="bezier1">bezier</option>';
+		temp += '<option value="circle">circle</option>';
+		temp += '<option value="poly">polygon</option>';
+		temp += '<option value="bezier1">bezier</option>';
 	}
-	temp+= '</select>';
-	temp+= 'Coords: <input type="text" name="img_coords" class="img_coords" value="">';
-	temp+= 'Href: <input type="text" name="img_href" class="img_href" value="">';
-	temp+= 'Alt: <input type="text" name="img_alt" class="img_alt" value="">';
-	temp+= 'Target: <select name="img_target" class="img_target">';
-	temp+= '<option value=""  >&lt;not set&gt;</option>';
-	temp+= '<option value="_self"  >this window</option>';
-	temp+= '<option value="_blank" >new window</option>';
-	temp+= '<option value="_top"   >top window</option>';
-	temp+= '</select>';
+	temp += '</select>';
+	temp += 'Coords: <input type="text" name="img_coords" class="img_coords" value="">';
+	temp += 'Href: <input type="text" name="img_href" class="img_href" value="">';
+	temp += 'Alt: <input type="text" name="img_alt" class="img_alt" value="">';
+	temp += 'Target: <select name="img_target" class="img_target">';
+	temp += '<option value=""  >&lt;not set&gt;</option>';
+	temp += '<option value="_self"  >this window</option>';
+	temp += '<option value="_blank" >new window</option>';
+	temp += '<option value="_top"   >top window</option>';
+	temp += '</select>';
 	props[id].innerHTML = temp;
 	//hook more event handlers to individual inputs
-	
-	myimgmap.addEvent(props[id].getElementsByTagName('input')[1],  'keydown', gui_cb_keydown);
-	myimgmap.addEvent(props[id].getElementsByTagName('input')[2],  'keydown', gui_coords_keydown);
-	myimgmap.addEvent(props[id].getElementsByTagName('input')[2],  'change', gui_input_change);
-	myimgmap.addEvent(props[id].getElementsByTagName('input')[3],  'change', gui_input_change);
-	myimgmap.addEvent(props[id].getElementsByTagName('input')[4],  'change', gui_input_change);
+
+	myimgmap.addEvent(props[id].getElementsByTagName('input')[1], 'keydown', gui_cb_keydown);
+	myimgmap.addEvent(props[id].getElementsByTagName('input')[2], 'keydown', gui_coords_keydown);
+	myimgmap.addEvent(props[id].getElementsByTagName('input')[2], 'change', gui_input_change);
+	myimgmap.addEvent(props[id].getElementsByTagName('input')[3], 'change', gui_input_change);
+	myimgmap.addEvent(props[id].getElementsByTagName('input')[4], 'change', gui_input_change);
 	myimgmap.addEvent(props[id].getElementsByTagName('select')[0], 'change', gui_input_change);
 	myimgmap.addEvent(props[id].getElementsByTagName('select')[1], 'change', gui_input_change);
 	if (myimgmap.isSafari) {
@@ -293,7 +293,7 @@ function gui_addArea(id) {
 		myimgmap.addEvent(props[id].getElementsByTagName('select')[1], 'change', gui_row_click);
 	}
 	//set shape as nextshape if set
-	if (myimgmap.nextShape) {props[id].getElementsByTagName('select')[0].value = myimgmap.nextShape;}
+	if (myimgmap.nextShape) { props[id].getElementsByTagName('select')[0].value = myimgmap.nextShape; }
 	//alert(this.props[id].parentNode.innerHTML);
 	gui_row_select(id, true);
 }
@@ -330,11 +330,11 @@ function gui_modeChanged(mode) {
 		}
 		//disable form elements (inputs and selects)
 		nodes = document.getElementById('form_container').getElementsByTagName("input");
-		for (i=0; i<nodes.length; i++) {
+		for (i = 0; i < nodes.length; i++) {
 			nodes[i].disabled = true;
 		}
 		nodes = document.getElementById('form_container').getElementsByTagName("select");
-		for (i=0; i<nodes.length; i++) {
+		for (i = 0; i < nodes.length; i++) {
 			nodes[i].disabled = true;
 		}
 		document.getElementById('i_preview').src = imgroot + 'edit.gif';
@@ -348,11 +348,11 @@ function gui_modeChanged(mode) {
 		}
 		//enable form elements (inputs and selects)
 		nodes = document.getElementById('form_container').getElementsByTagName("input");
-		for (i=0; i<nodes.length; i++) {
+		for (i = 0; i < nodes.length; i++) {
 			nodes[i].disabled = false;
 		}
 		nodes = document.getElementById('form_container').getElementsByTagName("select");
-		for (i=0; i<nodes.length; i++) {
+		for (i = 0; i < nodes.length; i++) {
 			nodes[i].disabled = false;
 		}
 		document.getElementById('i_preview').src = imgroot + 'zoom.gif';
@@ -392,11 +392,11 @@ function gui_statusMessage(str) {
 function gui_areaChanged(area) {
 	var id = area.aid;
 	if (props[id]) {
-		if (area.shape)  {props[id].getElementsByTagName('select')[0].value = area.shape;}
-		if (area.lastInput) {props[id].getElementsByTagName('input')[2].value  = area.lastInput;}
-		if (area.ahref)   {props[id].getElementsByTagName('input')[3].value  = area.ahref;}
-		if (area.aalt)    {props[id].getElementsByTagName('input')[4].value  = area.aalt;}
-		if (area.atarget) {props[id].getElementsByTagName('select')[1].value = area.atarget;}
+		if (area.shape) { props[id].getElementsByTagName('select')[0].value = area.shape; }
+		if (area.lastInput) { props[id].getElementsByTagName('input')[2].value = area.lastInput; }
+		if (area.ahref) { props[id].getElementsByTagName('input')[3].value = area.ahref; }
+		if (area.aalt) { props[id].getElementsByTagName('input')[4].value = area.aalt; }
+		if (area.atarget) { props[id].getElementsByTagName('select')[1].value = area.atarget; }
 	}
 }
 
@@ -481,14 +481,14 @@ function gui_selectArea(obj) {
 function gui_zoom() {
 	var scale = document.getElementById('dd_zoom').value;
 	var pic = document.getElementById('pic_container').getElementsByTagName('img')[0];
-	if (typeof pic == 'undefined') {return false;}
+	if (typeof pic == 'undefined') { return false; }
 	if (typeof pic.oldwidth == 'undefined' || !pic.oldwidth) {
 		pic.oldwidth = pic.width;
 	}
 	if (typeof pic.oldheight == 'undefined' || !pic.oldheight) {
 		pic.oldheight = pic.height;
 	}
-	pic.width  = pic.oldwidth * scale;
+	pic.width = pic.oldwidth * scale;
 	pic.height = pic.oldheight * scale;
 	myimgmap.scaleAllAreas(scale);
 }
@@ -511,7 +511,7 @@ function gui_outputChanged() {
 	var output = document.getElementById('dd_output').value;
 	if (output == 'css') {
 		//css output selected
-		for (i=0; i<myimgmap.areas.length; i++) {
+		for (i = 0; i < myimgmap.areas.length; i++) {
 			if (myimgmap.areas[i] && myimgmap.areas[i].shape != 'rect' && myimgmap.areas[i].shape != 'undefined') {
 				var others = true;
 				break;
@@ -527,7 +527,7 @@ function gui_outputChanged() {
 				for (i = 0; i < props.length; i++) {
 					if (props[i] && props[i].getElementsByTagName('select')[0].value != 'rect' && myimgmap.areas[i].shape != 'undefined') {
 						var coords = props[i].getElementsByTagName('input')[2].value;
-						coords = myimgmap._normCoords(coords, 'rect', 'from'+myimgmap.areas[i].shape);
+						coords = myimgmap._normCoords(coords, 'rect', 'from' + myimgmap.areas[i].shape);
 						myimgmap.areas[i].shape = 'rect';
 						myimgmap._recalculate(i, coords);
 						myimgmap.areas[i].lastInput = coords;
@@ -541,33 +541,33 @@ function gui_outputChanged() {
 			return false;
 		}
 		temp = 'This is the generated image map HTML + CSS code. ';
-		temp+= 'Click into the textarea below and press Ctrl+C to copy the code to your clipboard. ';
+		temp += 'Click into the textarea below and press Ctrl+C to copy the code to your clipboard. ';
 		if (clipboard_enabled) {
-			temp+= 'Alternatively you can use the clipboard icon on the right. ';
-			temp+= '<img src="example1_files/clipboard.gif" onclick="gui_toClipBoard()" style="float: right; margin: 4px; cursor: pointer;"/>';
+			temp += 'Alternatively you can use the clipboard icon on the right. ';
+			temp += '<img src="example1_files/clipboard.gif" onclick="gui_toClipBoard()" style="float: right; margin: 4px; cursor: pointer;"/>';
 		}
-		temp+= 'Please note, that you have to use a positioned container to make use of the absolute coordinates ';
-		temp+= '(<a href="http://css-tricks.com/absolute-positioning-inside-relative-positioning/">read more</a>).'; 
+		temp += 'Please note, that you have to use a positioned container to make use of the absolute coordinates ';
+		temp += '(<a href="http://css-tricks.com/absolute-positioning-inside-relative-positioning/">read more</a>).';
 	}
 	else if (output == 'wiki') {
 		temp = 'This is the generated image map Wiki code to use with MediaWiki ImageMap extension. ';
-		temp+= 'Click into the textarea below and press Ctrl+C to copy the code to your clipboard. ';
+		temp += 'Click into the textarea below and press Ctrl+C to copy the code to your clipboard. ';
 		if (clipboard_enabled) {
-			temp+= 'Alternatively you can use the clipboard icon on the right. ';
-			temp+= '<img src="example1_files/clipboard.gif" onclick="gui_toClipBoard()" style="float: right; margin: 4px; cursor: pointer;"/>';
+			temp += 'Alternatively you can use the clipboard icon on the right. ';
+			temp += '<img src="example1_files/clipboard.gif" onclick="gui_toClipBoard()" style="float: right; margin: 4px; cursor: pointer;"/>';
 		}
-		temp+= 'Please note, that you might need to change the Image url ';
-		temp+= '(<a href="http://www.mediawiki.org/wiki/Extension:ImageMap">read more</a>).'; 
+		temp += 'Please note, that you might need to change the Image url ';
+		temp += '(<a href="http://www.mediawiki.org/wiki/Extension:ImageMap">read more</a>).';
 	}
 	else {
 		temp = 'This is the generated image map HTML code. ';
-		temp+= 'Click into the textarea below and press Ctrl+C to copy the code to your clipboard. ';
+		temp += 'Click into the textarea below and press Ctrl+C to copy the code to your clipboard. ';
 		if (clipboard_enabled) {
-			temp+= 'Alternatively you can use the clipboard icon on the right. ';
-			temp+= '<img src="example1_files/clipboard.gif" onclick="gui_toClipBoard()" style="float: right; margin: 4px; cursor: pointer;"/>';
+			temp += 'Alternatively you can use the clipboard icon on the right. ';
+			temp += '<img src="example1_files/clipboard.gif" onclick="gui_toClipBoard()" style="float: right; margin: 4px; cursor: pointer;"/>';
 		}
-		temp+= 'Please note, that you have to attach this code to your image, via the usemap property ';
-		temp+= '(<a href="http://www.htmlhelp.com/reference/html40/special/map.html">read more</a>). '; 
+		temp += 'Please note, that you have to attach this code to your image, via the usemap property ';
+		temp += '(<a href="http://www.htmlhelp.com/reference/html40/special/map.html">read more</a>). ';
 	}
 	document.getElementById('output_help').innerHTML = temp;
 	//this will reload areas and sets dropdown restrictions
@@ -584,7 +584,7 @@ function gui_outputChanged() {
  *	@param	text	Text to copy, otherwise html_container will be used.
  */
 function gui_toClipBoard(text) {
-	if (typeof text == 'undefined') {text = document.getElementById('html_container').value;}
+	if (typeof text == 'undefined') { text = document.getElementById('html_container').value; }
 	try {
 		if (window.clipboardData) {
 			// IE send-to-clipboard method.
@@ -605,18 +605,18 @@ function gui_toClipBoard(text) {
 
 //instantiate the imgmap component, setting up some basic config values
 myimgmap = new imgmap({
-mode : "editor",
-custom_callbacks : {
-	'onStatusMessage' : function(str) {gui_statusMessage(str);},//to display status messages on gui
-	'onHtmlChanged'   : function(str) {gui_htmlChanged(str);},//to display updated html on gui
-	'onModeChanged'   : function(mode) {gui_modeChanged(mode);},//to switch normal and preview modes on gui
-	'onAddArea'       : function(id)  {gui_addArea(id);},//to add new form element on gui
-	'onRemoveArea'    : function(id)  {gui_removeArea(id);},//to remove form elements from gui
-	'onAreaChanged'   : function(obj) {gui_areaChanged(obj);},
-	'onSelectArea'    : function(obj) {gui_selectArea(obj);}//to select form element when an area is clicked
-},
-pic_container: document.getElementById('pic_container'),
-bounding_box : false
+	mode: "editor",
+	custom_callbacks: {
+		'onStatusMessage': function (str) { gui_statusMessage(str); },//to display status messages on gui
+		'onHtmlChanged': function (str) { gui_htmlChanged(str); },//to display updated html on gui
+		'onModeChanged': function (mode) { gui_modeChanged(mode); },//to switch normal and preview modes on gui
+		'onAddArea': function (id) { gui_addArea(id); },//to add new form element on gui
+		'onRemoveArea': function (id) { gui_removeArea(id); },//to remove form elements from gui
+		'onAreaChanged': function (obj) { gui_areaChanged(obj); },
+		'onSelectArea': function (obj) { gui_selectArea(obj); }//to select form element when an area is clicked
+	},
+	pic_container: document.getElementById('pic_container'),
+	bounding_box: false
 });
 
 //array of form elements
@@ -625,7 +625,7 @@ imgroot = 'example1_files/';
 outputmode = 'imgmap';
 gui_outputChanged();
 
-myimgmap.addEvent(document.getElementById('html_container'), 'blur',  gui_htmlBlur);
+myimgmap.addEvent(document.getElementById('html_container'), 'blur', gui_htmlBlur);
 myimgmap.addEvent(document.getElementById('html_container'), 'focus', gui_htmlFocus);
 
 $('#color1').colorPicker();
@@ -638,10 +638,10 @@ $('#color1').colorPicker();
  */
 function output_css() {
 	var html, coords, top, left, width, height;
-	html = '<div class="imgmap_css_container" id="'+myimgmap.getMapId()+'">';
-	
+	html = '<div class="imgmap_css_container" id="' + myimgmap.getMapId() + '">';
+
 	//foreach areas
-	for (var i=0; i<myimgmap.areas.length; i++) {
+	for (var i = 0; i < myimgmap.areas.length; i++) {
 		if (myimgmap.areas[i]) {
 			if (myimgmap.areas[i].shape && myimgmap.areas[i].shape != 'undefined') {
 				coords = myimgmap.areas[i].lastInput;
@@ -649,15 +649,15 @@ function output_css() {
 				left = myimgmap.areas[i].style.left;
 				width = myimgmap.areas[i].style.width;
 				height = myimgmap.areas[i].style.height;
-				html+= '<a style="position: absolute; top: '+top+'; left: '+left+'; width: '+width+'; height: '+height+';" '+
+				html += '<a style="position: absolute; top: ' + top + '; left: ' + left + '; width: ' + width + '; height: ' + height + ';" ' +
 					' alt="' + myimgmap.areas[i].aalt + '"' +
 					' title="' + myimgmap.areas[i].aalt + '"' +
-					' href="' +	myimgmap.areas[i].ahref + '"' +
+					' href="' + myimgmap.areas[i].ahref + '"' +
 					' target="' + myimgmap.areas[i].atarget + '" ><em>' + myimgmap.areas[i].atitle + '</em></a>';
 			}
 		}
 	}
-	html+= myimgmap.waterMark + '</div>';
+	html += myimgmap.waterMark + '</div>';
 	//alert(html);
 	return html;
 
@@ -681,19 +681,19 @@ function output_wiki() {
 	var html, coords;
 	html = '<imagemap>';
 	if (typeof myimgmap.pic != 'undefined') {
-		html+= 'Image:' + myimgmap.pic.src + '|' + myimgmap.pic.title + '\n';
+		html += 'Image:' + myimgmap.pic.src + '|' + myimgmap.pic.title + '\n';
 	}
-	
+
 	//foreach areas
-	for (var i=0; i<myimgmap.areas.length; i++) {
+	for (var i = 0; i < myimgmap.areas.length; i++) {
 		if (myimgmap.areas[i]) {
 			if (myimgmap.areas[i].shape && myimgmap.areas[i].shape != 'undefined') {
 				coords = myimgmap.areas[i].lastInput.split(',').join(' ');
-				html+= myimgmap.areas[i].shape + ' ' + coords + ' [[' + myimgmap.areas[i].ahref + '|' + myimgmap.areas[i].aalt + ']]\n';
+				html += myimgmap.areas[i].shape + ' ' + coords + ' [[' + myimgmap.areas[i].ahref + '|' + myimgmap.areas[i].aalt + ']]\n';
 			}
 		}
 	}
-	html+= '#' + myimgmap.waterMark + '\n</imagemap>';
+	html += '#' + myimgmap.waterMark + '\n</imagemap>';
 	//alert(html);
 	return html;
 }
@@ -709,30 +709,30 @@ function bp_init() {
 	BrowserPlus.init(function(res) {
 	  if (res.success) {  
 	   BrowserPlus.require({  
-	      services: [
-		  	{service: 'DragAndDrop'},
-		  	{service: "ImageAlter"}
+		  services: [
+				{service: 'DragAndDrop'},
+				{service: "ImageAlter"}
 			]},  
-	      function(res) {
-	        if (res.success) {
-	          var dnd = BrowserPlus.DragAndDrop;
-	          dnd.AddDropTarget(
-	            {id: "pic_container"},
-	            function(res) {
-	            	document.getElementById("pic_container").innerHTML = '<em>Drag and drop an image here to start editing, or select source above.</em>';
-	              dnd.AttachCallbacks({
-	                id: "pic_container",
-	                drop: bp_dropped
-	              },
-	              function(){});
-	              
-	          });
-	        } else {
-	          //alert("Error Loading Browserplus Services: " + res.error);
-	        }
-	      });
+		  function(res) {
+			if (res.success) {
+			  var dnd = BrowserPlus.DragAndDrop;
+			  dnd.AddDropTarget(
+				{id: "pic_container"},
+				function(res) {
+					document.getElementById("pic_container").innerHTML = '<em>Drag and drop an image here to start editing, or select source above.</em>';
+				  dnd.AttachCallbacks({
+					id: "pic_container",
+					drop: bp_dropped
+				  },
+				  function(){});
+				  
+			  });
+			} else {
+			  //alert("Error Loading Browserplus Services: " + res.error);
+			}
+		  });
 	  } else {
-	    //alert("Failed to initialize BrowserPlus: " + res.error);
+		//alert("Failed to initialize BrowserPlus: " + res.error);
 	  }
 	});
 }
