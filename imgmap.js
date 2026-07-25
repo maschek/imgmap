@@ -648,7 +648,13 @@ imgmap.prototype.loadImage = function(img, imgw, imgh) {
 		if (img.indexOf('?') > -1) {
 			q = '&';
 		}
-		this.pic.src = img + q + (new Date().getTime());
+		//blob:/data: URLs are local and uncacheable; a query string makes them
+		//invalid (ERR_FILE_NOT_FOUND), so skip the cache-busting timestamp
+		if (img.substr(0, 5) === 'blob:' || img.substr(0, 5) === 'data:') {
+			this.pic.src = img;
+		} else {
+			this.pic.src = img + q + (new Date().getTime());
+		}
 		if (imgw && imgw > 0) {this.pic.setAttribute('width',  imgw);}
 		if (imgh && imgh > 0) {this.pic.setAttribute('height', imgh);}
 		this.fireEvent('onLoadImage', this.pic);
