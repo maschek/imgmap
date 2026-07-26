@@ -2,6 +2,10 @@
 
 = Changelog =
 
+Version 2.3 PR
+ * Added export compatible with the format of the spip plugin Image cliquable
+ * Added a button to change maphilight visibility and list visibility
+
 Version 2.2
  * Updated excanvas to r3 - should solve IE8 problems
  * Added Example with ExtJs integration, thanks to Colin Bell

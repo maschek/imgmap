@@ -1,22 +1,25 @@
 <html>
+
 <head>
-<title>Online Image Map Editor - Example 1</title>
-<link rel="stylesheet" href="example1_files/imgmap.css" type="text/css">
-<link rel="stylesheet" href="example1_files/js/colorPicker.css" type="text/css" />
-<!--[if gte IE 6]>
+	<title>Online Image Map Editor - Example 1</title>
+	<link rel="stylesheet" href="example1_files/imgmap.css" type="text/css">
+	<link rel="stylesheet" href="example1_files/js/colorPicker.css" type="text/css" />
+	<!--[if gte IE 6]>
 <script language="javascript" type="text/javascript" src="../excanvas.js"></script>
 <![endif]-->
-<script language="javascript" type="text/javascript" src="example1_files/js/jquery-1.3.2.js"></script>
-<script language="javascript" type="text/javascript" src="example1_files/js/jquery.colorPicker.js"></script>
+	<script language="javascript" type="text/javascript" src="example1_files/js/jquery-1.3.2.js"></script>
+	<script language="javascript" type="text/javascript" src="example1_files/js/jquery.colorPicker.js"></script>
 </head>
-<body>
-<p style="font-size: 12px; font-weight: bold">
-Example 1 shows how to use the imgmap component in a complete imagemap editor application. This example is 
-functionally equivalent to the online editor found at
-<a href="http://www.maschek.hu/imagemap/imgmap">http://www.maschek.hu/imagemap/imgmap</a>.<br/>
-To use the uploader component ("An image on your computer") you will need to open the example from a php-enabled webserver.
 
-</p>
+<body>
+	<p style="font-size: 12px; font-weight: bold">
+		Example 1 shows how to use the imgmap component in a complete imagemap editor application. This example is
+		functionally equivalent to the online editor found at
+		<a href="http://www.maschek.hu/imagemap/imgmap">http://www.maschek.hu/imagemap/imgmap</a>.<br />
+		To use the uploader component ("An image on your computer") you will need to open the example from a php-enabled
+		webserver.
+
+	</p>
 	<form id="img_area_form">
 		<fieldset>
 			<legend>
@@ -25,31 +28,28 @@ To use the uploader component ("An image on your computer") you will need to ope
 			<div>
 				<div class="source_desc">An image on your computer:</div>
 				<div class="source_url">
-					<iframe id="iframe_uploader"
-						name="uploader"
-						src="example1_files/upload.php"
-						scrolling="no"
-						noresize="noresize"
-						frameborder="no"
-						width="240"
-						height="24"></iframe>
+					<iframe id="iframe_uploader" name="uploader" src="example1_files/upload.php" scrolling="no"
+						noresize="noresize" frameborder="no" width="240" height="24"></iframe>
 				</div>
-				<a href="javascript:gui_loadImage(window.frames['uploader'].document.getElementById('src').getAttribute('rel'))" class="source_accept">accept</a><br/>
-				
+				<a href="javascript:gui_loadImage(window.frames['uploader'].document.getElementById('src').getAttribute('rel'))"
+					class="source_accept">accept</a><br />
+
 				<div class="source_desc">An image on the Internet:</div>
 				<div class="source_url"><input type="txt" id="source_url2" value="http://"></div>
-				<a href="javascript:gui_loadImage(document.getElementById('source_url2').value)" class="source_accept">accept</a><br/>
-				
+				<a href="javascript:gui_loadImage(document.getElementById('source_url2').value)"
+					class="source_accept">accept</a><br />
+
 				<div class="source_desc">Use a sample image:</div>
 				<div class="source_url">
 					<select id="source_url3">
-						<option value="example_files/sample1.jpg" >sample 1</option>
-						<option value="example_files/sample2.jpg" >sample 2</option>
-						<option value="example_files/sample3.jpg" >sample 3</option>
-						<option value="example_files/sample4.jpg" >sample 4</option>
+						<option value="example_files/sample1.jpg">sample 1</option>
+						<option value="example_files/sample2.jpg">sample 2</option>
+						<option value="example_files/sample3.jpg">sample 3</option>
+						<option value="example_files/sample4.jpg">sample 4</option>
 					</select>
 				</div>
-				<a href="javascript:gui_loadImage(document.getElementById('source_url3').value);" class="source_accept">accept</a><br/>
+				<a href="javascript:gui_loadImage(document.getElementById('source_url3').value);"
+					class="source_accept">accept</a><br />
 			</div>
 		</fieldset>
 		<fieldset>
@@ -57,54 +57,78 @@ To use the uploader component ("An image on your computer") you will need to ope
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image map areas</a>
 			</legend>
 			<div style="border-bottom: solid 1px #efefef">
-			<div id="button_container">
-				<!-- buttons come here -->
-				<img src="example1_files/add.gif" onclick="myimgmap.addNewArea()" alt="Add new area" title="Add new area"/>
-				<img src="example1_files/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)" alt="Delete selected area" title="Delete selected area"/>
-				<img src="example1_files/zoom.gif" id="i_preview" onclick="myimgmap.togglePreview();" alt="Preview image map" title="Preview image map"/>
-				<img src="example1_files/html.gif" onclick="gui_htmlShow()" alt="Get image map HTML" title="Get image map HTML"/>
-				<label for="dd_zoom">Zoom:</label>
-				<select onchange="gui_zoom(this)" id="dd_zoom">
-				<option value='0.25'>25%</option>
-				<option value='0.5'>50%</option>
-				<option value='1' selected="1">100%</option>
-				<option value='2'>200%</option>
-				<option value='3'>300%</option>
-				</select>
-				<label for="dd_output">Output:</label> 
-				<select id="dd_output" onchange="return gui_outputChanged(this)">
-				<option value='imagemap'>Standard imagemap</option>
-				<option value='css'>CSS imagemap</option>
-				<option value='wiki'>Wiki imagemap</option>
-				</select>
-				<div>
-					<a class="toggler toggler_off" onclick="gui_toggleMore();return false;">More actions</a>
-					<div id="more_actions" style="display: none; position: absolute;">
-						<div><a href="" onclick="toggleBoundingBox(this); return false;">&nbsp; bounding box</a></div>
-						<div><a href="" onclick="return false">&nbsp; background color </a><input onchange="gui_colorChanged(this)" id="color1" style="display: none;" value="#ffffff"></div>
+				<div id="button_container" style="display: flex; gap: .5rem;">
+					<!-- buttons come here -->
+					<img src="example1_files/add.gif" onclick="myimgmap.addNewArea()" alt="Add new area"
+						title="Add new area" />
+					<img src="example1_files/delete.gif" onclick="myimgmap.removeArea(myimgmap.currentid)"
+						alt="Delete selected area" title="Delete selected area" />
+					<img src="example1_files/zoom.gif" id="i_preview" onclick="myimgmap.togglePreview();"
+						alt="Preview image map" title="Preview image map" />
+					<img src="example1_files/html.gif" onclick="gui_htmlShow()" alt="Get image map HTML"
+						title="Get image map HTML" />
+					<label for="dd_zoom">Zoom:</label>
+					<select onchange="gui_zoom(this)" id="dd_zoom">
+						<option value='0.25'>25%</option>
+						<option value='0.5'>50%</option>
+						<option value='1' selected="1">100%</option>
+						<option value='2'>200%</option>
+						<option value='3'>300%</option>
+					</select>
+					<label for="dd_output">Output:</label>
+					<select id="dd_output" onchange="return gui_outputChanged(this)">
+						<option value='imagemap'>Standard imagemap</option>
+						<option value='css'>CSS imagemap</option>
+						<option value='wiki'>Wiki imagemap</option>
+						<option value="spip">SPIP imagemap</option>
+					</select>
+					<div id="spip_options"
+						style="display: none; display: flex; gap: .2rem;justify-content: center; align-items: center;">
+						<label style="display: none;" for="spip_doc_id">ID of the image: </label>
+						<input style="display: none;" type="text" id="spip_doc_id" size="5">
+						<br>
+						<div style="display: flex; justify-content: center; align-items: center; gap: .5rem;">
+							<div style="display: flex; justify-content: center; align-items: center; gap: .5rem;">
+								<label for="spip_use_maphilight">Enable maphilight</label>
+								<input type="checkbox" id="spip_use_maphilight" checked="checked">
+							</div>
+							<div style="display: flex; justify-content: center; align-items: center; gap: .5rem;">
+								<label for="spip_use_nolist">Enable the links list</label>
+								<input type="checkbox" id="spip_use_nolist" checked="checked">
+							</div>
+						</div>
+					</div>
+					<div>
+						<a class="toggler toggler_off" onclick="gui_toggleMore();return false;">More actions</a>
+						<div id="more_actions" style="display: none; position: absolute;">
+							<div><a href="" onclick="toggleBoundingBox(this); return false;">&nbsp; bounding box</a>
+							</div>
+							<div><a href="" onclick="return false">&nbsp; background color </a><input
+									onchange="gui_colorChanged(this)" id="color1" style="display: none;"
+									value="#ffffff"></div>
+						</div>
 					</div>
 				</div>
-			</div>
-			<div style="float: right; margin: 0 5px">
-				<select onchange="changelabeling(this)">
-				<option value=''>No labeling</option>
-				<option value='%n' selected='1'>Label with numbers</option>
-				<option value='%a'>Label with alt text</option>
-				<option value='%h'>Label with href</option>
-				<option value='%c'>Label with coords</option>
-				</select>
-			</div>
+				<div style="float: right; margin: 0 5px">
+					<select onchange="changelabeling(this)">
+						<option value=''>No labeling</option>
+						<option value='%n' selected='1'>Label with numbers</option>
+						<option value='%a'>Label with alt text</option>
+						<option value='%h'>Label with href</option>
+						<option value='%c'>Label with coords</option>
+					</select>
+				</div>
 			</div>
 			<div id="form_container" style="clear: both;">
-			<!-- form elements come here -->
-         	</div>
+				<!-- form elements come here -->
+			</div>
 		</fieldset>
 		<fieldset>
 			<legend>
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Image</a>
 			</legend>
 			<div id="pic_container">
-			</div>			
+			</div>
 		</fieldset>
 		<fieldset>
 			<legend>
@@ -117,13 +141,15 @@ To use the uploader component ("An image on your computer") you will need to ope
 				<a onclick="toggleFieldset(this.parentNode.parentNode)">Code</a>
 			</legend>
 			<div>
-			<div id="output_help">
+				<div id="output_help">
+				</div>
+				<textarea id="html_container"></textarea>
 			</div>
-			<textarea id="html_container"></textarea></div>
 		</fieldset>
 	</form>
 
-<script type="text/javascript" src="../imgmap.js"></script>
-<script type="text/javascript" src="example1_files/default_interface.js"></script>
+	<script type="text/javascript" src="../imgmap.js"></script>
+	<script type="text/javascript" src="example1_files/default_interface.js"></script>
 </body>
+
 </html>

@@ -1,5 +1,9 @@
 # Changelog #
 
+Version 2.3 PR
+  * Added export compatible with the format of the spip plugin [Image cliquable](https://contrib.spip.net/Plugin-Image-Cliquable)
+  * Added a button to change maphilight visibility and list visibility
+
 Version 2.2
   * Updated excanvas to [r3](https://code.google.com/p/imgmap/source/detail?r=3) - should solve IE8 problems
   * Added Example with ExtJs integration, thanks to Colin Bell
